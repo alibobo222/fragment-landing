@@ -1,0 +1,210 @@
+@import "tailwindcss";
+
+/* ------------------------------------------------------------------ *
+ * Design system Etnisi — brutalisme contemporain / éditorial.
+ * Palette volontairement réduite : blanc cassé béton, noir profond,
+ * gris béton, gris anthracite. Les seules couleurs marquées viennent
+ * des matériaux de la lampe (accent piloté par le produit).
+ * ------------------------------------------------------------------ */
+@theme {
+  --color-paper: #e7e5de;        /* blanc cassé béton (fond) */
+  --color-paper-pure: #f2f0ea;   /* panneau clair, calcaire */
+  --color-paper-deep: #d9d6cd;   /* gris béton clair (sections alternées) */
+  --color-concrete: #c3c0b6;     /* gris béton */
+  --color-anthracite: #232427;   /* gris anthracite */
+  --color-ink: #08080a;          /* noir profond */
+  --color-ink-soft: #26262b;
+  --color-ink-muted: #6c6a62;    /* gris béton (texte secondaire) */
+  --color-line: #cbc8bd;         /* filet béton */
+
+  /* Accents MATIÈRE — dérivés du produit/configurateur, jamais décoratifs. */
+  --color-cobalt: #2a3fe6;
+  --color-brass: #b08a52;
+  --color-brick: #d1402c;
+  --color-glass: #4f6b53;
+
+  --font-display: var(--font-bricolage), "Arial Black", system-ui, sans-serif;
+  --font-sans: var(--font-inter), system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  /* Coins nets : brutalisme franc et assumé. */
+  --radius-xs: 0px;
+  --radius-sm: 1px;
+  --radius-pill: 999px;
+
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@layer base {
+  :root {
+    color-scheme: light;
+    /* Accent global piloté par le modèle affiché dans le hero (JS). */
+    --accent: var(--color-cobalt);
+    /* Pôle clair du même modèle, pour les éléments posés sur fond noir. */
+    --accent-on-dark: #6f83ff;
+  }
+
+  /* Éléments dont la couleur suit l'accent : transition douce et cohérente. */
+  .u-accent-fg {
+    color: var(--accent);
+    transition: color 0.6s var(--ease-out-soft);
+  }
+  .u-accent-bg {
+    background-color: var(--accent);
+    transition: background-color 0.5s var(--ease-out-soft),
+      transform 0.2s var(--ease-out-soft);
+  }
+  .u-accent-border {
+    border-color: var(--accent);
+    transition: border-color 0.5s var(--ease-out-soft);
+  }
+  /* Accent clair pour les fonds noirs (marquee, pied de page). */
+  .u-accent-fg-dark {
+    color: var(--accent-on-dark);
+    transition: color 0.6s var(--ease-out-soft);
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+  }
+
+  body {
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-feature-settings: "ss01", "cv01";
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    /* Micro-grain minéral (béton) très discret — matière, pas décor. */
+    background-image:
+      radial-gradient(rgba(18, 18, 20, 0.02) 1px, transparent 1px);
+    background-size: 3px 3px;
+  }
+
+  /* Titres monolithiques : très grands, serrés, architecturaux. */
+  h1, h2, h3 {
+    font-family: var(--font-display);
+    font-weight: 800;
+    letter-spacing: -0.045em;
+    line-height: 0.88;
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  /* Sélection neutre (noir/blanc cassé) — l'interface ne « pop » pas. */
+  ::selection {
+    background: var(--color-ink);
+    color: var(--color-paper);
+  }
+
+  /* Focus visible net et neutre (encre), cohérent partout. */
+  :where(a, button, input, textarea, [tabindex]):focus-visible {
+    outline: 2px solid var(--color-ink);
+    outline-offset: 3px;
+    border-radius: 0;
+  }
+}
+
+@layer utilities {
+  .u-container {
+    width: 100%;
+    max-width: 82rem;
+    margin-inline: auto;
+    /* Larges marges : beaucoup d'espace négatif, la page respire. */
+    padding-inline: clamp(1.35rem, 6vw, 5.5rem);
+  }
+
+  /* Sur-titres : petits, très espacés — contraste d'échelle éditorial. */
+  .u-eyebrow {
+    font-size: 0.68rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--color-ink-muted);
+    font-weight: 600;
+  }
+
+  /* Bande kinétique (marquee) — deux copies pour une boucle continue. */
+  .u-marquee {
+    display: flex;
+    overflow: hidden;
+    user-select: none;
+    -webkit-mask-image: linear-gradient(
+      90deg,
+      transparent,
+      #000 6%,
+      #000 94%,
+      transparent
+    );
+    mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+  }
+
+  .u-marquee__track {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 2.5rem;
+    padding-right: 2.5rem;
+    min-width: 100%;
+    animation: marquee 26s linear infinite;
+  }
+
+  @keyframes marquee {
+    to {
+      transform: translateX(-100%);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .u-marquee__track {
+      animation: none;
+    }
+    .u-marquee {
+      overflow-x: auto;
+    }
+  }
+
+  .u-hairline {
+    border-top: 1px solid var(--color-line);
+  }
+
+  /* Réserve d'espace safe-area iOS pour le CTA sticky. */
+  .u-safe-bottom {
+    padding-bottom: max(0.9rem, env(safe-area-inset-bottom));
+  }
+
+  /* Titre héroïque : échelle architecturale, impact maximal. */
+  .u-fluid-display {
+    font-size: clamp(2.9rem, 11.5vw, 9rem);
+  }
+
+  .hero-scroll-line {
+    transform-origin: top center;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .hero-scroll-line {
+      animation: hero-scroll 2.6s var(--ease-out-soft) infinite;
+    }
+  }
+
+  @keyframes hero-scroll {
+    0%,
+    100% {
+      transform: scaleY(0.35);
+      opacity: 0.4;
+    }
+    50% {
+      transform: scaleY(1);
+      opacity: 1;
+    }
+  }
+}
