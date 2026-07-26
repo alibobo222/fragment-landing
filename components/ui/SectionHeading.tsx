@@ -1,12 +1,15 @@
-import { Reveal } from "@/components/ui/Reveal";
-
 /**
- * En-tête de section unifié — dispositif de « nomenclature » éditoriale :
+ * En-tête de section unifié, **épinglé au scroll** (sticky) : le titre du
+ * chapitre reste en haut pendant tout le défilement de sa section, puis se
+ * libère naturellement à l'arrivée du chapitre suivant.
+ *
+ * Dispositif de « nomenclature » éditoriale :
  *   [index mono] ──────────── [étiquette mono]
  *   Grand titre monolithique
  *
- * Donne à chaque chapitre la même structure architecturale (cohérence forte,
- * lecture de catalogue / publication).
+ * ⚠️ À placer comme **enfant direct de `<section>`** (pas dans un sous-conteneur
+ * qui se termine avant la fin de la section), sinon l'épinglage se libère trop
+ * tôt. Fond blanc opaque : le contenu défile proprement dessous.
  */
 export function SectionHeading({
   id,
@@ -22,15 +25,17 @@ export function SectionHeading({
   className?: string;
 }) {
   return (
-    <Reveal className={className}>
-      <div className="flex items-center gap-4">
-        <span className="u-index text-xs text-ink-muted">{index}</span>
-        <span aria-hidden className="h-px flex-1 bg-line" />
-        <span className="u-eyebrow">{kicker}</span>
+    <div className={`sticky top-14 z-20 bg-white pt-6 pb-5 ${className}`}>
+      <div className="u-container">
+        <div className="flex items-center gap-4">
+          <span className="u-index text-xs text-ink-muted">{index}</span>
+          <span aria-hidden className="h-px flex-1 bg-line" />
+          <span className="u-eyebrow">{kicker}</span>
+        </div>
+        <h2 id={id} className="u-title mt-5">
+          {title}
+        </h2>
       </div>
-      <h2 id={id} className="u-title mt-6">
-        {title}
-      </h2>
-    </Reveal>
+    </div>
   );
 }

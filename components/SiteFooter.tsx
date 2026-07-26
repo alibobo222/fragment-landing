@@ -28,10 +28,11 @@ export function SiteFooter() {
         <nav aria-label="Pied de page">
           <p className={eyebrow}>Explorer</p>
           <ul className="mt-3 space-y-2 text-sm text-paper/70">
-            <li><a href="#projet" className={link}>Le projet</a></li>
-            <li><a href="#matieres" className={link}>Les matières</a></li>
+            <li><a href="#projet" className={link}>La démarche de conception</a></li>
+            <li><a href="#matieres" className={link}>Les matières recyclées</a></li>
             <li><a href="#configurateur" className={link}>Explorer les configurations</a></li>
-            <li><a href="#contact" className={link}>Prendre contact</a></li>
+            <li><a href="#details" className={link}>Fiche technique</a></li>
+            <li><a href="#contact" className={link}>Nous écrire</a></li>
           </ul>
         </nav>
 

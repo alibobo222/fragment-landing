@@ -9,16 +9,16 @@ import { RevealImage } from "@/components/ui/motion";
  */
 export function MaterialsIntro() {
   return (
-    <section id="matieres" aria-labelledby="matieres-title" className="scroll-mt-16 pt-24 pb-4">
+    <section id="matieres" aria-labelledby="matieres-title" className="scroll-mt-16 bg-white pt-4 pb-4">
+      <SectionHeading
+        index="02"
+        kicker="Les matières"
+        id="matieres-title"
+        title="La même forme. Un objet à chaque fois différent."
+      />
       <div className="u-container">
-        <SectionHeading
-          index="02"
-          kicker="Les matières"
-          id="matieres-title"
-          title="La même forme. Un objet à chaque fois différent."
-        />
         <Reveal delay={0.05}>
-          <p className="mt-7 max-w-[34ch] text-lg leading-relaxed text-ink-soft">
+          <p className="mt-1 max-w-[50ch] text-sm leading-relaxed text-ink-soft">
             Le dessin ne change pas ; la matière, oui. Elle décide du poids
             perçu, de la température de la lumière et de la façon dont la pièce
             prend place dans un intérieur.

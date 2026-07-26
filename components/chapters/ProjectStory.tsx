@@ -1,108 +1,138 @@
 import { Reveal } from "@/components/ui/Reveal";
+import { SectionHeading } from "@/components/ui/SectionHeading";
 import { RevealImage } from "@/components/ui/motion";
+import { ExplodedLampSection } from "@/components/chapters/ExplodedLampSection";
 
 /**
- * Chapitre 2 — Présentation éditoriale de la lampe (esprit catalogue de mobilier
- * contemporain / publication de design). Composition d'après la maquette :
- *   1. grande photographie d'ouverture (vue générale)
- *   2. deux détails rapprochés côte à côte
- *   3. grande vue éclatée en clôture
+ * Chapitre « Le projet » — la démarche de conception, racontée à travers ses
+ * principes fondateurs, chacun accompagné de sa photographie. Séquence
+ * éditoriale (esprit catalogue de design) : ouverture sur « Concevoir à partir
+ * de l'existant », puis géométrie, fabrication, matières. Fond blanc, révélations
+ * discrètes, pas de cartes.
  *
- * Le titre du chapitre reste « sticky » en haut pendant le défilement des images
- * et se retire naturellement à l'arrivée du chapitre suivant. Grille alignée,
- * gouttières régulières, fond blanc pur, animations discrètes (fade + montée +
- * parallaxe très légère), lazy-loading.
+ * ⚠️ Rythme : le conteneur `flex flex-col gap-6` impose le MÊME espacement entre
+ * chaque image et chaque bloc de texte (cohérence demandée).
  */
+
+const SIZES = "(max-width: 480px) 100vw, 480px";
+
+/** Bloc de texte d'un principe : étiquette mono + titre + court paragraphe. */
+function Text({
+  eyebrow,
+  title,
+  children,
+}: {
+  eyebrow: string;
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="u-container">
+      <Reveal>
+        <p className="u-eyebrow">{eyebrow}</p>
+        <h3 className="mt-2 text-lg leading-tight">{title}</h3>
+        <p className="mt-2.5 max-w-[50ch] text-sm leading-relaxed text-ink-soft">
+          {children}
+        </p>
+      </Reveal>
+    </div>
+  );
+}
+
 export function ProjectStory() {
   return (
-    <section
-      id="projet"
-      aria-labelledby="projet-title"
-      className="scroll-mt-16 bg-white pb-24 pt-4"
-    >
-      {/* Titre fixé pendant l'exploration du chapitre. */}
-      <div className="sticky top-16 z-20 bg-white pb-5 pt-6">
+    <section id="projet" aria-labelledby="projet-title" className="scroll-mt-16 bg-white pb-24">
+      <SectionHeading
+        index="01"
+        kicker="Le projet"
+        id="projet-title"
+        title="Concevoir à partir de l'existant."
+      />
+
+      {/* Espacement constant entre chaque élément (image ⇄ texte). */}
+      <div className="mt-4 flex flex-col gap-6">
+        {/* Ouverture — réemploi */}
         <div className="u-container">
-          <div className="flex items-center gap-4">
-            <span className="u-index text-xs text-ink-muted">01</span>
-            <span aria-hidden className="h-px flex-1 bg-line" />
-            <span className="u-eyebrow">Le projet</span>
-          </div>
-          <h2 id="projet-title" className="u-title mt-5">
-            Une masse posée en déséquilibre.
-          </h2>
+          <Reveal>
+            <p className="max-w-[50ch] text-sm leading-relaxed text-ink-soft">
+              Plutôt que de partir d&apos;une matière neuve, la lampe s&apos;appuie
+              sur ce qui existe déjà — une grille perforée standard, une chute, une
+              pièce promise à une seconde vie. La contrainte du réemploi
+              n&apos;est pas subie : elle oriente le dessin et donne à chaque
+              exemplaire son caractère.
+            </p>
+          </Reveal>
         </div>
-      </div>
 
-      {/* Courte accroche — accompagne les images sans les concurrencer. */}
-      <div className="u-container mt-4">
-        <Reveal>
-          <p className="max-w-[34ch] text-lg leading-relaxed text-ink-soft">
-            Un cylindre coupé, incliné sur son socle. Rien n&apos;est caché :
-            l&apos;assemblage fait partie du dessin.
-          </p>
-        </Reveal>
-      </div>
-
-      {/* 1 — Grande vue générale. */}
-      <figure className="u-container mt-12">
-        <RevealImage
-          src="/images/chapter2/general.webp"
-          alt="Vue générale de la lampe : abat-jour noir incliné, douille en inox, grille pliée et câble textile bleu."
-          ratio="aspect-[4/3]"
-          sizes="(max-width: 480px) 92vw, 450px"
-          imgClassName="object-cover object-center"
-          unoptimized
-          y={24}
-          zoom={1.05}
-        />
-      </figure>
-
-      {/* 2 — Deux détails rapprochés, côte à côte (grille alignée). */}
-      <div className="u-container mt-6 grid grid-cols-2 gap-3">
-        <figure>
+        {/* Vue générale — pièce ENTIÈRE (ratio portrait de la source, aucun rognage). */}
+        <figure className="u-container">
           <RevealImage
-            src="/images/chapter2/profil.webp"
-            alt="Profil de la lampe soulignant l'inclinaison de l'abat-jour sur le pied."
-            ratio="aspect-[4/5]"
-            sizes="(max-width: 480px) 44vw, 220px"
+            src="/images/chapter2/general.webp"
+            alt="Vue générale de la lampe : cylindre incliné, plan de la grille et pied, jonctions apparentes."
+            ratio="aspect-[3/4]"
+            sizes={SIZES}
+            imgClassName="object-contain"
+            unoptimized
+            y={18}
+            zoom={1.03}
+          />
+        </figure>
+
+        {/* Géométrie */}
+        <Text eyebrow="Un langage brutaliste" title="Jouer avec la géométrie">
+          Le dessin part de volumes simples — un cylindre, un plan incliné, une
+          découpe — assemblés sans détour. Rien n&apos;est ajouté pour décorer :
+          ce sont les intersections, les proportions et les masses qui font
+          l&apos;objet. Une grammaire brutaliste, réduite à l&apos;essentiel.
+        </Text>
+
+        {/* Croquis d'étude → objet */}
+        <figure className="u-container">
+          <RevealImage
+            src="/images/chapter2/croquis.webp"
+            alt="Lampe de profil devant son croquis d'étude au crayon : du dessin à l'objet."
+            ratio="aspect-[933/821]"
+            sizes={SIZES}
             imgClassName="object-cover object-center"
             unoptimized
-            y={20}
-            zoom={1.05}
+            y={18}
+            zoom={1.03}
           />
-          <figcaption className="u-caption mt-2.5">— Profil</figcaption>
         </figure>
-        <figure>
+
+        {/* Fabrication */}
+        <Text eyebrow="Logique constructive" title="Simple à fabriquer, à assembler">
+          Chaque pièce est pensée pour être facile à produire et à monter. Peu de
+          composants, des jonctions lisibles, une logique de construction
+          évidente. La forme naît autant des contraintes de l&apos;atelier que de
+          l&apos;intention : fabriquer devient une manière de dessiner.
+        </Text>
+
+        {/* Vue éclatée 3D — pilotée par le scroll (remplace l'illustration). */}
+        <ExplodedLampSection />
+
+        {/* Matières */}
+        <Text eyebrow="Dialogue de matières" title="Combiner matières et textures">
+          L&apos;identité se joue dans le contact des matières : le mat contre le
+          poli, le minéral contre le métal, la surface brute contre l&apos;âme
+          veinée. Chaque association déplace légèrement le caractère de la lampe,
+          sans jamais rompre la cohérence de la forme.
+        </Text>
+
+        {/* Détail nacre / grille */}
+        <figure className="u-container">
           <RevealImage
             src="/images/chapter2/nacre.jpg"
-            alt="Détail rapproché : intérieur nacré marbré et grille métallique perforée."
-            ratio="aspect-[4/5]"
-            sizes="(max-width: 480px) 44vw, 220px"
+            alt="Détail : intérieur en pierre veinée contre grille métallique perforée — contraste de textures."
+            ratio="aspect-[4/3]"
+            sizes={SIZES}
             imgClassName="object-cover object-center"
             unoptimized
-            y={20}
-            zoom={1.05}
+            y={18}
+            zoom={1.03}
           />
-          <figcaption className="u-caption mt-2.5">— Nacre &amp; grille</figcaption>
         </figure>
       </div>
-
-      {/* 3 — Grande vue éclatée (technique), pleine largeur et agrandie. */}
-      <figure className="u-container mt-14">
-        <RevealImage
-          className="u-bleed"
-          src="/images/chapter2/eclate.webp"
-          alt="Vue éclatée de la lampe : abat-jour à l'intérieur en bois, grille métallique pliée, ampoule et douille, pied minéral, câble bleu."
-          ratio="aspect-square"
-          sizes="(max-width: 480px) 100vw, 480px"
-          imgClassName="object-cover"
-          unoptimized
-          y={24}
-          zoom={1.03}
-        />
-        <figcaption className="u-caption mt-3">— Vue éclatée · trois volumes, une douille, un câble.</figcaption>
-      </figure>
     </section>
   );
 }

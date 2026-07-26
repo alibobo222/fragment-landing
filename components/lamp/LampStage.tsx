@@ -124,6 +124,17 @@ export function LampStage({
 
   return (
     <div ref={wrapRef} className={`relative ${className}`}>
+      {/* Halo circulaire gris très clair derrière la lampe — profondeur discrète,
+          fondu progressif dans le blanc, confiné à la scène (pas de vignettage
+          de page). Le canvas est transparent : le halo transparaît autour du 3D. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(circle at 50% 55%, rgba(20,20,28,0.07) 0%, rgba(20,20,28,0.03) 32%, rgba(20,20,28,0) 60%)",
+        }}
+      />
       {/* Repli photo : LCP immédiat + secours (pas de WebGL / reduced-motion). */}
       {variants.map((v, i) => (
         <Image

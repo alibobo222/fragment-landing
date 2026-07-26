@@ -31,7 +31,7 @@ export function Hero() {
       id="top"
       ref={ref}
       aria-labelledby="hero-title"
-      className="relative h-[calc(100svh-4rem)] w-full overflow-hidden bg-white"
+      className="relative h-[calc(100svh-3.5rem)] w-full overflow-hidden bg-white"
     >
       <motion.div
         className="absolute inset-0"

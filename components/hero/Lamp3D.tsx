@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { useGLTF, OrbitControls } from "@react-three/drei";
+import { useGLTF, OrbitControls, ContactShadows } from "@react-three/drei";
 import { useReducedMotion } from "framer-motion";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import * as THREE from "three";
@@ -63,7 +63,7 @@ function LampModel({
   const reduce = useReducedMotion();
 
   // Clone, matériaux dédiés, positions des pièces et lumières de la lampe.
-  const { root, materials, spot, point } = useMemo(() => {
+  const { root, materials, spot, point, groundY, shadowScale, shadowFar } = useMemo(() => {
     const root = scene.clone(true);
     root.updateMatrixWorld(true);
 
@@ -157,7 +157,19 @@ function LampModel({
     point.position.copy(bulbPos);
     root.add(point);
 
-    return { root, materials, spot, point };
+    // Ombre de contact : plan horizontal au niveau du pied (monde). Échelle
+    // dérivée de l'empreinte du corps (hors câble, qui s'étale au sol).
+    const baseBox = boxes.base ?? body;
+    const groundY = baseBox.min.y - c.y;
+    const bodySize = body.getSize(new THREE.Vector3());
+    const baseSize = baseBox.getSize(new THREE.Vector3());
+    const shadowScale = Math.max(
+      Math.max(baseSize.x, baseSize.z) * 3.2,
+      bodySize.x * 1.7
+    );
+    const shadowFar = Math.max(bodySize.y * 1.2, 0.001);
+
+    return { root, materials, spot, point, groundY, shadowScale, shadowFar };
   }, [scene]);
 
   // Cible de transmission de l'abat-jour selon la matière courante.
@@ -294,9 +306,23 @@ function LampModel({
   });
 
   return (
-    <group rotation={[0, -0.35, 0]}>
-      <primitive object={root} />
-    </group>
+    <>
+      <group rotation={[0, -0.35, 0]}>
+        <primitive object={root} />
+      </group>
+      {/* Ombre de contact douce sous le pied (rendu produit). Rendue une fois :
+          la lampe est immobile dans le monde (c'est la caméra qui orbite). */}
+      <ContactShadows
+        position={[0, groundY, 0]}
+        scale={shadowScale}
+        far={shadowFar}
+        resolution={512}
+        blur={2.7}
+        opacity={0.42}
+        color="#1b1b22"
+        frames={1}
+      />
+    </>
   );
 }
 

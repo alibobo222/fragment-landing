@@ -6,12 +6,15 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { siteConfig } from "@/config/site";
 import { tapProps } from "@/components/ui/motion";
 
+// Numéros et libellés IDENTIQUES aux titres de section affichés au scroll
+// (« Découvrir »/hero n'est pas un chapitre numéroté).
 const MENU = [
-  { href: "#top", label: "Découvrir" },
-  { href: "#projet", label: "Le projet" },
-  { href: "#matieres", label: "Matières" },
-  { href: "#configurateur", label: "Explorer" },
-  { href: "#contact", label: "Contact" },
+  { num: "", href: "#top", label: "Découvrir" },
+  { num: "01", href: "#projet", label: "Le projet" },
+  { num: "02", href: "#matieres", label: "Les matières" },
+  { num: "03", href: "#configurateur", label: "Le configurateur" },
+  { num: "04", href: "#details", label: "Fiche technique" },
+  { num: "05", href: "#contact", label: "Prendre contact" },
 ];
 
 /**
@@ -37,7 +40,7 @@ export function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-white">
-      <div className="u-container flex h-16 items-center justify-between">
+      <div className="u-container flex h-14 items-center justify-between">
         <a
           href="#top"
           onClick={() => setOpen(false)}
@@ -50,7 +53,8 @@ export function SiteHeader() {
             width={777}
             height={180}
             priority
-            className="h-[1.4rem] w-auto"
+            unoptimized
+            className="h-[1.7rem] w-auto"
           />
         </a>
 
@@ -86,7 +90,7 @@ export function SiteHeader() {
               role="dialog"
               aria-modal="true"
               aria-label="Navigation principale"
-              className="fixed inset-y-0 left-1/2 top-16 z-50 w-full max-w-[30rem] -translate-x-1/2 overflow-y-auto bg-white"
+              className="fixed inset-y-0 left-1/2 top-14 z-50 w-full max-w-[30rem] -translate-x-1/2 overflow-y-auto bg-white"
               initial={reduce ? { opacity: 0 } : { opacity: 0, y: -12 }}
               animate={{ opacity: 1, y: 0 }}
               exit={reduce ? { opacity: 0 } : { opacity: 0, y: -12 }}
@@ -98,7 +102,7 @@ export function SiteHeader() {
                 animate="visible"
                 variants={{ visible: { transition: { staggerChildren: 0.06, delayChildren: 0.08 } } }}
               >
-                {MENU.map((item, i) => (
+                {MENU.map((item) => (
                   <motion.a
                     key={item.href}
                     href={item.href}
@@ -107,10 +111,10 @@ export function SiteHeader() {
                       hidden: { opacity: 0, y: reduce ? 0 : 14 },
                       visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] } },
                     }}
-                    className="group flex items-baseline gap-4 border-b border-line py-5 font-display text-[2.4rem] font-extrabold uppercase leading-none tracking-[-0.03em] text-ink transition-colors hover:text-anthracite"
+                    className="group flex items-baseline gap-4 border-b border-line py-4 font-display text-[1.95rem] font-extrabold uppercase leading-[0.95] tracking-[-0.03em] text-ink transition-colors hover:text-anthracite"
                   >
-                    <span className="u-index w-7 text-xs text-ink-muted">
-                      0{i + 1}
+                    <span className="u-index w-7 shrink-0 text-xs text-ink-muted">
+                      {item.num}
                     </span>
                     {item.label}
                   </motion.a>

@@ -18,17 +18,17 @@ export function ContactSection() {
     <section
       id="contact"
       aria-labelledby="contact-title"
-      className="scroll-mt-16 border-t border-ink pt-24 pb-20"
+      className="scroll-mt-16 border-t border-ink bg-white pt-4 pb-20"
     >
+      <SectionHeading
+        index="05"
+        kicker="Prendre contact"
+        id="contact-title"
+        title="Échangeons autour du projet."
+      />
       <div className="u-container">
-        <SectionHeading
-          index="05"
-          kicker="Prendre contact"
-          id="contact-title"
-          title="Échangeons autour du projet."
-        />
         <Reveal delay={0.05}>
-          <p className="mt-7 max-w-[34ch] text-lg leading-relaxed text-ink-soft">
+          <p className="mt-1 max-w-[50ch] text-sm leading-relaxed text-ink-soft">
             FRAGMENT est un projet de design. Écrivez-nous pour découvrir la
             lampe, discuter d&apos;une configuration ou d&apos;une pièce
             d&apos;atelier sur mesure.

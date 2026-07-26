@@ -33,25 +33,25 @@ export function Configurator() {
     <section
       id="configurateur"
       aria-labelledby="configurateur-title"
-      className="scroll-mt-16 border-t border-line pt-24 pb-20"
+      className="scroll-mt-16 border-t border-line bg-white pt-4 pb-20"
     >
+      <SectionHeading
+        index="03"
+        kicker="Le configurateur"
+        id="configurateur-title"
+        title="Composez votre pièce."
+      />
       <div className="u-container">
-        <SectionHeading
-          index="03"
-          kicker="Le configurateur"
-          id="configurateur-title"
-          title="Composez votre pièce."
-        />
         <Reveal delay={0.05}>
-          <p className="mt-7 max-w-[34ch] text-lg leading-relaxed text-ink-soft">
+          <p className="mt-1 max-w-[50ch] text-sm leading-relaxed text-ink-soft">
             Sept associations de matières. Choisissez une combinaison : la lampe
             se met à jour en douceur. Faites-la tourner, allumez-la, changez la
             température de lumière.
           </p>
         </Reveal>
 
-        {/* Atelier 3D — reste visible pendant qu'on parcourt le catalogue. */}
-        <div className="sticky top-[4.75rem] z-10 mt-10">
+        {/* Atelier 3D. */}
+        <div className="mt-8">
           <LampStage
             camera={[0.12, 0.14, 0.5]}
             fov={30}

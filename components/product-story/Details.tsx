@@ -9,17 +9,16 @@ import { productSpecs } from "@/data/product";
  */
 export function Details() {
   return (
-    <section id="details" aria-labelledby="details-title" className="scroll-mt-16 pt-20 pb-20">
+    <section id="details" aria-labelledby="details-title" className="scroll-mt-16 bg-white pt-4 pb-20">
+      <SectionHeading
+        index="04"
+        kicker="Fiche technique"
+        id="details-title"
+        title="Ce qu'il faut savoir."
+      />
       <div className="u-container">
-        <SectionHeading
-          index="04"
-          kicker="Fiche technique"
-          id="details-title"
-          title="Les faits, rien de plus."
-        />
-
         <Reveal delay={0.05}>
-          <dl className="mt-9 border-t border-ink">
+          <dl className="mt-2 border-t border-ink">
             {productSpecs.map((spec) => (
               <div
                 key={spec.key}
