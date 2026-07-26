@@ -1,71 +1,47 @@
-import Image from "next/image";
 import { Reveal } from "@/components/ui/Reveal";
+import { SectionHeading } from "@/components/ui/SectionHeading";
 import { productSpecs } from "@/data/product";
-import { partLabels, partOrder } from "@/data/product";
 
+/**
+ * Fiche technique — datasheet mono (nomenclature). Uniquement les données
+ * réellement disponibles ; les champs non renseignés → « à venir » (aucune
+ * valeur inventée). Aucune donnée commerciale.
+ */
 export function Details() {
   return (
-    <section id="details" className="scroll-mt-16 py-24 sm:py-32">
-      <div className="u-container grid gap-12 lg:grid-cols-2 lg:gap-16">
-        <Reveal>
-          <figure className="overflow-hidden rounded-sm bg-paper-pure ring-1 ring-line">
-            <div className="relative aspect-[528/534] w-full">
-              <Image
-                src="/images/prototype/eclate.webp"
-                alt="Vue éclatée de la lampe Noir Minéral : abat-jour, grille métallique pliée, douille, pied et câble bleu séparés."
-                fill
-                sizes="(max-width: 1024px) 92vw, 46vw"
-                className="object-contain p-4"
-              />
-            </div>
-            <figcaption className="border-t border-line px-4 py-3 text-sm text-ink-muted">
-              Trois volumes, une douille, un câble. Un assemblage lisible.
-            </figcaption>
-          </figure>
-        </Reveal>
+    <section id="details" aria-labelledby="details-title" className="scroll-mt-16 pt-20 pb-20">
+      <div className="u-container">
+        <SectionHeading
+          index="04"
+          kicker="Fiche technique"
+          id="details-title"
+          title="Les faits, rien de plus."
+        />
 
-        <Reveal delay={0.1}>
-          <p className="u-eyebrow">La construction</p>
-          <h2 className="mt-5 text-5xl sm:text-6xl">Rien de superflu.</h2>
-
-          <ul className="mt-8 flex flex-wrap gap-2">
-            {partOrder.map((p) => (
-              <li
-                key={p}
-                className="rounded-none border border-line px-3 py-1 text-sm uppercase tracking-wide text-ink-soft"
-              >
-                {partLabels[p]}
-              </li>
-            ))}
-            <li className="rounded-none border border-line px-3 py-1 text-sm uppercase tracking-wide text-ink-soft">
-              Câble textile
-            </li>
-          </ul>
-
-          <dl className="mt-8 border-t border-line">
+        <Reveal delay={0.05}>
+          <dl className="mt-9 border-t border-ink">
             {productSpecs.map((spec) => (
               <div
                 key={spec.key}
-                className="flex items-baseline justify-between gap-6 border-b border-line py-3.5"
+                className="flex items-baseline justify-between gap-5 border-b border-line py-3.5"
               >
-                <dt className="text-sm uppercase tracking-wider text-ink-muted">
+                <dt className="u-mono shrink-0 text-[0.72rem] uppercase tracking-[0.12em] text-ink-muted">
                   {spec.label}
                 </dt>
                 <dd
-                  className={`text-right ${
-                    spec.value ? "text-ink" : "text-ink-muted/70 italic"
+                  className={`u-mono text-right text-[0.82rem] ${
+                    spec.value ? "text-ink" : "text-ink-muted/60"
                   }`}
                 >
-                  {spec.value ?? "Information à venir"}
+                  {spec.value ?? "— à venir"}
                 </dd>
               </div>
             ))}
           </dl>
-
-          <p className="mt-5 text-sm leading-relaxed text-ink-muted">
+          <p className="mt-6 max-w-[36ch] text-sm leading-relaxed text-ink-muted">
             Certaines caractéristiques (dimensions, source lumineuse,
-            alimentation, délai) sont confirmées au cas par cas selon la
-            configuration. Nous les précisons lors de votre demande.
+            alimentation) sont précisées au cas par cas selon la configuration,
+            lors de votre prise de contact.
           </p>
         </Reveal>
       </div>

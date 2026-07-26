@@ -10,12 +10,11 @@ import { siteConfig } from "@/config/site";
 
 export type AnalyticsEvent =
   | "qr_landing_view"
-  | "hero_cta_click"
   | "configurator_started"
   | "material_variant_selected"
-  | "order_cta_click"
-  | "lead_form_started"
-  | "lead_form_submitted";
+  | "configurator_contact_click"
+  | "contact_form_started"
+  | "contact_form_submitted";
 
 type EventProps = Record<string, string | number | boolean | null | undefined>;
 

@@ -1,14 +1,16 @@
 import type { Metadata, Viewport } from "next";
-import { Bricolage_Grotesque, Inter } from "next/font/google";
+import { Archivo, Inter, IBM_Plex_Mono } from "next/font/google";
 import { siteConfig } from "@/config/site";
 import { Analytics } from "@/components/Analytics";
 import "./globals.css";
 
-const bricolage = Bricolage_Grotesque({
+// Grotesque architectural, masse brutaliste (titres). Neutre et intemporel,
+// dialogue avec la mono technique (IBM Plex Mono) et le corps (Inter).
+const archivo = Archivo({
   subsets: ["latin"],
-  weight: ["600", "700", "800"],
+  weight: ["700", "800", "900"],
   display: "swap",
-  variable: "--font-bricolage",
+  variable: "--font-archivo",
 });
 
 const inter = Inter({
@@ -16,6 +18,15 @@ const inter = Inter({
   weight: ["400", "500", "600", "700"],
   display: "swap",
   variable: "--font-inter",
+});
+
+// Mono technique (annotations, indices, légendes, fiche technique) — évoque
+// le dessin d'architecture / la nomenclature industrielle.
+const mono = IBM_Plex_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500"],
+  display: "swap",
+  variable: "--font-mono",
 });
 
 const title = `${siteConfig.productName} — ${siteConfig.baseline}`;
@@ -60,7 +71,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#f3efe7",
+  themeColor: "#ffffff",
   colorScheme: "light",
   width: "device-width",
   initialScale: 1,
@@ -82,7 +93,7 @@ export default function RootLayout({
   };
 
   return (
-    <html lang="fr" className={`${bricolage.variable} ${inter.variable}`}>
+    <html lang="fr" className={`${archivo.variable} ${inter.variable} ${mono.variable}`}>
       <body>
         <a
           href="#configurateur"

@@ -2,18 +2,24 @@
 
 import { useRef } from "react";
 import Image from "next/image";
-import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
 import { variants, partLabels } from "@/data/product";
 import { useSelection } from "@/components/SelectionProvider";
-import { track, getSource } from "@/lib/analytics";
-import { siteConfig } from "@/config/site";
+import { track } from "@/lib/analytics";
 import { scrollToId } from "@/lib/scroll";
-import { Button } from "@/components/ui/Button";
+import { materialTexture } from "@/lib/materialSwatch";
+import { Reveal } from "@/components/ui/Reveal";
+import { SectionHeading } from "@/components/ui/SectionHeading";
+import { LampStage } from "@/components/lamp/LampStage";
 
+/**
+ * Chapitre 3 — Explorer matières & configurations. L'atelier 3D (scène
+ * interactive, sticky) réagit en douceur à la configuration choisie dans le
+ * catalogue. Aucune notion d'achat : on invite à échanger autour de la pièce.
+ */
 export function Configurator() {
   const { selectedId, variant, select } = useSelection();
   const startedRef = useRef(false);
-  const reduce = useReducedMotion();
 
   const onChoose = (id: string) => {
     if (!startedRef.current) {
@@ -27,135 +33,119 @@ export function Configurator() {
     <section
       id="configurateur"
       aria-labelledby="configurateur-title"
-      className="scroll-mt-6 bg-paper-deep/60 py-20 sm:py-28"
+      className="scroll-mt-16 border-t border-line pt-24 pb-20"
     >
       <div className="u-container">
-        <div className="max-w-xl">
-          <p className="u-eyebrow">Le configurateur</p>
-          <h2 id="configurateur-title" className="mt-5 text-5xl sm:text-6xl">
-            Choisissez ce qui la compose.
-          </h2>
-          <p className="mt-5 text-lg leading-relaxed text-ink-soft">
-            Sept associations de matières, éprouvées à l&apos;atelier. Chaque
-            combinaison change le poids, le grain et la manière dont la lumière
-            se pose.
+        <SectionHeading
+          index="03"
+          kicker="Le configurateur"
+          id="configurateur-title"
+          title="Composez votre pièce."
+        />
+        <Reveal delay={0.05}>
+          <p className="mt-7 max-w-[34ch] text-lg leading-relaxed text-ink-soft">
+            Sept associations de matières. Choisissez une combinaison : la lampe
+            se met à jour en douceur. Faites-la tourner, allumez-la, changez la
+            température de lumière.
           </p>
+        </Reveal>
+
+        {/* Atelier 3D — reste visible pendant qu'on parcourt le catalogue. */}
+        <div className="sticky top-[4.75rem] z-10 mt-10">
+          <LampStage
+            camera={[0.12, 0.14, 0.5]}
+            fov={30}
+            imageSizes="480px"
+            className="aspect-square w-full overflow-hidden bg-white"
+          />
         </div>
 
-        <div className="mt-12 grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:gap-12">
-          {/* Aperçu de la variante sélectionnée */}
-          <div className="lg:sticky lg:top-8 lg:self-start">
-            <div className="relative aspect-[780/689] w-full overflow-hidden rounded-sm bg-paper-pure ring-1 ring-line">
-              {variants.map((v) => (
-                <Image
-                  key={v.id}
-                  src={v.image}
-                  alt={v.alt}
-                  fill
-                  sizes="(max-width: 1024px) 92vw, 42vw"
-                  className={`object-contain p-4 ${
-                    reduce ? "" : "transition-opacity duration-500 ease-out"
-                  } ${v.id === selectedId ? "opacity-100" : "opacity-0"}`}
-                  aria-hidden={v.id !== selectedId}
-                />
-              ))}
-            </div>
-
-            {/* Décomposition matière de la sélection */}
-            <AnimatePresence mode="wait">
-              <motion.dl
-                key={variant.id}
-                initial={reduce ? false : { opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={reduce ? undefined : { opacity: 0 }}
-                transition={{ duration: 0.3 }}
-                className="mt-5 grid grid-cols-2 gap-x-6 gap-y-4"
-              >
-                <MaterialRow label={partLabels.shade} value={variant.shade.label} color={variant.shade.color} />
-                <MaterialRow label={partLabels.assembly} value={variant.assembly.label} color={variant.assembly.color} />
-                <MaterialRow label={partLabels.base} value={variant.base.label} color={variant.base.color} />
-                <MaterialRow label="Câble" value={variant.cable.label} color={variant.cable.color} />
-              </motion.dl>
-            </AnimatePresence>
-          </div>
-
-          {/* Choix des variantes (groupe radio accessible) */}
-          <div
-            role="radiogroup"
-            aria-label="Combinaisons de matières"
-            className="grid gap-3 sm:grid-cols-2"
-          >
-            {variants.map((v) => {
-              const active = v.id === selectedId;
-              return (
-                <label
-                  key={v.id}
-                  className={`group relative flex cursor-pointer gap-4 rounded-none border p-4 transition-colors ${
-                    active
-                      ? "u-accent-border bg-paper-pure"
-                      : "border-line/60 bg-paper-pure/40 hover:border-ink"
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="variant"
-                    value={v.id}
-                    checked={active}
-                    onChange={() => onChoose(v.id)}
-                    className="sr-only"
-                  />
-                  <span
-                    aria-hidden
-                    className={`absolute right-3 top-3 flex h-5 w-5 items-center justify-center rounded-none border text-[0.6rem] ${
-                      active ? "u-accent-bg border-transparent text-white" : "border-line text-transparent"
-                    }`}
-                  >
-                    ✓
-                  </span>
-                  <span className="relative h-16 w-16 shrink-0 overflow-hidden rounded-none bg-paper ring-1 ring-line">
-                    <Image
-                      src={v.image}
-                      alt=""
-                      fill
-                      sizes="4rem"
-                      className="object-contain p-1"
-                    />
-                  </span>
-                  <span className="min-w-0 pr-6">
-                    <span className="block font-display text-lg leading-tight text-ink">
-                      {v.name}
-                    </span>
-                    <span className="mt-0.5 block text-xs uppercase tracking-wide text-ink-muted">
-                      {v.materialsSummary}
-                    </span>
-                    <span className="mt-1.5 block text-sm leading-snug text-ink-soft">
-                      {v.description}
-                    </span>
-                  </span>
-                </label>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="mt-10 flex flex-wrap items-center gap-3">
-          <Button
-            onClick={() => {
-              track("order_cta_click", {
-                mode: siteConfig.purchaseMode,
-                variant: selectedId,
-                from: "configurator",
-                source: getSource() ?? "direct",
-              });
-              scrollToId("commande");
-            }}
-          >
-            Valider cette configuration
-          </Button>
-          <span className="text-sm text-ink-muted">
-            Sélection : {variant.name}
+        {/* Décomposition matière de la configuration active. */}
+        <div className="mt-6 flex items-baseline gap-3 border-t border-ink pt-4">
+          <span className="u-index text-xs text-ink-muted">
+            {variant.index} / 07
           </span>
+          <p className="font-display text-xl leading-tight text-ink">{variant.name}</p>
         </div>
+        <dl className="mt-5 grid grid-cols-2 gap-x-5 gap-y-5">
+          <MaterialRow label={partLabels.shade} finish={variant.shade} />
+          <MaterialRow label={partLabels.base} finish={variant.base} />
+          <MaterialRow label="Structure" finish={variant.assembly} />
+          <MaterialRow label="Câble" finish={variant.cable} />
+        </dl>
+
+        {/* Catalogue des configurations (groupe radio accessible). */}
+        <div
+          role="radiogroup"
+          aria-label="Configurations disponibles"
+          className="mt-10 flex flex-col divide-y divide-line border-y border-line"
+        >
+          {variants.map((v) => {
+            const active = v.id === selectedId;
+            return (
+              <motion.label
+                key={v.id}
+                whileTap={{ scale: 0.995 }}
+                className={`group relative flex cursor-pointer items-center gap-4 py-4 transition-colors ${
+                  active ? "bg-[#f6f5f1]" : "hover:bg-[#faf9f6]"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="variant"
+                  value={v.id}
+                  checked={active}
+                  onChange={() => onChoose(v.id)}
+                  className="sr-only"
+                />
+                <span
+                  aria-hidden
+                  className={`h-14 w-[3px] shrink-0 transition-colors ${
+                    active ? "u-accent-bg" : "bg-transparent"
+                  }`}
+                />
+                <span className="relative h-14 w-14 shrink-0 overflow-hidden bg-white ring-1 ring-line">
+                  <Image src={v.image} alt="" fill sizes="3.5rem" className="object-contain p-1" />
+                </span>
+                <span className="min-w-0 flex-1 pr-6">
+                  <span className="flex min-w-0 items-baseline gap-2">
+                    <span className="u-index text-[0.7rem] text-ink-muted">{v.index}</span>
+                    <span className="font-display text-base leading-tight text-ink">{v.name}</span>
+                  </span>
+                  <span className="mt-2 flex items-center gap-1.5" aria-hidden>
+                    {[v.shade, v.base, v.assembly, v.cable].map((f, i) => (
+                      <span
+                        key={i}
+                        title={f.label}
+                        className="h-3 w-3 ring-1 ring-ink/10"
+                        style={{ backgroundColor: f.color }}
+                      />
+                    ))}
+                  </span>
+                </span>
+                <span
+                  aria-hidden
+                  className={`absolute right-1 top-1/2 h-2 w-2 -translate-y-1/2 transition-opacity ${
+                    active ? "u-accent-bg opacity-100" : "opacity-0"
+                  }`}
+                />
+              </motion.label>
+            );
+          })}
+        </div>
+
+        {/* Invitation à échanger (pas d'achat). */}
+        <button
+          type="button"
+          onClick={() => {
+            track("configurator_contact_click", { variant: selectedId });
+            scrollToId("contact");
+          }}
+          className="group mt-10 inline-flex items-center gap-3 text-base font-medium text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink"
+        >
+          <span className="border-b border-ink pb-0.5">Échanger autour de cette pièce</span>
+          <span aria-hidden className="transition-transform duration-300 group-hover:translate-x-1.5">→</span>
+        </button>
       </div>
     </section>
   );
@@ -163,25 +153,24 @@ export function Configurator() {
 
 function MaterialRow({
   label,
-  value,
-  color,
+  finish,
 }: {
   label: string;
-  value: string;
-  color: string;
+  finish: { label: string; color: string };
 }) {
+  const texture = materialTexture(finish.label);
   return (
-    <div className="flex items-start gap-3 border-t border-line pt-3">
+    <div className="flex items-start gap-3">
       <span
         aria-hidden
-        className="mt-0.5 h-4 w-4 shrink-0 rounded-none border border-ink/15"
-        style={{ backgroundColor: color }}
-      />
-      <span>
-        <span className="block text-xs uppercase tracking-wider text-ink-muted">
-          {label}
-        </span>
-        <span className="block text-sm text-ink">{value}</span>
+        className="relative mt-0.5 h-7 w-7 shrink-0 overflow-hidden ring-1 ring-ink/15"
+        style={texture ? undefined : { backgroundColor: finish.color }}
+      >
+        {texture && <Image src={texture} alt="" fill sizes="1.75rem" className="object-cover" />}
+      </span>
+      <span className="min-w-0">
+        <span className="u-eyebrow block">{label}</span>
+        <span className="mt-1 block text-sm leading-snug text-ink">{finish.label}</span>
       </span>
     </div>
   );

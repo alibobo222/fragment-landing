@@ -12,7 +12,10 @@ export type AnalyticsProvider = "plausible" | "matomo" | "ga" | "none";
 
 export interface SiteConfig {
   productName: string;
+  /** Marque / atelier (logo FRAGMENT). Distinct de la collection produit. */
   brandName: string;
+  /** Nom de la collection / gamme de la lampe (« Noir Minéral »). */
+  collectionName: string;
   baseline: string;
   /** Prix TTC. `null` tant qu'il n'est pas fixé — ne jamais inventer. */
   price: number | null;
@@ -36,7 +39,9 @@ export interface SiteConfig {
 
 export const siteConfig: SiteConfig = {
   productName: "Noir Minéral",
-  brandName: "Noir Minéral",
+  // Marque affichée dans le logo (voir /public/images/brand/fragment-wordmark.png).
+  brandName: "FRAGMENT",
+  collectionName: "Noir Minéral",
   baseline: "La lumière prend position.",
 
   // TODO: fixer le prix de vente public. Tant que `null`, aucun prix ni donnée

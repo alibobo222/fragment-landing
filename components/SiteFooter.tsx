@@ -1,47 +1,37 @@
+import Image from "next/image";
 import { siteConfig } from "@/config/site";
 
-const eyebrow =
-  "text-[0.68rem] font-semibold uppercase tracking-[0.3em] text-paper/45";
+const eyebrow = "text-[0.68rem] font-semibold uppercase tracking-[0.3em] text-paper/45";
+const link = "transition-colors hover:text-[var(--accent-on-dark)]";
 
 export function SiteFooter() {
-  const year = 2026; // TODO: automatiser si besoin (évite un composant client pour une date).
+  const year = 2026;
 
   return (
     <footer className="bg-ink text-paper">
-      {/* Grand wordmark d'impact */}
-      <div className="u-container pt-16">
-        <p className="font-display text-[clamp(3rem,13vw,10rem)] font-extrabold uppercase leading-[0.85] tracking-[-0.04em]">
-          {siteConfig.brandName}
-          <span className="u-accent-fg-dark">.</span>
+      {/* Logotype d'impact (FRAGMENT, en blanc). */}
+      <div className="u-container pt-14">
+        <Image
+          src="/images/brand/fragment-wordmark.png"
+          alt={siteConfig.brandName}
+          width={777}
+          height={180}
+          className="h-auto w-full brightness-0 invert"
+        />
+        <p className="mt-4 font-display text-sm uppercase tracking-[0.3em] text-paper/50">
+          {siteConfig.collectionName}
         </p>
+        <p className="mt-4 max-w-xs text-sm text-paper/70">{siteConfig.baseline}</p>
       </div>
 
-      <div className="u-container grid gap-10 py-14 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="sm:col-span-2 lg:col-span-1">
-          <p className="max-w-xs text-sm text-paper/70">{siteConfig.baseline}</p>
-        </div>
-
+      <div className="u-container flex flex-col gap-10 py-12">
         <nav aria-label="Pied de page">
           <p className={eyebrow}>Explorer</p>
           <ul className="mt-3 space-y-2 text-sm text-paper/70">
-            <li>
-              <a href="#matieres" className="transition-colors hover:text-[var(--accent-on-dark)]">
-                Les matières
-              </a>
-            </li>
-            <li>
-              <a href="#details" className="transition-colors hover:text-[var(--accent-on-dark)]">
-                L&apos;objet
-              </a>
-            </li>
-            <li>
-              <a
-                href="#configurateur"
-                className="transition-colors hover:text-[var(--accent-on-dark)]"
-              >
-                Configurer ma lampe
-              </a>
-            </li>
+            <li><a href="#projet" className={link}>Le projet</a></li>
+            <li><a href="#matieres" className={link}>Les matières</a></li>
+            <li><a href="#configurateur" className={link}>Explorer les configurations</a></li>
+            <li><a href="#contact" className={link}>Prendre contact</a></li>
           </ul>
         </nav>
 
@@ -49,21 +39,13 @@ export function SiteFooter() {
           <p className={eyebrow}>Contact</p>
           <ul className="mt-3 space-y-2 text-sm text-paper/70">
             <li>
-              <a
-                href={`mailto:${siteConfig.contactEmail}`}
-                className="transition-colors hover:text-[var(--accent-on-dark)]"
-              >
+              <a href={`mailto:${siteConfig.contactEmail}`} className={link}>
                 {siteConfig.contactEmail}
               </a>
             </li>
             {siteConfig.instagramUrl && (
               <li>
-                <a
-                  href={siteConfig.instagramUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="transition-colors hover:text-[var(--accent-on-dark)]"
-                >
+                <a href={siteConfig.instagramUrl} target="_blank" rel="noopener noreferrer" className={link}>
                   Instagram
                 </a>
               </li>
@@ -75,26 +57,12 @@ export function SiteFooter() {
           <p className={eyebrow}>Informations</p>
           <ul className="mt-3 space-y-2 text-sm text-paper/70">
             {siteConfig.legalNoticeUrl ? (
-              <li>
-                <a
-                  href={siteConfig.legalNoticeUrl}
-                  className="transition-colors hover:text-[var(--accent-on-dark)]"
-                >
-                  Mentions légales
-                </a>
-              </li>
+              <li><a href={siteConfig.legalNoticeUrl} className={link}>Mentions légales</a></li>
             ) : (
               <li className="italic text-paper/40">Mentions légales à venir</li>
             )}
             {siteConfig.privacyUrl ? (
-              <li>
-                <a
-                  href={siteConfig.privacyUrl}
-                  className="transition-colors hover:text-[var(--accent-on-dark)]"
-                >
-                  Confidentialité
-                </a>
-              </li>
+              <li><a href={siteConfig.privacyUrl} className={link}>Confidentialité</a></li>
             ) : (
               <li className="italic text-paper/40">Confidentialité à venir</li>
             )}
@@ -102,13 +70,9 @@ export function SiteFooter() {
         </div>
       </div>
 
-      <div className="u-container flex flex-col items-start justify-between gap-2 border-t border-paper/15 py-5 text-xs text-paper/50 sm:flex-row sm:items-center">
-        <p>
-          © {year} {siteConfig.brandName}. Pièce d&apos;atelier.
-        </p>
-        <a href="#configurateur" className="transition-colors hover:text-[var(--accent-on-dark)]">
-          Revenir au configurateur ↑
-        </a>
+      <div className="u-container flex flex-col gap-2 border-t border-paper/15 py-5 text-xs text-paper/50">
+        <p>© {year} {siteConfig.brandName}. Projet de design — pièce d&apos;atelier.</p>
+        <a href="#top" className={link}>Retour en haut ↑</a>
       </div>
     </footer>
   );

@@ -7,9 +7,9 @@
  * des matériaux de la lampe (accent piloté par le produit).
  * ------------------------------------------------------------------ */
 @theme {
-  --color-paper: #e7e5de;        /* blanc cassé béton (fond) */
-  --color-paper-pure: #f2f0ea;   /* panneau clair, calcaire */
-  --color-paper-deep: #d9d6cd;   /* gris béton clair (sections alternées) */
+  --color-paper: #ffffff;        /* blanc pur (fond de toute la page) */
+  --color-paper-pure: #ffffff;   /* panneaux / puits d'image : blanc, cadrés au filet */
+  --color-paper-deep: #ffffff;   /* pas de bande teintée : blanc partout */
   --color-concrete: #c3c0b6;     /* gris béton */
   --color-anthracite: #232427;   /* gris anthracite */
   --color-ink: #08080a;          /* noir profond */
@@ -23,7 +23,7 @@
   --color-brick: #d1402c;
   --color-glass: #4f6b53;
 
-  --font-display: var(--font-bricolage), "Arial Black", system-ui, sans-serif;
+  --font-display: var(--font-archivo), "Arial Black", "Helvetica Neue", system-ui, sans-serif;
   --font-sans: var(--font-inter), system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 
   /* Coins nets : brutalisme franc et assumé. */
@@ -75,24 +75,35 @@
   }
 
   body {
-    background-color: var(--color-paper);
+    /* Surround neutre : sur desktop/tablette, la colonne mobile blanche est
+       centrée sur ce fond discret (expérience « exposition »). Sur smartphone,
+       la colonne occupe toute la largeur → surround invisible. */
+    background-color: #e8e6e1;
     color: var(--color-ink);
     font-family: var(--font-sans);
     font-feature-settings: "ss01", "cv01";
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
-    /* Micro-grain minéral (béton) très discret — matière, pas décor. */
-    background-image:
-      radial-gradient(rgba(18, 18, 20, 0.02) 1px, transparent 1px);
-    background-size: 3px 3px;
   }
 
-  /* Titres monolithiques : très grands, serrés, architecturaux. */
+  /* Colonne mobile fixe, centrée (mobile-only). Largeur quasi constante
+     (320–430) → tailles typographiques en rem fixes, pas de breakpoint viewport. */
+  .app-shell {
+    width: 100%;
+    max-width: 30rem; /* ~480px : téléphones jusqu'à ~430 + marge */
+    margin-inline: auto;
+    background-color: var(--color-paper);
+    min-height: 100svh;
+    box-shadow: 0 0 80px rgba(0, 0, 0, 0.06);
+  }
+
+  /* Titres monolithiques : grotesque architectural (Archivo), masse brutaliste,
+     tracking serré et interligne compact. */
   h1, h2, h3 {
     font-family: var(--font-display);
     font-weight: 800;
-    letter-spacing: -0.045em;
-    line-height: 0.88;
+    letter-spacing: -0.03em;
+    line-height: 0.92;
     text-wrap: balance;
   }
 
@@ -117,73 +128,64 @@
 @layer utilities {
   .u-container {
     width: 100%;
-    max-width: 82rem;
-    margin-inline: auto;
-    /* Larges marges : beaucoup d'espace négatif, la page respire. */
-    padding-inline: clamp(1.35rem, 6vw, 5.5rem);
+    /* Gouttière mobile fixe (indépendante du viewport). */
+    padding-inline: 1.4rem;
   }
 
-  /* Sur-titres : petits, très espacés — contraste d'échelle éditorial. */
+  /* Mono technique : nomenclature, indices, légendes — dessin d'architecture. */
+  .u-mono {
+    font-family: var(--font-mono), ui-monospace, "SFMono-Regular", Menlo, monospace;
+    font-feature-settings: "tnum";
+  }
+
+  /* Sur-titres / étiquettes techniques (mono, capitales, espacées). */
   .u-eyebrow {
-    font-size: 0.68rem;
-    letter-spacing: 0.3em;
+    font-family: var(--font-mono), ui-monospace, "SFMono-Regular", Menlo, monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
     text-transform: uppercase;
     color: var(--color-ink-muted);
-    font-weight: 600;
+    font-weight: 500;
   }
 
-  /* Bande kinétique (marquee) — deux copies pour une boucle continue. */
-  .u-marquee {
-    display: flex;
-    overflow: hidden;
-    user-select: none;
-    -webkit-mask-image: linear-gradient(
-      90deg,
-      transparent,
-      #000 6%,
-      #000 94%,
-      transparent
-    );
-    mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+  /* Numéro de repère (chapitre / configuration) — chiffres tabulaires. */
+  .u-index {
+    font-family: var(--font-mono), ui-monospace, "SFMono-Regular", Menlo, monospace;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.04em;
   }
 
-  .u-marquee__track {
-    display: flex;
-    flex-shrink: 0;
-    align-items: center;
-    gap: 2.5rem;
-    padding-right: 2.5rem;
-    min-width: 100%;
-    animation: marquee 26s linear infinite;
-  }
-
-  @keyframes marquee {
-    to {
-      transform: translateX(-100%);
-    }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .u-marquee__track {
-      animation: none;
-    }
-    .u-marquee {
-      overflow-x: auto;
-    }
+  /* Légende d'image — annotation technique, discrète. */
+  .u-caption {
+    font-family: var(--font-mono), ui-monospace, "SFMono-Regular", Menlo, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.01em;
+    color: var(--color-ink-muted);
   }
 
   .u-hairline {
     border-top: 1px solid var(--color-line);
   }
 
-  /* Réserve d'espace safe-area iOS pour le CTA sticky. */
-  .u-safe-bottom {
-    padding-bottom: max(0.9rem, env(safe-area-inset-bottom));
+  /* Pleine largeur de la colonne : annule la gouttière de .u-container.
+     Rupture volontaire de la grille (image éditoriale bord à bord). */
+  .u-bleed {
+    margin-inline: -1.4rem;
   }
 
-  /* Titre héroïque : échelle architecturale, impact maximal. */
+  /* Titre héroïque (rem fixe — colonne mobile). */
   .u-fluid-display {
-    font-size: clamp(2.9rem, 11.5vw, 9rem);
+    font-size: 3.1rem;
+    font-weight: 900;
+    letter-spacing: -0.035em;
+  }
+
+  /* Titre de section : grand, monolithique, masse brutaliste (Archivo Black). */
+  .u-title {
+    font-size: 2.55rem;
+    font-weight: 900;
+    line-height: 0.92;
+    letter-spacing: -0.03em;
   }
 
   .hero-scroll-line {

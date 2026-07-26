@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { useGLTF } from "@react-three/drei";
+import { useGLTF, OrbitControls } from "@react-three/drei";
 import { useReducedMotion } from "framer-motion";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import * as THREE from "three";
@@ -51,17 +51,14 @@ const COLD_COLOR = new THREE.Color(cfg.colorCold);
 
 function LampModel({
   partVariants,
-  spin,
   lampOn,
   warm,
 }: {
   partVariants: PartVariants;
-  spin: boolean;
   lampOn: boolean;
   warm: boolean;
 }) {
   const { scene } = useGLTF(LAMP_MODEL_URL);
-  const groupRef = useRef<THREE.Group>(null);
   const invalidate = useThree((s) => s.invalidate);
   const reduce = useReducedMotion();
 
@@ -165,6 +162,10 @@ function LampModel({
 
   // Cible de transmission de l'abat-jour selon la matière courante.
   const shadeGlowTarget = useRef(0);
+  // Couleurs cibles par partie → interpolation douce au changement de config
+  // (jamais de « claquement » : la couleur de base glisse vers sa cible).
+  const colorTargets = useRef<Partial<Record<LampPart, THREE.Color>>>({});
+  const firstColorApply = useRef(true);
   // Multiplicateur de luminosité de la lampe (réduit pour la config 01).
   const brightnessRef = useRef(1);
   const lit = useRef(0); // progression de l'allumage 0→1
@@ -177,13 +178,21 @@ function LampModel({
       const m = materials[part] as THREE.MeshPhysicalMaterial | undefined;
       if (!m) return;
       const finish = finishFor(part, variants[idx]);
-      applyProfile(m, finish.color, materialProfile(finish.label));
+      const tgt = (colorTargets.current[part] ??= new THREE.Color());
+      tgt.set(finish.color);
+      // On repart de la couleur COURANTE (sauf au tout premier rendu) et on
+      // interpole vers la cible dans useFrame → transition douce des matières.
+      const startHex = firstColorApply.current
+        ? finish.color
+        : "#" + m.color.getHexString();
+      applyProfile(m, startHex, materialProfile(finish.label));
     };
     apply("shade", partVariants.shade);
     apply("connector", partVariants.connector);
     apply("base", partVariants.base);
     apply("socket", partVariants.connector); // douille = finition de l'assemblage
     apply("cable", partVariants.cable);
+    firstColorApply.current = false;
 
     // Placage bois à l'INTÉRIEUR de l'abat-jour, uniquement pour la config 01
     // (prototype « Coquilles de moules »). L'extérieur reste inchangé.
@@ -265,19 +274,48 @@ function LampModel({
       }
     }
 
-    if (spin && groupRef.current) {
-      groupRef.current.rotation.y += dt * 0.28;
-      needsRender = true;
+    // Interpolation douce des couleurs de base (changement de configuration).
+    const parts: LampPart[] = ["shade", "connector", "base", "socket", "cable"];
+    for (const part of parts) {
+      const m = materials[part];
+      const tgt = colorTargets.current[part];
+      if (!m || !tgt) continue;
+      const c = m.color;
+      const cd =
+        Math.abs(c.r - tgt.r) + Math.abs(c.g - tgt.g) + Math.abs(c.b - tgt.b);
+      if (cd > 0.003) {
+        const k = reduce ? 1 : 1 - Math.exp((-dt * 1000) / 120);
+        c.lerp(tgt, reduce ? 1 : k);
+        needsRender = true;
+      }
     }
 
     if (needsRender) invalidate();
   });
 
   return (
-    <group ref={groupRef} rotation={[0, -0.35, 0]}>
+    <group rotation={[0, -0.35, 0]}>
       <primitive object={root} />
     </group>
   );
+}
+
+/**
+ * Laisse le défilement vertical de la page passer à travers le canvas sur
+ * mobile : `touch-action: pan-y` → un swipe vertical fait défiler la page,
+ * un glissement horizontal fait tourner la lampe. (OrbitControls force sinon
+ * `touch-action: none`, ce qui bloquerait le scroll.)
+ */
+function TouchScroll() {
+  const gl = useThree((s) => s.gl);
+  useEffect(() => {
+    const el = gl.domElement;
+    el.style.touchAction = "pan-y";
+    return () => {
+      el.style.touchAction = "";
+    };
+  }, [gl]);
+  return null;
 }
 
 function ProceduralEnv() {
@@ -301,16 +339,25 @@ export function Lamp3D({
   lampOn,
   warm,
   onCreated,
+  camera = CAMERA,
+  fov = FOV,
+  controls = true,
 }: {
   partVariants: PartVariants;
+  /** Rotation automatique au repos (et boucle de rendu continue). */
   spin: boolean;
   lampOn: boolean;
   warm: boolean;
   onCreated?: () => void;
+  /** Cadrage caméra — permet un plan différent pour l'atelier. */
+  camera?: [number, number, number];
+  fov?: number;
+  /** Manipulation souris/tactile (rotation). */
+  controls?: boolean;
 }) {
   return (
     <Canvas
-      camera={{ position: CAMERA, fov: FOV }}
+      camera={{ position: camera, fov }}
       dpr={[1, 1.8]}
       frameloop={spin ? "always" : "demand"}
       shadows={cfg.shadows}
@@ -324,7 +371,26 @@ export function Lamp3D({
       <directionalLight position={[2.5, 4, 2]} intensity={1.55} />
       <directionalLight position={[-3, 1.5, -2]} intensity={0.5} color="#cdd6ff" />
       <ProceduralEnv />
-      <LampModel partVariants={partVariants} spin={spin} lampOn={lampOn} warm={warm} />
+      <LampModel partVariants={partVariants} lampOn={lampOn} warm={warm} />
+      {controls && (
+        <>
+          <TouchScroll />
+          {/* Rotation manuelle (souris + tactile), sans zoom ni panoramique,
+              pour préserver le cadrage. Rotation automatique douce au repos. */}
+          <OrbitControls
+            makeDefault
+            enablePan={false}
+            enableZoom={false}
+            enableDamping={spin}
+            dampingFactor={0.08}
+            rotateSpeed={0.6}
+            autoRotate={spin}
+            autoRotateSpeed={0.8}
+            minPolarAngle={1.02}
+            maxPolarAngle={1.72}
+          />
+        </>
+      )}
     </Canvas>
   );
 }

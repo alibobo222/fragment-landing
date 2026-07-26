@@ -1,0 +1,59 @@
+name: Déploiement GitHub Pages
+
+# Déploie l'export statique Next.js (dossier `out/`) sur GitHub Pages
+# à chaque push sur la branche principale, et manuellement au besoin.
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Un seul déploiement à la fois.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      # Calcule le base path : vide pour une page utilisateur/orga
+      # (dépôt `user.github.io`), sinon "/<nom-du-dépôt>" pour une page de projet.
+      - name: Calculer le base path
+        run: |
+          REPO="${{ github.event.repository.name }}"
+          OWNER="${{ github.repository_owner }}"
+          if [ "$REPO" = "${OWNER}.github.io" ]; then
+            echo "PAGES_BASE_PATH=" >> "$GITHUB_ENV"
+          else
+            echo "PAGES_BASE_PATH=/$REPO" >> "$GITHUB_ENV"
+          fi
+
+      - run: npm ci
+      - run: npm run build   # next build → export statique dans ./out (lit PAGES_BASE_PATH)
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./out
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
