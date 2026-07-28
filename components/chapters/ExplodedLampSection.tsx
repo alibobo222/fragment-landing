@@ -70,6 +70,23 @@ function ExplodedScrollTrack() {
   const [ready, setReady] = useState(false);
   const progressRef = useRef(0);
   const anchorsRef = useRef<AnchorMap | null>(null);
+  // Le titre de chapitre (SectionHeading) est LUI AUSSI épinglé (sticky top-14,
+  // z-20, fond blanc opaque) et reste visible pendant toute la traversée de la
+  // section — y compris pendant la piste éclatée. Le badge d'action doit donc
+  // démarrer SOUS ce panneau, jamais à une hauteur fixe devinée : on mesure sa
+  // hauteur réelle (robuste aux changements de texte/police/largeur).
+  const [badgeTop, setBadgeTop] = useState(80);
+  useEffect(() => {
+    const measure = () => {
+      const heading = trackRef.current
+        ?.closest("section")
+        ?.querySelector<HTMLElement>(":scope > div.sticky");
+      if (heading) setBadgeTop(heading.getBoundingClientRect().height + 12);
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, []);
 
   const currentIndex = Math.max(
     0,
@@ -149,9 +166,34 @@ function ExplodedScrollTrack() {
           />
         )}
 
-        {/* Étiquette discrète (haut gauche). */}
-        <div className="pointer-events-none absolute left-[1.4rem] top-5">
-          <span className="u-index text-xs text-ink-muted">Vue éclatée</span>
+        {/* Étiquette d'action (haut gauche) — badge « verre », persiste tout au
+            long de la piste (contrairement à l'invite du bas, qui s'efface dès
+            le début du scroll) : signale que la vue répond au scroll. Positionné
+            SOUS le titre de chapitre sticky (mesuré dynamiquement, voir plus haut) :
+            celui-ci reste épinglé par-dessus toute la section, opaque. */}
+        <div
+          className="pointer-events-none absolute left-[1.4rem]"
+          style={{ top: badgeTop }}
+        >
+          <div className="btn-glass btn-glass-secondary inline-flex items-center gap-1.5 px-3 py-1.5">
+            <span className="u-index text-xs text-ink-muted">Vue éclatée</span>
+            <motion.svg
+              width="10"
+              height="10"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="text-ink-muted"
+              aria-hidden
+              animate={reduce ? undefined : { y: [0, 3, 0] }}
+              transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+            >
+              <path d="M12 5v14M6 13l6 6 6-6" />
+            </motion.svg>
+          </div>
         </div>
 
         {/* Invite au scroll — s'efface dès le début du désassemblage. */}
