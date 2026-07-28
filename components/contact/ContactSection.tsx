@@ -36,7 +36,7 @@ export function ContactSection() {
         </Reveal>
 
         <Reveal delay={0.05}>
-          <div className="mt-9 flex items-baseline gap-3 border-y border-line py-3">
+          <div className="mt-8 flex items-baseline gap-3 border-y border-line py-3">
             <span className="u-eyebrow shrink-0">Réf.</span>
             <span className="min-w-0">
               <span className="block text-sm font-medium text-ink">{variant.name}</span>
@@ -46,13 +46,13 @@ export function ContactSection() {
         </Reveal>
 
         <Reveal delay={0.1}>
-          <div className="mt-9">
+          <div className="mt-8">
             <ContactForm />
           </div>
         </Reveal>
 
         <Reveal delay={0.1}>
-          <div className="mt-12 border-t border-line pt-6">
+          <div className="mt-10 border-t border-line pt-6">
             <p className="u-eyebrow">Ou directement</p>
             <a
               href={`mailto:${siteConfig.contactEmail}`}

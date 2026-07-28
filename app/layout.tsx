@@ -1,16 +1,22 @@
 import type { Metadata, Viewport } from "next";
-import { Archivo, Inter, IBM_Plex_Mono } from "next/font/google";
+import { Inter, IBM_Plex_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import { siteConfig } from "@/config/site";
 import { Analytics } from "@/components/Analytics";
 import "./globals.css";
 
-// Grotesque architectural, masse brutaliste (titres). Neutre et intemporel,
-// dialogue avec la mono technique (IBM Plex Mono) et le corps (Inter).
-const archivo = Archivo({
-  subsets: ["latin"],
-  weight: ["700", "800", "900"],
+// Grand titrage : Overused Grotesk (grotesque contemporain, masse éditoriale).
+// Police VARIABLE auto-hébergée (axe de graisse complet 300→900) — chargée via
+// next/font/local : subset + preload automatiques, `display: swap` (pas de FOIT),
+// zéro requête tierce (aucun impact perf / cohérent avec l'export statique).
+const overusedGrotesk = localFont({
+  src: "./fonts/OverusedGrotesk-VF.woff2",
+  weight: "300 900",
+  style: "normal",
   display: "swap",
-  variable: "--font-archivo",
+  variable: "--font-display-src",
+  fallback: ["Arial Black", "Helvetica Neue", "system-ui", "sans-serif"],
+  preload: true,
 });
 
 const inter = Inter({
@@ -93,7 +99,7 @@ export default function RootLayout({
   };
 
   return (
-    <html lang="fr" className={`${archivo.variable} ${inter.variable} ${mono.variable}`}>
+    <html lang="fr" className={`${overusedGrotesk.variable} ${inter.variable} ${mono.variable}`}>
       <body>
         <a
           href="#configurateur"

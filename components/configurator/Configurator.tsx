@@ -67,7 +67,7 @@ export function Configurator() {
           </span>
           <p className="font-display text-xl leading-tight text-ink">{variant.name}</p>
         </div>
-        <dl className="mt-5 grid grid-cols-2 gap-x-5 gap-y-5">
+        <dl className="mt-6 grid grid-cols-2 gap-x-5 gap-y-6">
           <MaterialRow label={partLabels.shade} finish={variant.shade} />
           <MaterialRow label={partLabels.base} finish={variant.base} />
           <MaterialRow label="Structure" finish={variant.assembly} />

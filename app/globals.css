@@ -23,7 +23,7 @@
   --color-brick: #d1402c;
   --color-glass: #4f6b53;
 
-  --font-display: var(--font-archivo), "Arial Black", "Helvetica Neue", system-ui, sans-serif;
+  --font-display: var(--font-display-src), "Arial Black", "Helvetica Neue", system-ui, sans-serif;
   --font-sans: var(--font-inter), system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 
   /* Coins nets : brutalisme franc et assumé. */
@@ -97,13 +97,13 @@
     box-shadow: 0 0 80px rgba(0, 0, 0, 0.06);
   }
 
-  /* Titres monolithiques : grotesque architectural (Archivo), masse brutaliste,
-     tracking serré et interligne compact. */
+  /* Titres monolithiques : grotesque contemporain (Overused Grotesk), masse
+     éditoriale, tracking serré et interligne compact. */
   h1, h2, h3 {
     font-family: var(--font-display);
     font-weight: 800;
-    letter-spacing: -0.03em;
-    line-height: 0.92;
+    letter-spacing: -0.028em;
+    line-height: 0.94;
     text-wrap: balance;
   }
 
@@ -177,15 +177,16 @@
   .u-fluid-display {
     font-size: 3.1rem;
     font-weight: 900;
-    letter-spacing: -0.035em;
+    letter-spacing: -0.032em;
+    line-height: 0.92;
   }
 
-  /* Titre de section : grand, monolithique, masse brutaliste (Archivo Black). */
+  /* Titre de section : grand, monolithique, masse éditoriale (Overused Grotesk). */
   .u-title {
     font-size: 2.1rem;
     font-weight: 900;
-    line-height: 0.94;
-    letter-spacing: -0.03em;
+    line-height: 0.95;
+    letter-spacing: -0.028em;
   }
 
   .hero-scroll-line {

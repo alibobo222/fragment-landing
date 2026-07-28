@@ -9,7 +9,7 @@ import { RevealImage } from "@/components/ui/motion";
  */
 export function MaterialsIntro() {
   return (
-    <section id="matieres" aria-labelledby="matieres-title" className="scroll-mt-16 bg-white pt-4 pb-4">
+    <section id="matieres" aria-labelledby="matieres-title" className="scroll-mt-16 bg-white pt-4 pb-20">
       <SectionHeading
         index="02"
         kicker="Les matières"
@@ -26,7 +26,7 @@ export function MaterialsIntro() {
         </Reveal>
       </div>
 
-      <div className="u-container mt-12">
+      <div className="u-container mt-8">
         <figure className="u-bleed">
           <div className="relative">
             <RevealImage

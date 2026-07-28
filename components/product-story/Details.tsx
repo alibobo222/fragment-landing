@@ -18,7 +18,7 @@ export function Details() {
       />
       <div className="u-container">
         <Reveal delay={0.05}>
-          <dl className="mt-2 border-t border-ink">
+          <dl className="mt-1 border-t border-ink">
             {productSpecs.map((spec) => (
               <div
                 key={spec.key}

@@ -41,7 +41,7 @@ function Text({
 
 export function ProjectStory() {
   return (
-    <section id="projet" aria-labelledby="projet-title" className="scroll-mt-16 bg-white pb-24">
+    <section id="projet" aria-labelledby="projet-title" className="scroll-mt-16 bg-white pt-4 pb-20">
       <SectionHeading
         index="01"
         kicker="Le projet"
@@ -49,8 +49,8 @@ export function ProjectStory() {
         title="Concevoir à partir de l'existant."
       />
 
-      {/* Espacement constant entre chaque élément (image ⇄ texte). */}
-      <div className="mt-4 flex flex-col gap-6">
+      {/* Espacement constant entre chaque élément (image ⇄ texte) : 24px (gap-6). */}
+      <div className="mt-1 flex flex-col gap-6">
         {/* Ouverture — réemploi */}
         <div className="u-container">
           <Reveal>
