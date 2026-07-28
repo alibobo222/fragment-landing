@@ -2,16 +2,8 @@
 
 import { useEffect, useRef, type MutableRefObject } from "react";
 import { type MotionValue } from "framer-motion";
-import { Architects_Daughter } from "next/font/google";
 import type { AnchorMap } from "@/components/hero/ExplodedLamp3D";
 import type { LampPart } from "@/data/lampModel";
-
-// Police « écriture d'architecte » — annotation manuscrite au crayon.
-const sketchFont = Architects_Daughter({
-  weight: "400",
-  subsets: ["latin"],
-  display: "swap",
-});
 
 type Side = "left" | "right";
 interface AnnoDef {
@@ -19,24 +11,29 @@ interface AnnoDef {
   num: string;
   label: string;
   side: Side;
-  /** Position de l'étiquette (fraction de la boîte) : bord ext. + centre vertical. */
+  /** Position de l'étiquette : bord ext. (fraction de largeur) + hauteur
+   *  (fraction de la zone SÛRE, c-à-d sous le titre sticky — voir `safeTop`). */
   lx: number;
   ly: number;
 }
 
 // Ordonnées par ordre d'APPARITION (haut → bas) pour un stagger de tracé agréable.
 // Les numéros restent fixes par pièce (01 Abat-jour … 06 Support d'assemblage).
+// Positions réglées à la main sur la projection réelle des pièces (voir mémo
+// du composant parent) : chaque étiquette est éloignée de la pièce voisine et
+// espacée verticalement de ses voisines de même côté pour ne jamais chevaucher.
 const ANNOS: AnnoDef[] = [
-  { part: "shade", num: "01", label: "Abat-jour", side: "left", lx: 0.045, ly: 0.27 },
-  { part: "bulb", num: "05", label: "Ampoule", side: "right", lx: 0.955, ly: 0.31 },
-  { part: "connector", num: "06", label: "Support d'assemblage", side: "left", lx: 0.045, ly: 0.5 },
-  { part: "socket", num: "04", label: "Douille", side: "right", lx: 0.955, ly: 0.52 },
-  { part: "base", num: "02", label: "Pied", side: "left", lx: 0.06, ly: 0.74 },
-  { part: "cable", num: "03", label: "Câble", side: "right", lx: 0.955, ly: 0.73 },
+  { part: "shade", num: "01", label: "Abat-jour", side: "left", lx: 0.06, ly: 0.2 },
+  { part: "bulb", num: "05", label: "Ampoule", side: "right", lx: 0.94, ly: 0.1 },
+  { part: "connector", num: "06", label: "Support d'assemblage", side: "left", lx: 0.06, ly: 0.4 },
+  { part: "socket", num: "04", label: "Douille", side: "right", lx: 0.94, ly: 0.4 },
+  { part: "base", num: "02", label: "Pied", side: "left", lx: 0.06, ly: 0.62 },
+  { part: "cable", num: "03", label: "Câble", side: "right", lx: 0.94, ly: 0.7 },
 ];
 
-// Fenêtre de révélation : derniers ~18 % de la progression du scroll.
-const START = 0.8;
+// Fenêtre de révélation : derniers ~20 % de la progression du scroll (piste
+// allongée → largement le temps de lire avant la fin de l'éclatement).
+const START = 0.74;
 const END = 0.985;
 
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
@@ -49,22 +46,28 @@ interface ElRefs {
 }
 
 /**
- * Couche d'annotations éditoriales « planche de croquis » superposée AU-DESSUS
- * du canvas 3D (jamais dans la scène). Chaque nom est relié à sa pièce par une
- * flèche fine dessinée à la main, ancrée sur la PROJECTION 2D réelle de la pièce
- * (via `anchorsRef`, alimenté frame à frame côté 3D). Le tracé des flèches et le
- * fondu des textes sont pilotés par le scroll (apparition sur les derniers ~18 %,
- * disparition en sens inverse). Rendu impératif (aucun re-render React) pour
- * préserver la fluidité. Respecte `prefers-reduced-motion`.
+ * Couche d'annotations éditoriales superposée AU-DESSUS du canvas 3D (jamais
+ * dans la scène). Chaque nom est relié à sa pièce par une flèche fine, nette
+ * (pas de tremblé « croquis »), ancrée sur la PROJECTION 2D réelle de la pièce
+ * (via `anchorsRef`, alimenté frame à frame côté 3D). Typographie IDENTIQUE au
+ * reste du site (hérite `font-sans` — aucune police importée ici). Le tracé
+ * des flèches et le fondu des textes sont pilotés par le scroll (apparition
+ * sur les derniers ~20 %, disparition en sens inverse). Rendu impératif
+ * (aucun re-render React) pour préserver la fluidité. Respecte
+ * `prefers-reduced-motion`.
  */
 export function ExplodedAnnotations({
   scrollYProgress,
   anchorsRef,
   reduce,
+  safeTop,
 }: {
   scrollYProgress: MotionValue<number>;
   anchorsRef: MutableRefObject<AnchorMap | null>;
   reduce: boolean;
+  /** Hauteur (px) du panneau de titre sticky à éviter — les étiquettes ne
+   *  démarrent jamais au-dessus de cette ligne (voir composant parent). */
+  safeTop: number;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -72,6 +75,8 @@ export function ExplodedAnnotations({
   // Point d'ancrage (bord intérieur de l'étiquette) mesuré, en px de la boîte.
   const ptsRef = useRef<{ x: number; y: number }[]>(ANNOS.map(() => ({ x: 0, y: 0 })));
   const sizeRef = useRef({ w: 0, h: 0 });
+  const safeTopRef = useRef(safeTop);
+  safeTopRef.current = safeTop;
 
   useEffect(() => {
     const container = containerRef.current;
@@ -145,10 +150,10 @@ export function ExplodedAnnotations({
         const endGap = 11; // s'arrête un peu avant la pièce (la pointe la désigne)
         const ex = tx - ux * endGap;
         const ey = ty - uy * endGap;
-        // Courbe douce (léger bombé perpendiculaire) → tracé organique.
+        // Courbe TRÈS légère (quasi rectiligne) → tracé net, précis, pas gestuel.
         const mx = (sx + ex) / 2;
         const my = (sy + ey) / 2;
-        const bend = Math.min(22, dist * 0.11) * (anno.side === "left" ? 1 : -1);
+        const bend = Math.min(10, dist * 0.05) * (anno.side === "left" ? 1 : -1);
         const cx = mx - uy * bend;
         const cy = my + ux * bend;
         els.path.setAttribute("d", `M ${sx} ${sy} Q ${cx} ${cy} ${ex} ${ey}`);
@@ -157,7 +162,7 @@ export function ExplodedAnnotations({
         els.path.style.strokeDashoffset = String(len * (1 - drawT));
 
         // Pointe de flèche (deux barbes) — apparaît en fin de tracé.
-        const ah = 9;
+        const ah = 7;
         const sp = 0.44;
         const cos = Math.cos(sp);
         const sin = Math.sin(sp);
@@ -203,58 +208,43 @@ export function ExplodedAnnotations({
     });
     ro.observe(container);
 
-    // Re-mesure quand la police manuscrite est chargée (largeur des étiquettes).
-    if (typeof document !== "undefined" && document.fonts?.ready) {
-      document.fonts.ready.then(() => {
-        measure();
-        draw(scrollYProgress.get());
-      });
-    }
-
     return () => {
       cancelAnimationFrame(raf);
       ro.disconnect();
     };
   }, [scrollYProgress, anchorsRef, reduce]);
 
+  // Re-mesure si la hauteur du panneau-titre change (police encore en chargement,
+  // redimensionnement) : les étiquettes restent toujours sous cette ligne.
+  useEffect(() => {
+    const container = containerRef.current;
+    const svg = svgRef.current;
+    if (!container || !svg) return;
+    const cRect = container.getBoundingClientRect();
+    ANNOS.forEach((anno, i) => {
+      const span = elRefs.current[i].span;
+      if (!span) return;
+      const r = span.getBoundingClientRect();
+      const innerX =
+        anno.side === "left" ? r.right - cRect.left : r.left - cRect.left;
+      ptsRef.current[i] = { x: innerX, y: r.top - cRect.top + r.height / 2 };
+    });
+  }, [safeTop]);
+
   return (
     <div
       ref={containerRef}
       aria-hidden
-      className={`pointer-events-none absolute inset-0 ${sketchFont.className}`}
+      className="pointer-events-none absolute inset-0"
     >
-      {/* Flèches dessinées à la main (SVG superposé, filtre de tremblé). */}
+      {/* Flèches nettes et discrètes (SVG superposé), sans effet « croquis ». */}
       <svg
         ref={svgRef}
         className="absolute inset-0 h-full w-full overflow-visible"
         fill="none"
         preserveAspectRatio="none"
       >
-        <defs>
-          <filter id="sketchWobble" x="-25%" y="-25%" width="150%" height="150%">
-            <feTurbulence
-              type="fractalNoise"
-              baseFrequency="0.018"
-              numOctaves={2}
-              seed={7}
-              result="noise"
-            />
-            <feDisplacementMap
-              in="SourceGraphic"
-              in2="noise"
-              scale={2.4}
-              xChannelSelector="R"
-              yChannelSelector="G"
-            />
-          </filter>
-        </defs>
-        <g
-          filter="url(#sketchWobble)"
-          stroke="#2b2b2b"
-          strokeWidth={1.4}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
+        <g stroke="#6c6a62" strokeWidth={1.1} strokeLinecap="round" strokeLinejoin="round">
           {ANNOS.map((anno, i) => (
             <g key={anno.part}>
               <path
@@ -267,7 +257,7 @@ export function ExplodedAnnotations({
                 ref={(el) => {
                   elRefs.current[i].head = el;
                 }}
-                strokeWidth={1.5}
+                strokeWidth={1.2}
                 style={{ opacity: 0 }}
               />
             </g>
@@ -275,7 +265,7 @@ export function ExplodedAnnotations({
         </g>
       </svg>
 
-      {/* Étiquettes manuscrites (HTML — hors de la scène 3D). */}
+      {/* Étiquettes — même typographie que le corps du site (hérite font-sans). */}
       {ANNOS.map((anno, i) => (
         <div
           key={anno.part}
@@ -285,12 +275,12 @@ export function ExplodedAnnotations({
           className="absolute"
           style={{
             left: `${anno.lx * 100}%`,
-            top: `${anno.ly * 100}%`,
+            top: `calc(${safeTop}px + ${anno.ly} * (100% - ${safeTop}px))`,
             transform:
               anno.side === "left"
                 ? "translate(0, -50%)"
                 : "translate(-100%, -50%)",
-            maxWidth: "42%",
+            maxWidth: "40%",
             textAlign: anno.side === "left" ? "left" : "right",
             opacity: 0,
           }}
@@ -299,10 +289,11 @@ export function ExplodedAnnotations({
             ref={(el) => {
               elRefs.current[i].span = el;
             }}
-            className="inline-block leading-tight text-[#2b2b2b]"
-            style={{ fontSize: "clamp(0.72rem, 3.2vw, 0.9rem)" }}
+            className="inline-block text-[0.78rem] font-medium leading-snug text-ink"
           >
-            <span style={{ opacity: 0.55 }}>{anno.num} — </span>
+            <span className="u-index text-[0.68rem] font-normal text-ink-muted">
+              {anno.num}
+            </span>{" "}
             {anno.label}
           </span>
         </div>

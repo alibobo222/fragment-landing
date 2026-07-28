@@ -108,6 +108,14 @@ function ExplodedScrollTrack() {
     progressRef.current = v;
   });
   const hintOpacity = useTransform(scrollYProgress, [0, 0.1], [1, 0]);
+  // Fondu de sortie de TOUTE la scène juste avant que le pin se relâche : le
+  // relâchement du sticky (CSS) découpe visuellement la boîte en une fine
+  // tranche partiellement masquée par le titre de chapitre (lui-même épinglé
+  // par-dessus) — sans ce fondu, on voit un fragment d'annotation flottant sur
+  // fond presque vide juste avant le chapitre suivant. En s'effaçant PENDANT
+  // que la boîte est encore pleinement épinglée (donc pleinement visible), la
+  // transition devient propre : plus rien à voir au moment du relâchement.
+  const sceneEndOpacity = useTransform(scrollYProgress, [0.93, 1], [1, 0]);
 
   // Monte / démonte le canvas selon la proximité du viewport (un seul contexte
   // WebGL lourd à la fois).
@@ -126,8 +134,11 @@ function ExplodedScrollTrack() {
   }, []);
 
   return (
-    <div ref={trackRef} className="relative" style={{ height: "220svh" }}>
-      <div className="sticky top-14 h-[calc(100svh-3.5rem)] overflow-hidden">
+    <div ref={trackRef} className="relative" style={{ height: "360svh" }}>
+      <motion.div
+        className="sticky top-14 h-[calc(100svh-3.5rem)] overflow-hidden"
+        style={{ opacity: reduce ? 1 : sceneEndOpacity }}
+      >
         {/* Halo circulaire gris très clair derrière la lampe (profondeur douce). */}
         <div
           aria-hidden
@@ -163,6 +174,7 @@ function ExplodedScrollTrack() {
             scrollYProgress={scrollYProgress}
             anchorsRef={anchorsRef}
             reduce={!!reduce}
+            safeTop={badgeTop}
           />
         )}
 
@@ -219,7 +231,7 @@ function ExplodedScrollTrack() {
             <path d="M12 5v14M6 13l6 6 6-6" />
           </motion.svg>
         </motion.div>
-      </div>
+      </motion.div>
     </div>
   );
 }

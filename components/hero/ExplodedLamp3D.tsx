@@ -120,7 +120,7 @@ function ExplodedModel({
   const camera = useThree((s) => s.camera);
   const reduce = useReducedMotion();
 
-  const { root, materials, moves, groundY, shadowScale, shadowFar } = useMemo(() => {
+  const { root, materials, moves, baseMove, qDisp, groundY, shadowScale, shadowFar } = useMemo(() => {
     const root = scene.clone(true);
     root.updateMatrixWorld(true);
 
@@ -229,7 +229,10 @@ function ExplodedModel({
     );
     const shadowFar = Math.max(bodySize.y * 1.2, 0.001);
 
-    return { root, materials, moves, groundY, shadowScale, shadowFar };
+    // Pièce dont l'ombre de contact doit suivre le déplacement (le pied).
+    const baseMove = moves.find((m) => m.part === "base") ?? null;
+
+    return { root, materials, moves, baseMove, qDisp, groundY, shadowScale, shadowFar };
   }, [scene]);
 
   // Matières + couleurs de la variante courante (identiques au configurateur).
@@ -272,17 +275,29 @@ function ExplodedModel({
     invalidate();
   }, [materials, partVariants, lampOn, warm, invalidate]);
 
+  // Ancre de l'ombre de contact : suit le pied à l'horizontale (X/Z) pendant
+  // qu'il se déplace, reste ancrée au sol (Y = groundY, fixe — un vrai sol ne
+  // monte ni ne descend). Un pied peut avoir un léger déport latéral (repère
+  // AFFICHÉ, post-rotation) : on projette donc son décalage via `qDisp`.
+  const shadowAnchorRef = useRef<THREE.Group>(null);
+  const _shadowOff = useMemo(() => new THREE.Vector3(), []);
+
   // Progression lissée : suit le scroll (0 → 1) sans à-coups, réversible.
+  // Lerp volontairement doux (k faible) : mouvement contemplatif, jamais saccadé.
   const cur = useRef(0);
   useFrame(() => {
     const target = easeInOut(Math.min(1, Math.max(0, progressRef.current)));
-    const k = reduce ? 1 : 0.16;
+    const k = reduce ? 1 : 0.1;
     let p = cur.current + (target - cur.current) * k;
     if (Math.abs(target - p) < 0.0004) p = target;
     if (p !== cur.current) {
       cur.current = p;
       for (const { mesh, orig, off } of moves)
         mesh.position.copy(orig).addScaledVector(off, p);
+      if (baseMove && shadowAnchorRef.current) {
+        _shadowOff.copy(baseMove.off).multiplyScalar(p).applyQuaternion(qDisp);
+        shadowAnchorRef.current.position.set(_shadowOff.x, groundY, _shadowOff.z);
+      }
       invalidate();
     }
 
@@ -308,16 +323,23 @@ function ExplodedModel({
       <group rotation={DISPLAY_ROT}>
         <primitive object={root} />
       </group>
-      <ContactShadows
-        position={[0, groundY, 0]}
-        scale={shadowScale}
-        far={shadowFar}
-        resolution={512}
-        blur={2.7}
-        opacity={0.42}
-        color="#1b1b22"
-        frames={1}
-      />
+      {/* Ancrée au sol (Y fixe), recentrée en X/Z chaque frame sur la position
+          réelle du pied (voir useFrame) : l'ombre suit physiquement son
+          déplacement pendant tout l'éclaté, au lieu de rester figée sous la
+          position assemblée. `frames={Infinity}` : se redessine en continu
+          (nécessaire puisqu'elle bouge, contrairement à la scène assemblée
+          statique du configurateur). */}
+      <group ref={shadowAnchorRef} position={[0, groundY, 0]}>
+        <ContactShadows
+          scale={shadowScale}
+          far={shadowFar}
+          resolution={512}
+          blur={2.7}
+          opacity={0.42}
+          color="#1b1b22"
+          frames={Infinity}
+        />
+      </group>
     </>
   );
 }
