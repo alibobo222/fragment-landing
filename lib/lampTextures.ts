@@ -67,7 +67,9 @@ const PROFILES: Record<MaterialKind, Omit<MaterialProfile, "kind">> = {
   metal: { roughness: 0.34, metalness: 0.92, clearcoat: 0.1, clearcoatRoughness: 0.3, grainScale: 40, grainRough: 0.14, speckle: 0.0, grainBump: 0 },
   // Béton noir : couleur via la texture (composite), très mat, AUCUN relief.
   blackConcrete: { roughness: 0.92, metalness: 0, clearcoat: 0.03, clearcoatRoughness: 0.85, grainScale: 20, grainRough: 0, speckle: 0, grainBump: 0 },
-  fabric: { roughness: 0.8, metalness: 0, clearcoat: 0.04, clearcoatRoughness: 0.8, grainScale: 52, grainRough: 0.5, speckle: 0.16, grainBump: 0.42 },
+  // Gaine textile du câble : tissage plat fin (chaîne/trame), mat, relief
+  // discret — évoque un câble gainé de tissu haut de gamme sans excès.
+  fabric: { roughness: 0.82, metalness: 0, clearcoat: 0.04, clearcoatRoughness: 0.8, grainScale: 60, grainRough: 0.4, speckle: 0.12, grainBump: 0.32 },
   matte: { roughness: 0.75, metalness: 0, clearcoat: 0.05, clearcoatRoughness: 0.7, grainScale: 11, grainRough: 0.32, speckle: 0.3, grainBump: 0 },
 };
 
@@ -179,30 +181,65 @@ function getNoiseTexture(): THREE.Texture {
   return noiseTex;
 }
 
-/* --- Texture textile tressée (câble), générée une fois --- */
+/* --- Texture textile (câble), générée une fois --- */
 let weaveTex: THREE.Texture | null = null;
 
+/**
+ * Gaine textile du câble — tissage PLAT chaîne/trame (armure toile), inspiré
+ * d'une référence photo de tissu clair à grain fin et régulier. Motif MACRO
+ * (fils) exactement périodique — `period` divise `S` sans reste, donc AUCUNE
+ * couture avec `RepeatWrapping`. Le grain fin des fibres utilise une grille de
+ * bruit bouclée + bilinéaire (même technique que les autres textures de ce
+ * fichier), donc elle aussi sans couture. Uniquement du niveau de gris : cette
+ * texture ne sert que de DÉTAIL (relief/rugosité/moucheté) dans le shader —
+ * jamais de couleur — la teinte du câble reste celle de `applyProfile`.
+ */
 function makeWeaveTexture(): THREE.Texture {
-  const S = 128;
+  const S = 256;
   const canvas = document.createElement("canvas");
   canvas.width = canvas.height = S;
   const ctx = canvas.getContext("2d")!;
   const img = ctx.createImageData(S, S);
-  const period = S / 8; // 8 brins par tuile
+
+  const threadsPerTile = 16; // tissage fin (16 fils/tuile)
+  const period = S / threadsPerTile; // 16 px — divise S exactement
+
+  // Grain fin des fibres, tileable (grille bouclée + bilinéaire).
+  const makeGrid = (n: number) => {
+    const g = new Float32Array(n * n);
+    for (let i = 0; i < g.length; i++) g[i] = Math.random();
+    return g;
+  };
+  const sample = (g: Float32Array, n: number, u: number, v: number) => {
+    const fx = u * n, fy = v * n;
+    const x0 = ((Math.floor(fx) % n) + n) % n;
+    const y0 = ((Math.floor(fy) % n) + n) % n;
+    const x1 = (x0 + 1) % n, y1 = (y0 + 1) % n;
+    const tx = fx - Math.floor(fx), ty = fy - Math.floor(fy);
+    const a = g[y0 * n + x0], b = g[y0 * n + x1];
+    const c = g[y1 * n + x0], d = g[y1 * n + x1];
+    return a * (1 - tx) * (1 - ty) + b * tx * (1 - ty) + c * (1 - tx) * ty + d * tx * ty;
+  };
+  const gFiber = makeGrid(48);
 
   for (let y = 0; y < S; y++) {
     for (let x = 0; x < S; x++) {
-      // Deux jeux de brins diagonaux entrecroisés (sur/sous → tressage).
-      const d1 = (((x + y) % period) + period) % period / period;
-      const d2 = (((x - y) % period) + period) % period / period;
-      const t1 = 1 - Math.abs(d1 - 0.5) * 2; // crête du brin ↗
-      const t2 = 1 - Math.abs(d2 - 0.5) * 2; // crête du brin ↘
-      const over =
-        ((Math.floor(x / period) + Math.floor(y / period)) & 1) === 0;
-      const v = over
-        ? Math.max(t1 * 0.95, t2 * 0.45)
-        : Math.max(t2 * 0.95, t1 * 0.45);
-      const g = Math.max(0, Math.min(255, (0.34 + v * 0.55) * 255));
+      // Profil arrondi de chaque fil (chaîne verticale, trame horizontale).
+      const warp = 1 - Math.abs(((x % period) / period) - 0.5) * 2;
+      const weft = 1 - Math.abs(((y % period) / period) - 0.5) * 2;
+      // Armure toile : alternance stricte dessus/dessous à chaque croisement.
+      const cellX = Math.floor(x / period);
+      const cellY = Math.floor(y / period);
+      const warpOnTop = ((cellX + cellY) & 1) === 0;
+      const v = warpOnTop
+        ? Math.max(warp * 0.92, weft * 0.42)
+        : Math.max(weft * 0.92, warp * 0.42);
+      // Irrégularité naturelle des fibres — discrète, jamais dominante.
+      const fiber = sample(gFiber, 48, x / S, y / S);
+      const g = Math.max(
+        0,
+        Math.min(255, (0.4 + v * 0.48 + (fiber - 0.5) * 0.1) * 255)
+      );
       const p = (y * S + x) * 4;
       img.data[p] = img.data[p + 1] = img.data[p + 2] = g;
       img.data[p + 3] = 255;
@@ -218,6 +255,9 @@ function makeWeaveTexture(): THREE.Texture {
   return tex;
 }
 
+/** Texture de gaine textile du câble — MISE EN CACHE et PARTAGÉE entre les
+ *  scènes (Hero et vue éclatée appellent tous deux cette même fonction ; la
+ *  texture n'est générée qu'une seule fois, jamais dupliquée). */
 export function getWeaveTexture(): THREE.Texture {
   if (!weaveTex) weaveTex = makeWeaveTexture();
   return weaveTex;
