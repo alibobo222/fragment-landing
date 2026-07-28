@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { siteConfig } from "@/config/site";
-import { tapProps } from "@/components/ui/motion";
+import { buttonMotion } from "@/components/ui/motion";
 
 // Numéros et libellés IDENTIQUES aux titres de section affichés au scroll
 // (« Découvrir »/hero n'est pas un chapitre numéroté).
@@ -60,12 +60,12 @@ export function SiteHeader() {
 
         <motion.button
           type="button"
-          {...tapProps}
+          {...buttonMotion}
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
           aria-controls="menu-principal"
           aria-label={open ? "Fermer le menu" : "Ouvrir le menu"}
-          className="inline-flex h-10 w-10 items-center justify-center text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink"
+          className="btn-glass btn-glass-icon inline-flex h-10 w-10 items-center justify-center"
         >
           <BurgerIcon open={open} />
         </motion.button>

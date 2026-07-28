@@ -90,8 +90,13 @@ export function RevealImage({
   );
 }
 
-/** Micro-interaction tactile : léger enfoncement au tap/clic (bouton). */
-export const tapProps = {
-  whileTap: { scale: 0.96 },
-  transition: { type: "spring" as const, stiffness: 400, damping: 26 },
+/**
+ * Micro-interaction partagée par tous les boutons « verre » du site : léger
+ * soulèvement au survol, légère compression naturelle au clic — courte,
+ * fluide (ressort), cohérente sur l'ensemble des CTA.
+ */
+export const buttonMotion = {
+  whileHover: { y: -1, scale: 1.012 },
+  whileTap: { scale: 0.965, y: 0 },
+  transition: { type: "spring" as const, stiffness: 420, damping: 30 },
 };

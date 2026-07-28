@@ -6,7 +6,7 @@ import dynamic from "next/dynamic";
 import { motion, useAnimationControls, useReducedMotion } from "framer-motion";
 import { variants } from "@/data/product";
 import { useSelection } from "@/components/SelectionProvider";
-import { tapProps } from "@/components/ui/motion";
+import { buttonMotion } from "@/components/ui/motion";
 import type { PartVariants } from "@/components/hero/Lamp3D";
 
 // La 3D (three.js) est chargée à la demande, hors du bundle initial.
@@ -187,31 +187,28 @@ export function LampStage({
   );
 }
 
-/* --- Contrôles d'éclairage (plats, carrés, accessibles) --- */
+/* --- Contrôles d'éclairage — famille « verre » premium, accessibles --- */
 
-/** Bouton plat pour allumer / éteindre la lampe 3D. */
+/** Bouton icône « verre » pour allumer / éteindre la lampe 3D. */
 function LampPowerButton({ on, onToggle }: { on: boolean; onToggle: () => void }) {
   const label = on ? "Éteindre la lampe" : "Allumer la lampe";
   return (
     <motion.button
       type="button"
-      {...tapProps}
+      {...buttonMotion}
       onClick={onToggle}
       aria-label={label}
       aria-pressed={on}
       title={label}
-      className={`inline-flex h-11 w-11 items-center justify-center border transition-[background-color,color,border-color] duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-1 focus-visible:ring-offset-paper ${
-        on
-          ? "border-ink bg-ink text-paper"
-          : "border-ink/25 bg-paper-pure text-ink-muted hover:border-ink hover:text-ink"
-      }`}
+      data-active={on}
+      className="btn-glass btn-glass-icon inline-flex h-11 w-11 items-center justify-center"
     >
       <BulbIcon on={on} />
     </motion.button>
   );
 }
 
-/** Sélecteur de température de lumière (plat) : chaude / froide. */
+/** Sélecteur de température de lumière — contrôle segmenté « verre » : chaude / froide. */
 function LightTempControl({
   warm,
   onSelect,
@@ -220,13 +217,8 @@ function LightTempControl({
   onSelect: (warm: boolean) => void;
 }) {
   return (
-    <div
-      role="group"
-      aria-label="Température de lumière"
-      className="inline-flex items-center border border-ink/25 bg-paper-pure"
-    >
+    <div role="group" aria-label="Température de lumière" className="btn-glass-group">
       <TempOption active={warm} onClick={() => onSelect(true)} label="Lumière chaude" icon={<SunIcon />} />
-      <span aria-hidden className="h-6 w-px bg-ink/15" />
       <TempOption active={!warm} onClick={() => onSelect(false)} label="Lumière froide" icon={<SnowIcon />} />
     </div>
   );
@@ -246,14 +238,13 @@ function TempOption({
   return (
     <motion.button
       type="button"
-      {...tapProps}
+      {...buttonMotion}
       onClick={onClick}
       aria-label={label}
       aria-pressed={active}
       title={label}
-      className={`inline-flex h-10 w-10 items-center justify-center transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ink ${
-        active ? "bg-ink text-paper" : "text-ink-muted hover:text-ink"
-      }`}
+      data-active={active}
+      className="btn-glass-segment inline-flex h-10 w-10 items-center justify-center"
     >
       {icon}
     </motion.button>

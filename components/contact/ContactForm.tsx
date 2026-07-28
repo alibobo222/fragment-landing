@@ -6,7 +6,7 @@ import { useSelection } from "@/components/SelectionProvider";
 import { validateLead, isValid, type LeadErrors } from "@/lib/validation";
 import { track, getSource } from "@/lib/analytics";
 import { siteConfig } from "@/config/site";
-import { tapProps } from "@/components/ui/motion";
+import { buttonMotion } from "@/components/ui/motion";
 
 type Status = "idle" | "loading" | "sent" | "error";
 
@@ -170,9 +170,9 @@ export function ContactForm() {
       <div className="pt-1">
         <motion.button
           type="submit"
-          {...tapProps}
+          {...buttonMotion}
           disabled={status === "loading"}
-          className="inline-flex min-h-[3rem] w-full items-center justify-center bg-ink px-7 text-[0.95rem] font-semibold text-paper transition-colors hover:bg-anthracite disabled:opacity-45"
+          className="btn-glass btn-glass-primary inline-flex min-h-[3rem] w-full items-center justify-center px-7 text-[0.95rem] font-semibold disabled:cursor-not-allowed"
         >
           {status === "loading" ? "Envoi…" : "Prendre contact"}
         </motion.button>

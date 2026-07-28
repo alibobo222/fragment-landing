@@ -11,6 +11,7 @@ import { materialTexture } from "@/lib/materialSwatch";
 import { Reveal } from "@/components/ui/Reveal";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { LampStage } from "@/components/lamp/LampStage";
+import { buttonMotion } from "@/components/ui/motion";
 
 /**
  * Chapitre 3 — Explorer matières & configurations. L'atelier 3D (scène
@@ -135,17 +136,18 @@ export function Configurator() {
         </div>
 
         {/* Invitation à échanger (pas d'achat). */}
-        <button
+        <motion.button
           type="button"
+          {...buttonMotion}
           onClick={() => {
             track("configurator_contact_click", { variant: selectedId });
             scrollToId("contact");
           }}
-          className="group mt-10 inline-flex items-center gap-3 text-base font-medium text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink"
+          className="btn-glass btn-glass-secondary group mt-10 inline-flex items-center gap-2.5 px-6 py-3 text-[0.95rem] font-medium"
         >
-          <span className="border-b border-ink pb-0.5">Échanger autour de cette pièce</span>
+          <span>Échanger autour de cette pièce</span>
           <span aria-hidden className="transition-transform duration-300 group-hover:translate-x-1.5">→</span>
-        </button>
+        </motion.button>
       </div>
     </section>
   );

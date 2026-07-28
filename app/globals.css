@@ -189,6 +189,129 @@
     letter-spacing: -0.028em;
   }
 
+  /* ------------------------------------------------------------------ *
+   * Boutons — famille « verre » premium (translucide, dépoli), inspirée du
+   * langage Apple : fond feutré (backdrop-filter), bordure fine, coins très
+   * arrondis, ombre douce et diffuse. UNE seule famille pour tous les boutons
+   * du site ; la hiérarchie se lit par variante :
+   *   .btn-glass-primary   → CTA principal (verre encre, texte clair)
+   *   .btn-glass-secondary → CTA secondaire (verre clair, texte encre)
+   *   .btn-glass-icon      → bouton icône rond (bascule on/off, etc.)
+   *   .btn-glass-group ›  .btn-glass-segment → contrôle segmenté (température)
+   * Micro-interactions (survol/clic) pilotées par `buttonMotion`
+   * (components/ui/motion.tsx) — GPU-friendly (transform + opacity).
+   * ------------------------------------------------------------------ */
+  .btn-glass {
+    position: relative;
+    border-radius: 999px;
+    -webkit-backdrop-filter: blur(20px) saturate(1.6);
+    backdrop-filter: blur(20px) saturate(1.6);
+    transition: background-color 0.35s var(--ease-out-soft),
+      border-color 0.35s var(--ease-out-soft),
+      box-shadow 0.35s var(--ease-out-soft),
+      color 0.35s var(--ease-out-soft);
+  }
+  /* Surclasse le focus brutaliste global (border-radius:0) : les boutons
+     « verre » gardent leurs coins arrondis même au focus clavier. */
+  .btn-glass:focus-visible {
+    outline: 2px solid var(--color-ink);
+    outline-offset: 3px;
+    border-radius: 999px;
+  }
+
+  .btn-glass-primary {
+    background: rgba(8, 8, 10, 0.84);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: var(--color-paper);
+    box-shadow:
+      0 1px 1px rgba(0, 0, 0, 0.08),
+      0 12px 28px -14px rgba(0, 0, 0, 0.5);
+  }
+  .btn-glass-primary:hover {
+    background: rgba(22, 22, 26, 0.92);
+    box-shadow:
+      0 1px 1px rgba(0, 0, 0, 0.1),
+      0 16px 32px -12px rgba(0, 0, 0, 0.55);
+  }
+  .btn-glass-primary:disabled {
+    background: rgba(8, 8, 10, 0.35);
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow: none;
+  }
+
+  .btn-glass-secondary {
+    background: rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(8, 8, 10, 0.1);
+    color: var(--color-ink);
+    box-shadow:
+      0 1px 1px rgba(0, 0, 0, 0.03),
+      0 10px 24px -16px rgba(0, 0, 0, 0.22);
+  }
+  .btn-glass-secondary:hover {
+    background: rgba(255, 255, 255, 0.82);
+    border-color: rgba(8, 8, 10, 0.16);
+  }
+
+  .btn-glass-icon {
+    background: rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(8, 8, 10, 0.08);
+    color: var(--color-ink-muted);
+    box-shadow:
+      0 1px 1px rgba(0, 0, 0, 0.04),
+      0 8px 20px -14px rgba(0, 0, 0, 0.28);
+  }
+  .btn-glass-icon:hover {
+    background: rgba(255, 255, 255, 0.82);
+    color: var(--color-ink);
+  }
+  .btn-glass-icon[data-active="true"] {
+    background: rgba(8, 8, 10, 0.86);
+    border-color: rgba(255, 255, 255, 0.14);
+    color: var(--color-paper);
+  }
+  .btn-glass-icon[data-active="true"]:hover {
+    background: rgba(24, 24, 28, 0.92);
+  }
+
+  /* Enveloppe de verre d'un contrôle segmenté (ex. température de lumière) :
+     les segments eux-mêmes restent transparents (voir .btn-glass-segment) et
+     ne portent qu'un fond plein — « pastille » — quand actifs. */
+  .btn-glass-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.125rem;
+    border-radius: 999px;
+    padding: 0.25rem;
+    background: rgba(255, 255, 255, 0.55);
+    border: 1px solid rgba(8, 8, 10, 0.08);
+    -webkit-backdrop-filter: blur(20px) saturate(1.6);
+    backdrop-filter: blur(20px) saturate(1.6);
+    box-shadow:
+      0 1px 1px rgba(0, 0, 0, 0.04),
+      0 8px 20px -14px rgba(0, 0, 0, 0.28);
+  }
+  .btn-glass-segment {
+    border-radius: 999px;
+    color: var(--color-ink-muted);
+    transition: background-color 0.3s var(--ease-out-soft),
+      color 0.3s var(--ease-out-soft);
+  }
+  .btn-glass-segment:hover {
+    color: var(--color-ink);
+  }
+  .btn-glass-segment[data-active="true"] {
+    background: rgba(8, 8, 10, 0.86);
+    color: var(--color-paper);
+    box-shadow:
+      0 1px 1px rgba(0, 0, 0, 0.08),
+      0 6px 14px -8px rgba(0, 0, 0, 0.4);
+  }
+  .btn-glass-segment:focus-visible {
+    outline: 2px solid var(--color-ink);
+    outline-offset: 2px;
+    border-radius: 999px;
+  }
+
   .hero-scroll-line {
     transform-origin: top center;
   }
