@@ -5,7 +5,8 @@ import { siteConfig } from "@/config/site";
 import { Analytics } from "@/components/Analytics";
 import "./globals.css";
 
-// Grand titrage : Overused Grotesk (grotesque contemporain, masse éditoriale).
+// Grand titrage : Overused Grotesk (grotesque contemporain). Les titres sont
+// réglés sur la graisse du logotype FRAGMENT (600, semi-gras) — voir globals.css.
 // Police VARIABLE auto-hébergée (axe de graisse complet 300→900) — chargée via
 // next/font/local : subset + preload automatiques, `display: swap` (pas de FOIT),
 // zéro requête tierce (aucun impact perf / cohérent avec l'export statique).
@@ -15,7 +16,9 @@ const overusedGrotesk = localFont({
   style: "normal",
   display: "swap",
   variable: "--font-display-src",
-  fallback: ["Arial Black", "Helvetica Neue", "system-ui", "sans-serif"],
+  // Repli calé sur la MÊME graisse que les titres (600) : « Arial Black »,
+  // choisi du temps où les titres étaient en 900, écraserait le dessin.
+  fallback: ["Helvetica Neue", "Arial", "system-ui", "sans-serif"],
   preload: true,
 });
 

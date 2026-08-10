@@ -6,12 +6,18 @@ import { useGLTF, OrbitControls, ContactShadows } from "@react-three/drei";
 import { useReducedMotion } from "framer-motion";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import * as THREE from "three";
-import { variants, defaultVariantId } from "@/data/product";
+import {
+  variants,
+  defaultVariantId,
+  defaultPerforation,
+  type PerforationShape,
+} from "@/data/product";
 import {
   LAMP_MODEL_URL,
   lampMeshMapping,
   finishFor,
   shadeTransmission,
+  canEmit,
   lampLightConfig as cfg,
   type LampPart,
 } from "@/data/lampModel";
@@ -19,6 +25,7 @@ import {
   createGrainMaterial,
   applyProfile,
   applyInteriorVeneer,
+  applyPerforation,
   materialProfile,
   disposeLampTextures,
   getWeaveTexture,
@@ -53,10 +60,12 @@ function LampModel({
   partVariants,
   lampOn,
   warm,
+  perforation,
 }: {
   partVariants: PartVariants;
   lampOn: boolean;
   warm: boolean;
+  perforation: PerforationShape;
 }) {
   const { scene } = useGLTF(LAMP_MODEL_URL);
   const invalidate = useThree((s) => s.invalidate);
@@ -99,6 +108,14 @@ function LampModel({
         }
         mat = gm;
       }
+      // Verrou d'émission : toute pièce hors liste d'autorisation (donc la
+      // pièce d'assemblage et la douille) a son émission mise à zéro et n'est
+      // plus jamais touchée par la logique d'allumage.
+      if (!canEmit(part)) {
+        mat.emissive.setRGB(0, 0, 0);
+        mat.emissiveIntensity = 0;
+      }
+
       materials[part] = mat;
       mesh.material = mat;
       mesh.castShadow = cfg.shadows && part !== "bulb";
@@ -198,6 +215,12 @@ function LampModel({
         ? finish.color
         : "#" + m.color.getHexString();
       applyProfile(m, startHex, materialProfile(finish.label));
+      // Ré-affirmé après chaque application de profil : changer de matière ne
+      // doit en aucun cas rallumer l'émission d'une pièce qui n'y a pas droit.
+      if (!canEmit(part)) {
+        m.emissive.setRGB(0, 0, 0);
+        m.emissiveIntensity = 0;
+      }
     };
     apply("shade", partVariants.shade);
     apply("connector", partVariants.connector);
@@ -205,6 +228,14 @@ function LampModel({
     apply("socket", partVariants.connector); // douille = finition de l'assemblage
     apply("cable", partVariants.cable);
     firstColorApply.current = false;
+
+    // TÔLE PERFORÉE — pièce d'assemblage UNIQUEMENT. Réappliqué à chaque
+    // changement de configuration : la finition métallique change (acier brut,
+    // aluminium, laiton, inox, anodisé), le percement, lui, ne change jamais.
+    // La douille (`socket`), qui partage pourtant la finition de l'assemblage,
+    // n'est volontairement PAS percée : ce n'est pas une tôle.
+    const connectorMat = materials.connector as THREE.MeshPhysicalMaterial | undefined;
+    if (connectorMat) applyPerforation(connectorMat, perforation);
 
     // Placage bois à l'INTÉRIEUR de l'abat-jour, uniquement pour la config 01
     // (prototype « Coquilles de moules »). L'extérieur reste inchangé.
@@ -225,7 +256,7 @@ function LampModel({
       cfg.glassGlowMax *
       shadeTransmission(variants[partVariants.shade].shade.label);
     invalidate();
-  }, [materials, partVariants, invalidate, spot, point]);
+  }, [materials, partVariants, perforation, invalidate, spot, point]);
 
   // Libère la texture de bruit au démontage.
   useEffect(() => () => disposeLampTextures(), []);
@@ -234,8 +265,9 @@ function LampModel({
     let needsRender = false;
 
     // Allumage / extinction progressif vers l'état cible (bouton on/off).
-    // Au chargement : lit 0 → 1 (lampe allumée par défaut). Au clic : fondu
-    // fluide dans un sens ou l'autre. Seules les intensités lumineuses varient.
+    // Au chargement, la lampe est ÉTEINTE : `lit` vaut 0 et y reste tant que
+    // personne n'appuie. Au clic : fondu fluide dans un sens ou l'autre. Seules
+    // les intensités lumineuses varient.
     const target = lampOn ? 1 : 0;
     if (lit.current !== target) {
       if (reduce) {
@@ -270,8 +302,10 @@ function LampModel({
       c.lerp(tempTarget, reduce ? 1 : k);
       spot.color.copy(c);
       point.color.copy(c);
-      if (materials.bulb) materials.bulb.emissive.copy(c);
-      if (materials.shade) materials.shade.emissive.copy(c);
+      // Seules les pièces autorisées suivent la couleur de la lumière. La
+      // pièce d'assemblage n'apparaît volontairement pas ici.
+      if (materials.bulb && canEmit("bulb")) materials.bulb.emissive.copy(c);
+      if (materials.shade && canEmit("shade")) materials.shade.emissive.copy(c);
       needsRender = true;
     }
 
@@ -364,6 +398,7 @@ export function Lamp3D({
   spin,
   lampOn,
   warm,
+  perforation = defaultPerforation,
   onCreated,
   camera = CAMERA,
   fov = FOV,
@@ -374,6 +409,8 @@ export function Lamp3D({
   spin: boolean;
   lampOn: boolean;
   warm: boolean;
+  /** Géométrie des perforations de la pièce d'assemblage. */
+  perforation?: PerforationShape;
   onCreated?: () => void;
   /** Cadrage caméra — permet un plan différent pour l'atelier. */
   camera?: [number, number, number];
@@ -397,7 +434,12 @@ export function Lamp3D({
       <directionalLight position={[2.5, 4, 2]} intensity={1.55} />
       <directionalLight position={[-3, 1.5, -2]} intensity={0.5} color="#cdd6ff" />
       <ProceduralEnv />
-      <LampModel partVariants={partVariants} lampOn={lampOn} warm={warm} />
+      <LampModel
+        partVariants={partVariants}
+        lampOn={lampOn}
+        warm={warm}
+        perforation={perforation}
+      />
       {controls && (
         <>
           <TouchScroll />

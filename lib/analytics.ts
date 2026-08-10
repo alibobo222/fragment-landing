@@ -12,6 +12,7 @@ export type AnalyticsEvent =
   | "qr_landing_view"
   | "configurator_started"
   | "material_variant_selected"
+  | "perforation_selected"
   | "configurator_contact_click"
   | "contact_form_started"
   | "contact_form_submitted";

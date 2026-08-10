@@ -1,25 +1,42 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import Image from "next/image";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { variants, partLabels } from "@/data/product";
 import { useSelection } from "@/components/SelectionProvider";
 import { track } from "@/lib/analytics";
 import { scrollToId } from "@/lib/scroll";
 import { materialTexture } from "@/lib/materialSwatch";
+import { splitFinishLabel, capitalise } from "@/lib/materialLabel";
 import { Reveal } from "@/components/ui/Reveal";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { LampStage } from "@/components/lamp/LampStage";
 import { buttonMotion } from "@/components/ui/motion";
+import { ProductThumb } from "@/components/ui/ProductThumb";
 
 /**
- * Chapitre 3 — Explorer matières & configurations. L'atelier 3D (scène
- * interactive, sticky) réagit en douceur à la configuration choisie dans le
- * catalogue. Aucune notion d'achat : on invite à échanger autour de la pièce.
+ * Chapitre 3 — Explorer matières & configurations.
+ *
+ * ⚠️ DISPOSITION — UN SEUL sélecteur, juste sous la scène 3D, et la fiche de la
+ * configuration active immédiatement en dessous.
+ *
+ * Historique de la décision : le catalogue vertical d'origine commençait ~590 px
+ * sous le bas de la scène sur un téléphone, donc au moment du choix la lampe
+ * était hors champ et le fondu-enchaîné de `LampStage` se jouait dans le vide.
+ * Une première correction a ajouté une rangée horizontale épinglée sous la
+ * scène — mais elle faisait alors DOUBLON avec le catalogue vertical (le même
+ * choix, offert deux fois, à deux endroits). Le catalogue vertical a donc été
+ * supprimé et ses informations remontées ici : nom, composition matière et
+ * description de la configuration active se lisent maintenant à côté du rendu,
+ * et changent avec lui.
+ *
+ * La scène et le sélecteur restent dans un bloc épinglé : sur un écran court,
+ * la lampe demeure visible pendant qu'on parcourt la fiche.
  */
 export function Configurator() {
   const { selectedId, variant, select } = useSelection();
+  const reduce = useReducedMotion();
   const startedRef = useRef(false);
 
   const onChoose = (id: string) => {
@@ -34,9 +51,11 @@ export function Configurator() {
     <section
       id="configurateur"
       aria-labelledby="configurateur-title"
-      className="scroll-mt-16 border-t border-line bg-white pt-4 pb-20"
+      className="scroll-mt-16 bg-white pt-4 pb-24"
     >
+      {/* Titre NON épinglé : la place en haut d'écran revient à la scène 3D. */}
       <SectionHeading
+        sticky={false}
         index="03"
         kicker="Le configurateur"
         id="configurateur-title"
@@ -50,90 +69,62 @@ export function Configurator() {
             température de lumière.
           </p>
         </Reveal>
+      </div>
 
-        {/* Atelier 3D. */}
-        <div className="mt-8">
+      {/* ---------- Bloc épinglé : la scène et le choix ne se quittent jamais ---------- */}
+      <div className="sticky top-14 z-10 mt-8 bg-white pb-4">
+        {/* ⚠️ HAUTEUR FIXE, LARGEUR LIBRE — et c'est tout le point.
+            La boîte était `aspect-square max-w-[40svh] overflow-hidden` : un carré
+            d'environ 296 px dans une colonne qui en fait 480. Le câble, qui
+            s'étale latéralement, était donc coupé par le CSS — pas par la 3D.
+            La focale d'une caméra perspective étant VERTICALE, élargir la boîte
+            révèle davantage de scène sur les côtés SANS changer d'un pixel la
+            taille apparente de la lampe. Augmenter la hauteur, à l'inverse, la
+            grossirait : c'est pourquoi `h-[40svh]` est conservé tel quel.
+            `u-bleed` annule la gouttière pour occuper toute la largeur utile. */}
+        <div className="u-container">
           <LampStage
             camera={[0.12, 0.14, 0.5]}
             fov={30}
             imageSizes="480px"
-            className="aspect-square w-full overflow-hidden bg-white"
+            className="u-bleed h-[40svh] bg-white"
           />
         </div>
-
-        {/* Décomposition matière de la configuration active. */}
-        <div className="mt-6 flex items-baseline gap-3 border-t border-ink pt-4">
-          <span className="u-index text-xs text-ink-muted">
-            {variant.index} / 07
-          </span>
-          <p className="font-display text-xl leading-tight text-ink">{variant.name}</p>
-        </div>
-        <dl className="mt-6 grid grid-cols-2 gap-x-5 gap-y-6">
-          <MaterialRow label={partLabels.shade} finish={variant.shade} />
-          <MaterialRow label={partLabels.base} finish={variant.base} />
-          <MaterialRow label="Structure" finish={variant.assembly} />
-          <MaterialRow label="Câble" finish={variant.cable} />
-        </dl>
-
-        {/* Catalogue des configurations (groupe radio accessible). */}
+        <VariantPicker selectedId={selectedId} onChoose={onChoose} />
+        {/* Le filet qui fermait ce bloc est remplacé par un fondu : le contenu
+            se dissout en glissant dessous au lieu d'être tranché par un trait. */}
         <div
-          role="radiogroup"
-          aria-label="Configurations disponibles"
-          className="mt-10 flex flex-col divide-y divide-line border-y border-line"
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-full h-5 bg-gradient-to-b from-white to-transparent"
+        />
+      </div>
+
+      {/* ---------- Fiche de la configuration active ---------- */}
+      <div className="u-container">
+        <motion.div
+          key={variant.id}
+          initial={reduce ? false : { opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
         >
-          {variants.map((v) => {
-            const active = v.id === selectedId;
-            return (
-              <motion.label
-                key={v.id}
-                whileTap={{ scale: 0.995 }}
-                className={`group relative flex cursor-pointer items-center gap-4 py-4 transition-colors ${
-                  active ? "bg-[#f6f5f1]" : "hover:bg-[#faf9f6]"
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="variant"
-                  value={v.id}
-                  checked={active}
-                  onChange={() => onChoose(v.id)}
-                  className="sr-only"
-                />
-                <span
-                  aria-hidden
-                  className={`h-14 w-[3px] shrink-0 transition-colors ${
-                    active ? "u-accent-bg" : "bg-transparent"
-                  }`}
-                />
-                <span className="relative h-14 w-14 shrink-0 overflow-hidden bg-white ring-1 ring-line">
-                  <Image src={v.image} alt="" fill sizes="3.5rem" className="object-contain p-1" />
-                </span>
-                <span className="min-w-0 flex-1 pr-6">
-                  <span className="flex min-w-0 items-baseline gap-2">
-                    <span className="u-index text-[0.7rem] text-ink-muted">{v.index}</span>
-                    <span className="font-display text-base leading-tight text-ink">{v.name}</span>
-                  </span>
-                  <span className="mt-2 flex items-center gap-1.5" aria-hidden>
-                    {[v.shade, v.base, v.assembly, v.cable].map((f, i) => (
-                      <span
-                        key={i}
-                        title={f.label}
-                        className="h-3 w-3 ring-1 ring-ink/10"
-                        style={{ backgroundColor: f.color }}
-                      />
-                    ))}
-                  </span>
-                </span>
-                <span
-                  aria-hidden
-                  className={`absolute right-1 top-1/2 h-2 w-2 -translate-y-1/2 transition-opacity ${
-                    active ? "u-accent-bg opacity-100" : "opacity-0"
-                  }`}
-                />
-              </motion.label>
-            );
-          })}
-        </div>
+          {/* Plus de filet : le rapport de graisse et de couleur entre le
+              repère mono et le nom en display porte seul la hiérarchie. */}
+          <p className="u-eyebrow mt-10">{variant.index} / 07</p>
+          <p className="mt-2 font-display text-2xl leading-tight text-ink">
+            {variant.name}
+          </p>
+
+          <p className="mt-3 max-w-[50ch] text-sm leading-relaxed text-ink-soft">
+            {variant.description}
+          </p>
+
+          <dl className="mt-8 grid grid-cols-2 gap-x-5 gap-y-7">
+            <MaterialRow label={partLabels.shade} finish={variant.shade} />
+            <MaterialRow label={partLabels.base} finish={variant.base} />
+            <MaterialRow label="Structure" finish={variant.assembly} />
+            <MaterialRow label="Câble textile" finish={variant.cable} />
+          </dl>
+        </motion.div>
 
         {/* Invitation à échanger (pas d'achat). */}
         <motion.button
@@ -143,13 +134,106 @@ export function Configurator() {
             track("configurator_contact_click", { variant: selectedId });
             scrollToId("contact");
           }}
-          className="btn-glass btn-glass-secondary group mt-10 inline-flex items-center gap-2.5 px-6 py-3 text-[0.95rem] font-medium"
+          className="btn-glass btn-glass-secondary group mt-12 inline-flex items-center gap-2.5 px-6 py-3 text-[0.95rem] font-medium"
         >
           <span>Échanger autour de cette pièce</span>
           <span aria-hidden className="transition-transform duration-300 group-hover:translate-x-1.5">→</span>
         </motion.button>
       </div>
     </section>
+  );
+}
+
+/**
+ * Sélecteur unique — rangée horizontale à défilement « snap », collée sous la
+ * scène 3D dans le bloc épinglé. C'est LE geste de sélection : il tient sur une
+ * ligne, se parcourt au pouce, et garantit que la lampe est visible au moment
+ * du choix. Groupe radio natif : navigation clavier par les flèches, focus
+ * visible sur la vignette (l'input lui-même est masqué).
+ */
+function VariantPicker({
+  selectedId,
+  onChoose,
+}: {
+  selectedId: string;
+  onChoose: (id: string) => void;
+}) {
+  const rowRef = useRef<HTMLDivElement>(null);
+  const activeRef = useRef<HTMLLabelElement>(null);
+
+  // Recentre la vignette active quand la sélection vient d'ailleurs (clavier,
+  // restauration de session). Défilement HORIZONTAL uniquement : on pilote
+  // `scrollLeft` de la rangée, jamais `scrollIntoView`, qui ferait aussi défiler
+  // la page verticalement et volerait le contrôle à l'utilisateur.
+  useEffect(() => {
+    const row = rowRef.current;
+    const el = activeRef.current;
+    if (!row || !el) return;
+    const target = el.offsetLeft - (row.clientWidth - el.clientWidth) / 2;
+    row.scrollTo({ left: Math.max(0, target), behavior: "smooth" });
+  }, [selectedId]);
+
+  return (
+    <div
+      ref={rowRef}
+      role="radiogroup"
+      aria-label="Configurations disponibles"
+      className="mt-16 flex snap-x snap-mandatory gap-1 overflow-x-auto px-[0.9rem] pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+    >
+      {variants.map((v) => {
+        const active = v.id === selectedId;
+        return (
+          <label
+            key={v.id}
+            ref={active ? activeRef : undefined}
+            className={`group relative shrink-0 cursor-pointer snap-center px-2 pt-2 pb-1 transition-colors duration-200 ${
+              active ? "bg-ink/[0.035]" : "hover:bg-ink/[0.02]"
+            }`}
+          >
+            <input
+              type="radio"
+              name="variant"
+              value={v.id}
+              checked={active}
+              onChange={() => onChoose(v.id)}
+              className="peer sr-only"
+            />
+            {/* AUCUN cadre. Les packshots sont détourés sur blanc : posés à
+                même le fond de l'interface, ils se lisent comme des objets et
+                non comme des cartes. L'état actif ne tient plus qu'à DEUX
+                signaux — pleine opacité et barre d'accent — au lieu des quatre
+                d'avant (opacité, cadre noir, accent, numéro), qui se répétaient
+                sans rien ajouter. */}
+            <span
+              className={`relative block h-16 w-16 transition-opacity duration-300 peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-ink ${
+                active ? "opacity-100" : "opacity-55 group-hover:opacity-90"
+              }`}
+            >
+              <ProductThumb variant={v} sizes="4rem" />
+            </span>
+            {/* Barre d'accent : couleur dominante de la configuration
+                (var CSS `--accent`, diffusée par le SelectionProvider). */}
+            <span
+              aria-hidden
+              className={`mt-2 block h-[2px] w-full transition-colors ${
+                active ? "u-accent-bg" : "bg-transparent"
+              }`}
+            />
+            {/* Repère de nomenclature — situe la configuration dans la série. */}
+            <span
+              aria-hidden
+              className="u-index mt-1.5 block text-center text-[0.62rem] text-ink-muted"
+            >
+              {v.index}
+            </span>
+            {/* Nom accessible du bouton radio (l'image est décorative). */}
+            <span className="sr-only">
+              Configuration {v.index} — {v.name}. {v.materialsSummary}.
+            </span>
+          </label>
+        );
+      })}
+    </div>
   );
 }
 
@@ -161,18 +245,25 @@ function MaterialRow({
   finish: { label: string; color: string };
 }) {
   const texture = materialTexture(finish.label);
+  // « Câble textile » en intitulé + « Câble textile bleu » en valeur : on
+  // n'écrit pas deux fois la même chose (voir lib/materialLabel.ts).
+  const parts = splitFinishLabel(label, finish.label);
+  const value = parts.suffix ? capitalise(parts.suffix) : parts.full ?? finish.label;
   return (
     <div className="flex items-start gap-3">
       <span
         aria-hidden
-        className="relative mt-0.5 h-7 w-7 shrink-0 overflow-hidden ring-1 ring-ink/15"
+        // Seul cerne conservé de toute la section, parce qu'il a une utilité :
+        // sans lui, une pastille claire (porcelaine, béton clair) n'aurait aucune
+        // limite sur le fond blanc. Affiné pour rester discret.
+        className="relative mt-0.5 h-7 w-7 shrink-0 overflow-hidden ring-1 ring-ink/10"
         style={texture ? undefined : { backgroundColor: finish.color }}
       >
         {texture && <Image src={texture} alt="" fill sizes="1.75rem" className="object-cover" />}
       </span>
       <span className="min-w-0">
         <span className="u-eyebrow block">{label}</span>
-        <span className="mt-1 block text-sm leading-snug text-ink">{finish.label}</span>
+        <span className="mt-1 block text-sm leading-snug text-ink">{value}</span>
       </span>
     </div>
   );

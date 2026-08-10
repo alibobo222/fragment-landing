@@ -63,6 +63,31 @@ export function surfaceFor(part: LampPart, variant: ProductVariant): Surface {
   return { color: finish.color, ...surfaceFromLabel(finish.label) };
 }
 
+/**
+ * Les SEULES pièces dont le matériau a le droit de devenir émissif, c'est-à-dire
+ * d'émettre de la lumière par lui-même indépendamment de l'éclairage de la scène.
+ *
+ *   - `bulb`  : l'ampoule, qui EST la source lumineuse ;
+ *   - `shade` : l'abat-jour, dont une fraction de la lumière traverse la matière
+ *               (transmission approchée — voir `shadeTransmission`).
+ *
+ * Tout le reste — et **explicitement la pièce d'assemblage** (`connector`) ainsi
+ * que la douille (`socket`), qui en partage la finition — doit conserver
+ * exactement le même matériau, la même couleur et la même apparence que la lampe
+ * soit allumée ou éteinte. Ces pièces ne reçoivent que l'éclairage PHYSIQUE de la
+ * scène, ce qui est voulu ; leur matériau, lui, ne bascule jamais en mode
+ * lumineux.
+ *
+ * Liste d'AUTORISATION et non d'exclusion, volontairement : une pièce ajoutée
+ * plus tard sera non émissive par défaut, sans qu'on ait à y penser.
+ */
+const EMISSIVE_PARTS: readonly LampPart[] = ["bulb", "shade"];
+
+/** `true` si le matériau de cette pièce a le droit d'émettre de la lumière. */
+export function canEmit(part: LampPart): boolean {
+  return EMISSIVE_PARTS.includes(part);
+}
+
 /** Matière (libellé + couleur) d'une partie donnée pour une variante. */
 export function finishFor(
   part: Exclude<LampPart, "bulb">,

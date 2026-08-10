@@ -13,6 +13,10 @@ import { useSelection } from "@/components/SelectionProvider";
 import { variants } from "@/data/product";
 import { RevealImage } from "@/components/ui/motion";
 import { ExplodedAnnotations } from "@/components/chapters/ExplodedAnnotations";
+import {
+  EXPLODED_TIMELINE as T,
+  phaseProgress,
+} from "@/components/chapters/explodedTimeline";
 import type { PartVariants } from "@/components/hero/Lamp3D";
 import type { AnchorMap } from "@/components/hero/ExplodedLamp3D";
 
@@ -35,6 +39,31 @@ function webglAvailable(): boolean {
 }
 
 const SIZES = "(max-width: 480px) 100vw, 480px";
+
+/**
+ * Marge basse (px) réservée SOUS la scène 3D, pour le cartouche de planche.
+ * Avec `STAGE_TOP` en haut, elle définit la « fenêtre de scène ».
+ *
+ * ⚠️ C'est le premier réglage à toucher pour agrandir ou réduire l'éclaté :
+ * la fenêtre gagne directement ce que cette marge perd. Le second réglage est
+ * la distance de caméra dans `ExplodedLamp3D` (constante `CAMERA`).
+ */
+const STAGE_BOTTOM = 30;
+
+/**
+ * Marge haute (px) de la fenêtre de scène.
+ *
+ * Elle valait auparavant la hauteur RÉELLE du titre de chapitre épinglé (~110 px),
+ * qu'il fallait contourner puisqu'il reste collé en haut d'écran, opaque, pendant
+ * toute la traversée de la section. C'était la plus grosse réserve de place du
+ * dispositif — confisquée en permanence à la planche technique.
+ *
+ * La piste éclatée passe désormais AU-DESSUS de ce titre (z-30 + fond blanc) tant
+ * qu'elle est épinglée : pendant la vue éclatée, l'écran entier sous l'en-tête du
+ * site appartient à la scène ; le titre réapparaît dès que l'épinglage se relâche.
+ * D'où cette simple marge de respiration.
+ */
+const STAGE_TOP = 18;
 
 /** Illustration statique d'origine (repli : pas de WebGL / reduced-motion). */
 function StaticEclate() {
@@ -60,33 +89,23 @@ function StaticEclate() {
  * disponible : son `trackRef` existe donc dès le premier rendu, ce qui permet à
  * `useScroll({ target })` de se caler sur la plage d'épinglage de la section
  * (et non sur le scroll global de la page).
+ *
+ * ⚠️ La scène est découpée en ACTES — voir `explodedTimeline.ts`. Le
+ * désassemblage ne consomme plus toute la piste : il s'achève à 44 %, les
+ * annotations se tracent ensuite sur scène immobile, puis vient un long palier
+ * de lecture où plus rien ne bouge. Le fondu de sortie n'intervient qu'après.
  */
 function ExplodedScrollTrack() {
-  const { variant, lampOn, warm } = useSelection();
+  const { variant, lampOn, warm, perforation } = useSelection();
   const reduce = useReducedMotion();
 
   const trackRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
   const [ready, setReady] = useState(false);
+  // 0 = désassemblage en cours, 1 = nomenclature (tracé puis lecture).
+  const [act, setAct] = useState<0 | 1>(0);
   const progressRef = useRef(0);
   const anchorsRef = useRef<AnchorMap | null>(null);
-  // Le titre de chapitre (SectionHeading) est LUI AUSSI épinglé (sticky top-14,
-  // z-20, fond blanc opaque) et reste visible pendant toute la traversée de la
-  // section — y compris pendant la piste éclatée. Le badge d'action doit donc
-  // démarrer SOUS ce panneau, jamais à une hauteur fixe devinée : on mesure sa
-  // hauteur réelle (robuste aux changements de texte/police/largeur).
-  const [badgeTop, setBadgeTop] = useState(80);
-  useEffect(() => {
-    const measure = () => {
-      const heading = trackRef.current
-        ?.closest("section")
-        ?.querySelector<HTMLElement>(":scope > div.sticky");
-      if (heading) setBadgeTop(heading.getBoundingClientRect().height + 12);
-    };
-    measure();
-    window.addEventListener("resize", measure);
-    return () => window.removeEventListener("resize", measure);
-  }, []);
 
   const currentIndex = Math.max(
     0,
@@ -99,23 +118,46 @@ function ExplodedScrollTrack() {
     cable: currentIndex,
   };
 
-  // Progression de désassemblage = position dans la piste (0 en haut → 1 en bas).
   const { scrollYProgress } = useScroll({
     target: trackRef,
     offset: ["start start", "end end"],
   });
+
+  // La progression 3D n'est PAS la progression de scroll : elle est remappée sur
+  // le seul acte de désassemblage. Passé 0.44, elle vaut 1 et les pièces restent
+  // parfaitement immobiles pendant que la nomenclature s'écrit et se lit.
   useMotionValueEvent(scrollYProgress, "change", (v) => {
-    progressRef.current = v;
+    progressRef.current = phaseProgress(v, T.explodeStart, T.explodeEnd);
+    const nextAct: 0 | 1 = v >= T.annoStart - 0.04 ? 1 : 0;
+    setAct((prev) => (prev === nextAct ? prev : nextAct));
   });
-  const hintOpacity = useTransform(scrollYProgress, [0, 0.1], [1, 0]);
-  // Fondu de sortie de TOUTE la scène juste avant que le pin se relâche : le
-  // relâchement du sticky (CSS) découpe visuellement la boîte en une fine
-  // tranche partiellement masquée par le titre de chapitre (lui-même épinglé
-  // par-dessus) — sans ce fondu, on voit un fragment d'annotation flottant sur
-  // fond presque vide juste avant le chapitre suivant. En s'effaçant PENDANT
-  // que la boîte est encore pleinement épinglée (donc pleinement visible), la
-  // transition devient propre : plus rien à voir au moment du relâchement.
-  const sceneEndOpacity = useTransform(scrollYProgress, [0.93, 1], [1, 0]);
+
+  const hintOpacity = useTransform(scrollYProgress, [0, 0.08], [1, 0]);
+  // ⚠️ Aucun fondu de sortie — voir `explodedTimeline.ts`. Il existait pour
+  // masquer une tranche disgracieuse au relâchement de l'épinglage, causée par
+  // le titre de chapitre épinglé PAR-DESSUS la scène. Ce titre passant désormais
+  // DESSOUS (la planche est en z-30), le relâchement est propre : la scène
+  // défile simplement vers le haut et le chapitre suivant enchaîne. Le fondu ne
+  // servait donc plus à rien, sinon à réserver un écran entier de blanc.
+  // Jauge de progression de la piste (2 segments : désassemblage / nomenclature).
+  const act1Scale = useTransform(
+    scrollYProgress,
+    [T.explodeStart, T.explodeEnd],
+    [0, 1]
+  );
+  const act2Scale = useTransform(
+    scrollYProgress,
+    [T.annoStart, T.annoEnd],
+    [0, 1]
+  );
+  // Cartouche de planche : apparaît une fois les flèches lancées, disparaît
+  // avec la scène. Il porte l'argument du chapitre (« peu de composants ») et
+  // rattache la planche à la configuration réellement affichée.
+  const cartoucheOpacity = useTransform(
+    scrollYProgress,
+    [T.annoStart, T.annoStart + 0.06],
+    [0, 1]
+  );
 
   // Monte / démonte le canvas selon la proximité du viewport (un seul contexte
   // WebGL lourd à la fois).
@@ -135,30 +177,35 @@ function ExplodedScrollTrack() {
 
   return (
     <div ref={trackRef} className="relative" style={{ height: "360svh" }}>
-      <motion.div
-        className="sticky top-14 h-[calc(100svh-3.5rem)] overflow-hidden"
-        style={{ opacity: reduce ? 1 : sceneEndOpacity }}
-      >
+      {/* z-30 + fond blanc : la planche passe PAR-DESSUS le titre de chapitre
+          (z-20) tant qu'elle est épinglée, et récupère ainsi toute la hauteur
+          d'écran. Elle reste sous l'en-tête du site (z-40), qui doit rester
+          atteignable. */}
+      <div className="sticky top-14 z-30 h-[calc(100svh-3.5rem)] overflow-hidden bg-white">
         {/* Halo circulaire gris très clair derrière la lampe (profondeur douce). */}
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0"
+          className="pointer-events-none absolute inset-x-0"
           style={{
+            top: STAGE_TOP,
+            bottom: STAGE_BOTTOM,
             background:
-              "radial-gradient(circle at 50% 52%, rgba(20,20,28,0.07) 0%, rgba(20,20,28,0.03) 32%, rgba(20,20,28,0) 60%)",
+              "radial-gradient(circle at 50% 50%, rgba(20,20,28,0.07) 0%, rgba(20,20,28,0.03) 32%, rgba(20,20,28,0) 60%)",
           }}
         />
 
         {mounted && (
           <div
-            className={`absolute inset-0 transition-opacity duration-700 ${
+            className={`absolute inset-x-0 transition-opacity duration-700 ${
               ready ? "opacity-100" : "opacity-0"
             }`}
+            style={{ top: STAGE_TOP, bottom: STAGE_BOTTOM }}
           >
             <ExplodedLamp3D
               partVariants={parts}
               lampOn={lampOn}
               warm={warm}
+              perforation={perforation}
               progressRef={progressRef}
               active={mounted}
               onCreated={() => setReady(true)}
@@ -167,46 +214,75 @@ function ExplodedScrollTrack() {
           </div>
         )}
 
-        {/* Couche d'annotations « planche de croquis » — apparaît en fin d'éclaté,
-            ancrée sur la projection 2D réelle des pièces (au-dessus du canvas). */}
+        {/* Couche d'annotations « planche de croquis » — se trace sur scène
+            immobile (acte 2), puis reste lisible tout le palier (acte 3). */}
         {mounted && (
           <ExplodedAnnotations
             scrollYProgress={scrollYProgress}
             anchorsRef={anchorsRef}
             reduce={!!reduce}
-            safeTop={badgeTop}
+            safeTop={STAGE_TOP}
+            stageBottom={STAGE_BOTTOM}
+            variant={variant}
           />
         )}
 
-        {/* Étiquette d'action (haut gauche) — badge « verre », persiste tout au
-            long de la piste (contrairement à l'invite du bas, qui s'efface dès
-            le début du scroll) : signale que la vue répond au scroll. Positionné
-            SOUS le titre de chapitre sticky (mesuré dynamiquement, voir plus haut) :
-            celui-ci reste épinglé par-dessus toute la section, opaque. */}
+        {/* Étiquette d'acte (haut gauche) — badge « verre » qui NOMME l'étape en
+            cours et montre l'avancement dans la piste. Il occupe le coin que le
+            titre de chapitre libère pendant l'épinglage. */}
         <div
           className="pointer-events-none absolute left-[1.4rem]"
-          style={{ top: badgeTop }}
+          style={{ top: STAGE_TOP }}
         >
-          <div className="btn-glass btn-glass-secondary inline-flex items-center gap-1.5 px-3 py-1.5">
-            <span className="u-index text-xs text-ink-muted">Vue éclatée</span>
-            <motion.svg
-              width="10"
-              height="10"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.4"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="text-ink-muted"
-              aria-hidden
-              animate={reduce ? undefined : { y: [0, 3, 0] }}
-              transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-            >
-              <path d="M12 5v14M6 13l6 6 6-6" />
-            </motion.svg>
+          <div className="btn-glass btn-glass-secondary inline-flex flex-col gap-1.5 px-3 py-1.5">
+            <div className="flex items-center gap-1.5">
+              <span className="u-index text-xs text-ink-muted">
+                {act === 0 ? "Désassemblage" : "Nomenclature"}
+              </span>
+              <motion.svg
+                width="10"
+                height="10"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="text-ink-muted"
+                aria-hidden
+                animate={reduce ? undefined : { y: [0, 3, 0] }}
+                transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+              >
+                <path d="M12 5v14M6 13l6 6 6-6" />
+              </motion.svg>
+            </div>
+            {/* Jauge en deux segments : où en est-on dans la scène. */}
+            <div aria-hidden className="flex gap-1">
+              {[act1Scale, act2Scale].map((scale, i) => (
+                <span key={i} className="h-[2px] w-8 overflow-hidden bg-ink/12">
+                  <motion.span
+                    className="u-accent-bg block h-full w-full origin-left"
+                    style={{ scaleX: reduce ? 1 : scale }}
+                  />
+                </span>
+              ))}
+            </div>
           </div>
         </div>
+
+        {/* Cartouche de planche (bas) — prend la place de l'invite au scroll
+            une fois celle-ci effacée. */}
+        <motion.div
+          style={{ opacity: reduce ? 1 : cartoucheOpacity }}
+          className="pointer-events-none absolute inset-x-0 bottom-6 flex flex-col items-center gap-1 px-[1.4rem] text-center"
+        >
+          <span className="u-eyebrow text-[0.6rem] tracking-[0.18em] text-ink-muted">
+            06 pièces · assemblage manuel
+          </span>
+          <span className="u-index text-[0.62rem] text-ink">
+            {variant.index} — {variant.name}
+          </span>
+        </motion.div>
 
         {/* Invite au scroll — s'efface dès le début du désassemblage. */}
         <motion.div
@@ -231,7 +307,7 @@ function ExplodedScrollTrack() {
             <path d="M12 5v14M6 13l6 6 6-6" />
           </motion.svg>
         </motion.div>
-      </motion.div>
+      </div>
     </div>
   );
 }

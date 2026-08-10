@@ -56,8 +56,8 @@ export const variants: ProductVariant[] = [
   {
     id: "prototype-noir-cable-bleu",
     index: "01",
-    name: "Noir brut & câble bleu",
-    materialsSummary: "WESTERIAL - Coquilles de moules · Acier brut · Câble bleu",
+    name: "Noir brut & câble textile bleu",
+    materialsSummary: "WESTERIAL - Coquilles de moules · Acier brut · Câble textile bleu",
     // Accent : le bleu franc du câble textile, signature de la pièce d'origine.
     accent: "#2a3fe6",
     accentOnDark: "#6f83ff",
@@ -66,7 +66,7 @@ export const variants: ProductVariant[] = [
     base: { label: "WESTERIAL - Coquilles de moules", color: "#1a1a1c" },
     // Bleu Klein (International Klein Blue, outremer profond). Seule la couleur
     // de base change ; le kind reste « fabric » (texture de tissage inchangée).
-    cable: { label: "Câble bleu", color: "#002FA7" },
+    cable: { label: "Câble textile bleu", color: "#002FA7" },
     description:
       "Le prototype d'origine : un noir brut et mat, l'âme claire du bois révélée à l'ouverture, ponctuée du bleu franc du câble textile.",
     image: "/images/prototype/trois-quarts.webp",
@@ -87,7 +87,7 @@ export const variants: ProductVariant[] = [
     base: { label: "Béton clair", color: "#9d9a91" },
     // Noir profond : le tissage textile éclaircit légèrement la teinte de base
     // sous l'éclairage ; une base plus sombre garantit un câble clairement noir.
-    cable: { label: "Câble noir", color: "#060608" },
+    cable: { label: "Câble textile noir", color: "#060608" },
     description:
       "Le grain minéral de la porcelaine contre la sècheresse du métal noir. Une lumière retenue, presque monacale.",
     image: "/images/variants/porcelaine-acier-noir.webp",
@@ -103,7 +103,7 @@ export const variants: ProductVariant[] = [
     shade: { label: "Wasterial® - Brique", color: "#9c4a39" },
     assembly: { label: "Aluminium", color: "#c7c9cb" },
     base: { label: "Wasterial® - Brique", color: "#9c4a39" },
-    cable: { label: "Câble noir", color: "#111113" },
+    cable: { label: "Câble textile noir", color: "#111113" },
     description:
       "La terre cuite chaude réveille l'aluminium froid. Une matière qui garde la mémoire du feu.",
     image: "/images/variants/brique-aluminium.webp",
@@ -119,7 +119,7 @@ export const variants: ProductVariant[] = [
     shade: { label: "Wasterial® - Coquilles d'huître", color: "#5e6440" },
     assembly: { label: "Inox", color: "#b7bab8" },
     base: { label: "Wasterial® - Verre de bouteille", color: "#2e3b2c" },
-    cable: { label: "Câble noir", color: "#111113" },
+    cable: { label: "Câble textile noir", color: "#111113" },
     description:
       "Le vert profond du verre recyclé, poli comme un galet. L'inox y dépose un reflet net.",
     image: "/images/variants/verre-bouteille-inox.webp",
@@ -135,7 +135,7 @@ export const variants: ProductVariant[] = [
     shade: { label: "Wasterial® - Coquilles d'huîtres", color: "#5e6440" },
     assembly: { label: "Laiton", color: "#b08a52" },
     base: { label: "Béton noir", color: "#1a1a1c" },
-    cable: { label: "Câble bordeaux", color: "#6d2a2f" },
+    cable: { label: "Câble textile bordeaux", color: "#6d2a2f" },
     description:
       "Un composite vert olive de coquilles d'huîtres broyées, mat et minéral, réchauffé par le laiton. Une matière recyclée, artisanale.",
     image: "/images/variants/coquille-laiton.webp",
@@ -157,7 +157,7 @@ export const variants: ProductVariant[] = [
     // Câble teinté de la couleur des « Billes de verre » (#2b3a54). Seule la
     // couleur de base change ; le kind reste « fabric » (texture de tissage,
     // relief, roughness inchangés) → câble mat/souple réaliste, teinte navy.
-    cable: { label: "Câble bleu", color: "#2b3a54" },
+    cable: { label: "Câble textile bleu", color: "#2b3a54" },
     description:
       "Un bleu de fumée, granuleux, traversé par la lumière. L'acier anodisé prolonge la fraîcheur.",
     image: "/images/variants/verre-bleu-acier-anodise.webp",
@@ -173,13 +173,34 @@ export const variants: ProductVariant[] = [
     shade: { label: "Porcelaine", color: "#e7e2d8" },
     assembly: { label: "Époxy mat cobalt", color: "#2b4cd4" },
     base: { label: "Béton clair", color: "#9d9a91" },
-    cable: { label: "Câble bleu", color: "#2f4fd0" },
+    cable: { label: "Câble textile bleu", color: "#2f4fd0" },
     description:
       "La blancheur de la porcelaine ponctuée d'un cobalt franc. Le geste graphique d'un trait de couleur.",
     image: "/images/variants/porcelaine-epoxy-mat.webp",
     alt: "Lampe Noir Minéral en porcelaine claire avec pièce d'assemblage peinte en époxy mat cobalt.",
   },
 ];
+
+/**
+ * PERFORATION de la pièce d'assemblage — option de configuration à part entière.
+ *
+ * Déclarée ici, avec les variantes, et non dans le composant 3D : c'est une
+ * caractéristique du produit, au même titre qu'une matière. Elle peut donc être
+ * lue ailleurs (fiche, résumé, formulaire de contact) sans dépendre du viewer.
+ */
+export type PerforationShape = "round" | "square" | "none";
+
+export const perforationOptions: {
+  value: PerforationShape;
+  /** Libellé court affiché dans le contrôle. */
+  label: string;
+}[] = [
+  { value: "round", label: "Ronde" },
+  { value: "square", label: "Carrée" },
+  { value: "none", label: "Aucune" },
+];
+
+export const defaultPerforation: PerforationShape = "square";
 
 export const defaultVariantId = variants[0].id;
 
@@ -201,7 +222,7 @@ export interface ProductShot {
 export const prototypeShots: ProductShot[] = [
   {
     src: "/images/prototype/trois-quarts.webp",
-    alt: "Vue de trois-quarts avant de la lampe Noir Minéral, abat-jour incliné, ampoule visible et câble bleu.",
+    alt: "Vue de trois-quarts avant de la lampe Noir Minéral, abat-jour incliné, ampoule visible et câble textile bleu.",
     caption: "Trois-quarts",
   },
   {
@@ -216,7 +237,7 @@ export const prototypeShots: ProductShot[] = [
   },
   {
     src: "/images/prototype/eclate.webp",
-    alt: "Vue éclatée de la lampe Noir Minéral : abat-jour, grille métallique, douille, pied et câble bleu.",
+    alt: "Vue éclatée de la lampe Noir Minéral : abat-jour, grille métallique, douille, pied et câble textile bleu.",
     caption: "Vue éclatée",
   },
 ];
@@ -246,7 +267,7 @@ export const productSpecs: SpecField[] = [
   // Renseignés à partir des visuels fournis (observables) :
   { key: "type", label: "Type", value: "Lampe de table sculpturale" },
   { key: "assembly", label: "Structure", value: "Trois volumes assemblés (abat-jour, pièce métallique, pied)" },
-  { key: "cable", label: "Câble", value: "Câble textile (couleur selon configuration)" },
+  { key: "cable", label: "Câble textile", value: "Gaine tissée (couleur selon configuration)" },
   { key: "unique", label: "Fabrication", value: "Pièce d'atelier, assemblage manuel" },
 
   // TODO — à renseigner par l'atelier, ne pas inventer :

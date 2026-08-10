@@ -1,0 +1,25 @@
+# Normalisation des fins de ligne.
+# Le dépôt stocke du LF ; chaque poste garde ses fins de ligne natives.
+# Sans ce fichier, le comportement dépend du réglage `core.autocrlf` de chaque
+# machine : le même dépôt apparaît « tout modifié » vu depuis Linux et propre
+# vu depuis Windows.
+* text=auto
+
+# Fichiers BINAIRES : git ne doit jamais y toucher aux fins de ligne.
+# Les sources CAO en particulier : une conversion CRLF/LF sur un .IGS peut le
+# rendre illisible par le convertisseur (`npm run cad`).
+*.IGS  -text
+*.igs  -text
+*.glb  -text
+*.gltf -text
+*.woff -text
+*.woff2 -text
+*.png  -text
+*.jpg  -text
+*.jpeg -text
+*.webp -text
+*.avif -text
+*.ico  -text
+
+# Diff plus lisible pour les verrous de dépendances (bruit inévitable).
+package-lock.json -diff linguist-generated

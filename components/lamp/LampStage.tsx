@@ -4,7 +4,11 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import Image from "next/image";
 import dynamic from "next/dynamic";
 import { motion, useAnimationControls, useReducedMotion } from "framer-motion";
-import { variants } from "@/data/product";
+import {
+  variants,
+  perforationOptions,
+  type PerforationShape,
+} from "@/data/product";
 import { useSelection } from "@/components/SelectionProvider";
 import { buttonMotion } from "@/components/ui/motion";
 import type { PartVariants } from "@/components/hero/Lamp3D";
@@ -55,7 +59,8 @@ export function LampStage({
   showControls?: boolean;
   imageSizes?: string;
 }) {
-  const { variant, lampOn, setLampOn, warm, setWarm } = useSelection();
+  const { variant, lampOn, setLampOn, warm, setWarm, perforation, setPerforation } =
+    useSelection();
   const reduce = useReducedMotion();
 
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -164,6 +169,7 @@ export function LampStage({
               spin={spin}
               lampOn={lampOn}
               warm={warm}
+              perforation={perforation}
               camera={camera}
               fov={fov}
               onCreated={() => setReady3D(true)}
@@ -175,10 +181,17 @@ export function LampStage({
       {/* Contrôles d'éclairage — plats, nets, sans verre ni ombre. */}
       {showControls && use3D && (
         <div
-          className={`absolute bottom-3 right-3 z-10 flex items-center gap-2 transition-opacity duration-300 sm:bottom-4 sm:right-4 ${
+          // Les contrôles SORTENT du cadre de la scène : posés en dessous, sur
+          // le blanc, plutôt qu'en surimpression sur la lampe. Ils empiétaient
+          // sur le produit — et sur un configurateur, c'est l'objet qui doit
+          // occuper l'image, pas l'outillage. Rien ne les découpe puisque la
+          // scène n'a plus d'`overflow-hidden` ; l'espace qu'ils prennent est
+          // réservé sous la scène, donc la lampe ne change pas de taille.
+          className={`absolute -bottom-5 right-[1.4rem] z-10 flex items-center gap-2 transition-opacity duration-300 ${
             ready3D ? "opacity-100" : "pointer-events-none opacity-0"
           }`}
         >
+          <PerforationControl value={perforation} onSelect={setPerforation} />
           <LightTempControl warm={warm} onSelect={setWarm} />
           <LampPowerButton on={lampOn} onToggle={() => setLampOn(!lampOn)} />
         </div>
@@ -205,6 +218,64 @@ function LampPowerButton({ on, onToggle }: { on: boolean; onToggle: () => void }
     >
       <BulbIcon on={on} />
     </motion.button>
+  );
+}
+
+/**
+ * Sélecteur de PERFORATION — contrôle segmenté « verre », ronde / carrée / aucune.
+ *
+ * Même famille visuelle que la température de lumière : aucun panneau, aucune
+ * carte, trois pictogrammes sobres qui montrent la forme du poinçon plutôt que
+ * de la nommer. Le nom reste disponible pour les technologies d'assistance.
+ */
+function PerforationControl({
+  value,
+  onSelect,
+}: {
+  value: PerforationShape;
+  onSelect: (shape: PerforationShape) => void;
+}) {
+  return (
+    <div role="group" aria-label="Perforation de l'assemblage" className="btn-glass-group">
+      {perforationOptions.map((o) => (
+        <TempOption
+          key={o.value}
+          active={value === o.value}
+          onClick={() => onSelect(o.value)}
+          label={`Perforation ${o.label.toLowerCase()}`}
+          icon={<PerforationIcon shape={o.value} />}
+        />
+      ))}
+    </div>
+  );
+}
+
+/** Pictogrammes : un cercle, un carré, une surface pleine. */
+function PerforationIcon({ shape }: { shape: PerforationShape }) {
+  const common = {
+    width: 15,
+    height: 15,
+    viewBox: "0 0 24 24",
+    stroke: "currentColor",
+    strokeWidth: 1.7,
+    "aria-hidden": true as const,
+  };
+  if (shape === "round")
+    return (
+      <svg {...common} fill="none">
+        <circle cx="12" cy="12" r="6.5" />
+      </svg>
+    );
+  if (shape === "square")
+    return (
+      <svg {...common} fill="none">
+        <rect x="5.5" y="5.5" width="13" height="13" rx="1.5" />
+      </svg>
+    );
+  return (
+    <svg {...common} fill="currentColor" fillOpacity={0.5}>
+      <rect x="5.5" y="5.5" width="13" height="13" rx="1.5" />
+    </svg>
   );
 }
 

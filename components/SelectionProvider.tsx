@@ -9,8 +9,10 @@ import {
   useState,
 } from "react";
 import {
+  defaultPerforation,
   defaultVariantId,
   getVariant,
+  type PerforationShape,
   type ProductVariant,
 } from "@/data/product";
 import { track } from "@/lib/analytics";
@@ -28,18 +30,28 @@ interface SelectionContextValue {
   /** Température de lumière : chaude (true) / froide (false). */
   warm: boolean;
   setWarm: (warm: boolean) => void;
+  /** Géométrie des perforations de la pièce d'assemblage. */
+  perforation: PerforationShape;
+  setPerforation: (shape: PerforationShape) => void;
 }
 
 const SelectionContext = createContext<SelectionContextValue | null>(null);
 
 const STORAGE_KEY = "etnisi:variant";
+const PERFORATION_KEY = "etnisi:perforation";
 
 export function SelectionProvider({ children }: { children: React.ReactNode }) {
   const [selectedId, setSelectedId] = useState<string>(defaultVariantId);
   const [quantity, setQuantity] = useState<number>(1);
-  // État lumineux partagé — lampe allumée / lumière chaude par défaut.
-  const [lampOn, setLampOn] = useState<boolean>(true);
+  // État lumineux partagé. La lampe démarre ÉTEINTE : l'allumage est un geste
+  // de l'utilisateur, pas un état imposé. On voit donc d'abord la pièce et ses
+  // matières telles quelles, sous le seul éclairage de studio ; la lumière n'est
+  // ajoutée que si on la demande. Le bouton reflète cet état dès le départ.
+  const [lampOn, setLampOn] = useState<boolean>(false);
   const [warm, setWarm] = useState<boolean>(true);
+  // Option produit, mémorisée le temps de la session comme la variante.
+  const [perforation, setPerforationState] =
+    useState<PerforationShape>(defaultPerforation);
 
   // Diffuse la couleur dominante de la variante sélectionnée à toute la page
   // (var CSS `--accent`). Centralisé ici → cohérent quel que soit le chapitre
@@ -61,6 +73,27 @@ export function SelectionProvider({ children }: { children: React.ReactNode }) {
     } catch {
       /* sessionStorage indisponible : on garde la valeur par défaut. */
     }
+  }, []);
+
+  useEffect(() => {
+    try {
+      const stored = window.sessionStorage.getItem(PERFORATION_KEY);
+      if (stored === "round" || stored === "square" || stored === "none") {
+        setPerforationState(stored);
+      }
+    } catch {
+      /* sessionStorage indisponible : on garde la valeur par défaut. */
+    }
+  }, []);
+
+  const setPerforation = useCallback((shape: PerforationShape) => {
+    setPerforationState(shape);
+    try {
+      window.sessionStorage.setItem(PERFORATION_KEY, shape);
+    } catch {
+      /* ignore */
+    }
+    track("perforation_selected", { shape });
   }, []);
 
   const select = useCallback(
@@ -94,8 +127,10 @@ export function SelectionProvider({ children }: { children: React.ReactNode }) {
       setLampOn,
       warm,
       setWarm,
+      perforation,
+      setPerforation,
     }),
-    [selectedId, quantity, select, lampOn, warm]
+    [selectedId, quantity, select, lampOn, warm, perforation, setPerforation]
   );
 
   return (

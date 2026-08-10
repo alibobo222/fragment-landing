@@ -9,6 +9,7 @@
  * Aucune image distante : la texture de bruit est générée en canvas.
  */
 import * as THREE from "three";
+import type { PerforationShape } from "@/data/product";
 
 export type MaterialKind =
   | "porcelain"
@@ -921,6 +922,69 @@ function getBlueTerrazzoTexture(): THREE.Texture {
  * `both: true` → la texture couvre AUSSI les faces intérieures (abat-jour vu
  * de l'intérieur), avec la même échelle/orientation (triplanar object-space).
  */
+/**
+ * TÔLE PERFORÉE — réglages de la pièce d'assemblage.
+ *
+ * Contrainte de départ : le GLB issu de la CAO n'a **pas de coordonnées UV**.
+ * Une `alphaMap` classique, qui s'échantillonne en UV, est donc hors de portée —
+ * c'est d'ailleurs la raison d'être du grain triplanar déjà en place. Les trous
+ * sont par conséquent calculés dans le shader, en espace OBJET, et évacués par
+ * `discard` : ce sont de vraies zones vides, pas des pastilles sombres peintes.
+ * On voit réellement à travers, y compris l'intérieur de la pièce (le matériau
+ * est en `DoubleSide`), et aucun sommet n'est ajouté à la géométrie.
+ *
+ * La projection n'est pas triplanaire mais mono-planaire par AXE DOMINANT de la
+ * normale : sur une tôle pliée, chaque facette est ainsi percée perpendiculai-
+ * rement à elle-même, et les deux faces d'une même facette partagent les mêmes
+ * coordonnées objet — le trou traverse donc réellement la tôle au lieu de
+ * produire deux motifs décalés.
+ *
+ * FORME — poinçon CARRÉ, en rangées et colonnes alignées.
+ *
+ * Deux choix accompagnent le passage du rond au carré, et méritent d'être
+ * explicités :
+ *
+ *   1. L'alignement. Les trous ronds étaient en maille hexagonale (une rangée
+ *      sur deux décalée d'un demi-pas), qui est la maille standard du poinçon
+ *      circulaire. Le poinçon carré, lui, se pose toujours en grille droite —
+ *      c'est ce que montre la photo de référence, et c'est mécaniquement lié au
+ *      fait que les ponts de matière restent alors rectilignes. Décaler des
+ *      carrés produirait un motif qui n'existe pas en tôlerie.
+ *
+ *   2. La taille. `radius` est désormais le DEMI-CÔTÉ, plus un rayon. Sa valeur
+ *      est calculée pour conserver EXACTEMENT la même surface ouverte qu'avec
+ *      les ronds — un carré de demi-côté s ouvre 4s², un cercle de rayon r ouvre
+ *      πr². Avec r = 0,3 : s = √(π × 0,09) / 2 ≈ 0,266. Le pas, la densité et le
+ *      taux de vide sont donc inchangés ; seule la forme du trou change.
+ */
+const PERFORATION = {
+  /** Mailles par unité objet. C'est LE réglage de densité : augmenter = trous
+   *  plus petits et plus serrés.
+   *
+   *  Valeur RELEVÉE SUR LA PHOTO du prototype, et non réglée à vue. La tôle
+   *  mesure 0,1524 de large (mesure faite sur le GLB) ; sur la photo, sa partie
+   *  ajourée compte de l'ordre de trente-cinq à quarante trous en travers. Un
+   *  pas de 1/250 donne 38 trous sur la largeur et 22 rangées sur la hauteur
+   *  (0,0903), ce qui correspond. */
+  scale: 250,
+  /** Demi-côté du carré, en fraction de la maille (0,30 → côté = 60 % du pas).
+   *  Proportion trou / pont de matière relevée elle aussi sur la photo : les
+   *  ponts y sont nettement plus fins que le trou. */
+  radius: 0.3,
+  /** Congé d'angle, en fraction du demi-côté. Un poinçon réel ne laisse jamais
+   *  d'angle parfaitement vif : ce très léger arrondi évite l'aspect « pixel ».  */
+  corner: 0.22,
+  /**
+   * Rayon du poinçon ROND, en fraction de la maille.
+   *
+   * Calculé pour ouvrir EXACTEMENT la même surface que le carré, afin que passer
+   * d'une forme à l'autre ne change que le dessin du trou — jamais la densité ni
+   * la sensation de vide. Un carré de demi-côté s ouvre 4s², un cercle de rayon r
+   * ouvre πr² : avec s = 0,30, r = √(4·0,09/π) ≈ 0,3385.
+   */
+  roundRadius: 0.3385,
+} as const;
+
 const COMPOSITE: Record<
   string,
   { tex: () => THREE.Texture; scale: number; bump: number; rough: number; both?: boolean }
@@ -975,6 +1039,15 @@ export function createGrainMaterial(
   };
   // Texture intérieure optionnelle (placage bois). composite 0 = désactivé.
   mat.userData.interior = { composite: 0, scale: WOOD_VENEER_SCALE, tex: null as THREE.Texture | null };
+  // Perforation (tôle) — désactivée par défaut : seule la pièce d'assemblage
+  // l'active, via applyPerforation.
+  mat.userData.perf = {
+    mode: 0,
+    scale: PERFORATION.scale,
+    radius: PERFORATION.radius,
+    corner: PERFORATION.corner,
+    round: PERFORATION.roundRadius,
+  };
 
   mat.onBeforeCompile = (shader) => {
     shader.uniforms.uGrainTex = { value: texture ?? getNoiseTexture() };
@@ -997,6 +1070,15 @@ export function createGrainMaterial(
     shader.uniforms.uInteriorTex = { value: mat.userData.interior.tex ?? getNoiseTexture() };
     shader.uniforms.uInteriorComposite = { value: mat.userData.interior.composite };
     shader.uniforms.uInteriorScale = { value: mat.userData.interior.scale };
+    // Tôle perforée (voir PERFORATION). Piloté par uniforme : le code est
+    // compilé pour tous les matériaux, mais n'a d'effet que là où on l'allume —
+    // donc aucune recompilation au changement de configuration.
+    shader.uniforms.uPerfMode = { value: mat.userData.perf.mode };
+    shader.uniforms.uPerfScale = { value: mat.userData.perf.scale };
+    shader.uniforms.uPerfRadius = { value: mat.userData.perf.radius };
+    shader.uniforms.uPerfCorner = { value: mat.userData.perf.corner };
+    shader.uniforms.uPerfRound = { value: mat.userData.perf.round };
+    // Filetage hélicoïdal, appliqué à la face INTÉRIEURE seulement.
 
     shader.vertexShader = shader.vertexShader
       .replace(
@@ -1012,6 +1094,15 @@ export function createGrainMaterial(
 
     shader.fragmentShader = shader.fragmentShader
       .replace(
+        "#include <clipping_planes_fragment>",
+        `#include <clipping_planes_fragment>
+        // TÔLE PERFORÉE : le fragment situé dans un trou est purement et
+        // simplement abandonné. Vraie transparence (on voit à travers), aucun
+        // tri d'alpha à gérer, aucun sommet ajouté. Placé en tête de main() pour
+        // ne pas payer l'éclairage de fragments qui seront jetés.
+        if (uPerfMode > 0.5 && perforationSDF() < 0.0) discard;`
+      )
+      .replace(
         "#include <common>",
         `#include <common>
         varying vec3 vGrainPos; varying vec3 vGrainNrm;
@@ -1021,6 +1112,37 @@ export function createGrainMaterial(
         uniform float uCompositeScale; uniform float uCompositeBump; uniform float uCompositeRough;
         uniform float uCompositeBoth;
         uniform sampler2D uInteriorTex; uniform float uInteriorComposite; uniform float uInteriorScale;
+        uniform float uPerfMode; uniform float uPerfScale; uniform float uPerfRadius;
+        uniform float uPerfCorner; uniform float uPerfRound;
+        // Distance SIGNÉE au trou carré le plus proche (négative = dans le trou).
+        // Grille DROITE, rangées et colonnes alignées : c'est la maille du
+        // poinçon carré en tôlerie, celle de la photo de référence, et celle qui
+        // laisse des ponts de matière rectilignes.
+        // Le carré est une « rounded box » : uPerfRadius est le demi-côté,
+        // uPerfCorner le congé d'angle — un poinçon réel n'a pas d'angle vif.
+        float perforationSDF() {
+          vec3 pan = abs(normalize(vGrainNrm));
+          vec2 pp;
+          if (pan.x >= pan.y && pan.x >= pan.z) pp = vGrainPos.yz;
+          else if (pan.y >= pan.z) pp = vGrainPos.xz;
+          else pp = vGrainPos.xy;
+          vec2 g = pp * uPerfScale;
+          if (uPerfMode > 1.5) {
+            // CARRÉ — grille droite, « rounded box ». Le poinçon carré se pose
+            // toujours en rangées et colonnes alignées : c'est ce qui laisse des
+            // ponts de matière rectilignes.
+            vec2 a = abs(fract(g) - 0.5);
+            float k = uPerfRadius * uPerfCorner;
+            vec2 d = a - vec2(uPerfRadius - k);
+            return min(max(d.x, d.y), 0.0) + length(max(d, vec2(0.0))) - k;
+          }
+          // ROND — maille hexagonale, une rangée sur deux décalée d'un demi-pas.
+          // C'est la maille standard du poinçon circulaire, celle qui préserve la
+          // résistance mécanique. Le PAS est identique à celui du carré : seule la
+          // forme du trou change, pas la densité.
+          g.x += mod(floor(g.y), 2.0) * 0.5;
+          return length(fract(g) - 0.5) - uPerfRound;
+        }
         vec3 triBlend() {
           // Mélange triplanar ADOUCI : la transition entre les 3 plans est
           // fondue (pas de ligne de couture nette). L'exposant modéré garde une
@@ -1094,7 +1216,8 @@ export function createGrainMaterial(
         // Intérieur en placage bois : finition légèrement satinée (verni léger).
         if (gl_FrontFacing && uInteriorComposite > 0.5) {
           roughnessFactor = 0.5;
-        }`
+        }
+        `
       )
       .replace(
         "#include <normal_fragment_maps>",
@@ -1188,6 +1311,53 @@ export function applyInteriorVeneer(
     shader.uniforms.uInteriorComposite.value = enabled ? 1 : 0;
     shader.uniforms.uInteriorScale.value = WOOD_VENEER_SCALE;
     if (enabled) shader.uniforms.uInteriorTex.value = getWoodVeneerTexture();
+  }
+}
+
+/**
+ * Active (ou désactive) l'aspect TÔLE PERFORÉE sur un matériau.
+ *
+ * À n'appeler que pour la pièce d'assemblage. La géométrie, la silhouette, les
+ * dimensions, la position et la finition métallique restent strictement
+ * inchangées : seule la surface est percée. Aucune recompilation de shader.
+ */
+/** Traduction de l'option produit en mode shader. */
+const PERF_MODE: Record<PerforationShape, number> = {
+  none: 0,
+  round: 1,
+  square: 2,
+};
+
+/**
+ * Applique la géométrie de perforation à un matériau — la pièce d'assemblage.
+ *
+ * UN SEUL matériau, UNE SEULE géométrie, trois états : le changement se réduit à
+ * un uniforme. Pas de mesh alternatif, pas de recompilation de shader, donc une
+ * bascule instantanée et sans le moindre déplacement de la pièce. La forme
+ * extérieure, les dimensions, la position, l'orientation et la finition
+ * métallique sont, par construction, hors d'atteinte de ce réglage.
+ */
+export function applyPerforation(
+  mat: THREE.MeshPhysicalMaterial,
+  shape: PerforationShape
+) {
+  const mode = PERF_MODE[shape] ?? 0;
+  mat.userData.perf = {
+    mode,
+    scale: PERFORATION.scale,
+    radius: PERFORATION.radius,
+    corner: PERFORATION.corner,
+    round: PERFORATION.roundRadius,
+  };
+  const shader = mat.userData.shader as
+    | { uniforms: Record<string, { value: unknown }> }
+    | undefined;
+  if (shader) {
+    shader.uniforms.uPerfMode.value = mode;
+    shader.uniforms.uPerfScale.value = PERFORATION.scale;
+    shader.uniforms.uPerfRadius.value = PERFORATION.radius;
+    shader.uniforms.uPerfCorner.value = PERFORATION.corner;
+    shader.uniforms.uPerfRound.value = PERFORATION.roundRadius;
   }
 }
 

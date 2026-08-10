@@ -97,13 +97,15 @@
     box-shadow: 0 0 80px rgba(0, 0, 0, 0.06);
   }
 
-  /* Titres monolithiques : grotesque contemporain (Overused Grotesk), masse
-     éditoriale, tracking serré et interligne compact. */
+  /* Titres : grotesque contemporain (Overused Grotesk). Graisse et tracking calés
+     sur le logotype FRAGMENT — lettres semi-grasses, dessin ouvert, jamais massif.
+     Le tracking négatif est volontairement léger : il compensait une graisse 800,
+     il serait excessif à 600. */
   h1, h2, h3 {
     font-family: var(--font-display);
-    font-weight: 800;
-    letter-spacing: -0.028em;
-    line-height: 0.94;
+    font-weight: 600;
+    letter-spacing: -0.008em;
+    line-height: 0.98;
     text-wrap: balance;
   }
 
@@ -173,20 +175,20 @@
     margin-inline: -1.4rem;
   }
 
-  /* Titre héroïque (rem fixe — colonne mobile). */
+  /* Titre héroïque (rem fixe — colonne mobile), même graisse que le logotype. */
   .u-fluid-display {
     font-size: 3.1rem;
-    font-weight: 900;
-    letter-spacing: -0.032em;
-    line-height: 0.92;
+    font-weight: 600;
+    letter-spacing: -0.012em;
+    line-height: 0.96;
   }
 
-  /* Titre de section : grand, monolithique, masse éditoriale (Overused Grotesk). */
+  /* Titre de section : grand et ouvert, à la graisse du logotype (Overused Grotesk). */
   .u-title {
     font-size: 2.1rem;
-    font-weight: 900;
-    line-height: 0.95;
-    letter-spacing: -0.028em;
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: -0.006em;
   }
 
   /* ------------------------------------------------------------------ *

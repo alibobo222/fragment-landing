@@ -41,6 +41,17 @@ jobs:
           fi
 
       - run: npm ci
+
+      # --- Garde-fous : rien ne part en production sans ces trois feux verts. ---
+      - name: Vérification des types
+        run: npm run typecheck
+
+      - name: Analyse statique (lint)
+        run: npm run lint
+
+      - name: Tests unitaires
+        run: npm run test
+
       - run: npm run build   # next build → export statique dans ./out (lit PAGES_BASE_PATH)
 
       - uses: actions/configure-pages@v5

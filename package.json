@@ -13,7 +13,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "assets": "node scripts/prepare-assets.mjs",
-    "cad": "node scripts/convert-cad.mjs"
+    "cad": "node scripts/convert-cad.mjs",
+    "packshots": "node scripts/render-packshots.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.7",
