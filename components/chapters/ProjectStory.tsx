@@ -101,7 +101,7 @@ export function ProjectStory() {
         </figure>
 
         {/* Fabrication */}
-        <Text eyebrow="Logique constructive" title="Simple à fabriquer, à assembler">
+        <Text eyebrow="Logique constructiviste" title="Simple à fabriquer, à assembler">
           Chaque pièce est pensée pour être facile à produire et à monter. Peu de
           composants, des jonctions lisibles, une logique de construction
           évidente. La forme naît autant des contraintes de l&apos;atelier que de
