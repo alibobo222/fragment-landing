@@ -184,6 +184,37 @@ function VariantPicker({
 }) {
   const rowRef = useRef<HTMLDivElement>(null);
   const activeRef = useRef<HTMLLabelElement>(null);
+  const fadeLeftRef = useRef<HTMLDivElement>(null);
+  const fadeRightRef = useRef<HTMLDivElement>(null);
+
+  // DÉBORDEMENT — la rangée contient sept vignettes pour une colonne qui en
+  // affiche quatre ou cinq, et sa barre de défilement est masquée : rien ne
+  // signalait qu'il y avait une suite. Un dégradé apparaît donc du côté où du
+  // contenu reste hors champ, et disparaît en bout de course. L'indice est
+  // HONNÊTE — il ne s'affiche jamais s'il n'y a rien de plus à voir — et il
+  // évite d'ajouter des flèches ou une barre, qui alourdiraient l'interface.
+  useEffect(() => {
+    const row = rowRef.current;
+    if (!row) return;
+    const update = () => {
+      const max = row.scrollWidth - row.clientWidth;
+      const x = row.scrollLeft;
+      if (fadeLeftRef.current)
+        fadeLeftRef.current.style.opacity = String(Math.min(1, x / 24));
+      if (fadeRightRef.current)
+        fadeRightRef.current.style.opacity = String(
+          Math.min(1, Math.max(0, max - x) / 24)
+        );
+    };
+    update();
+    row.addEventListener("scroll", update, { passive: true });
+    const ro = new ResizeObserver(update);
+    ro.observe(row);
+    return () => {
+      row.removeEventListener("scroll", update);
+      ro.disconnect();
+    };
+  }, []);
 
   // Recentre la vignette active quand la sélection vient d'ailleurs (clavier,
   // restauration de session). Défilement HORIZONTAL uniquement : on pilote
@@ -198,7 +229,21 @@ function VariantPicker({
   }, [selectedId]);
 
   return (
-    <div
+    <div className="relative">
+      {/* Dégradés de débordement, gauche et droite. */}
+      <div
+        ref={fadeLeftRef}
+        aria-hidden
+        className="pointer-events-none absolute inset-y-0 left-0 z-10 w-10 bg-gradient-to-r from-white to-transparent"
+        style={{ opacity: 0 }}
+      />
+      <div
+        ref={fadeRightRef}
+        aria-hidden
+        className="pointer-events-none absolute inset-y-0 right-0 z-10 w-10 bg-gradient-to-l from-white to-transparent"
+        style={{ opacity: 0 }}
+      />
+      <div
       ref={rowRef}
       role="radiogroup"
       aria-label="Configurations disponibles"
@@ -257,6 +302,7 @@ function VariantPicker({
           </label>
         );
       })}
+      </div>
     </div>
   );
 }
