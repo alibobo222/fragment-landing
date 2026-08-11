@@ -270,6 +270,16 @@ function LampModel({
     invalidate();
   }, [materials, partVariants, perforation, invalidate, spot, point]);
 
+  // Libère les matériaux créés par ce montage (un par pièce, voir useMemo
+  // ci-dessus) : sans ça, chaque aller-retour de scroll en laisse derrière lui.
+  // Les géométries, elles, viennent du GLTF mis en cache par drei et sont
+  // partagées entre scènes — jamais disposées ici.
+  useEffect(() => {
+    return () => {
+      for (const mat of Object.values(materials)) mat?.dispose();
+    };
+  }, [materials]);
+
   // Libère la texture de bruit au démontage.
   useEffect(() => () => disposeLampTextures(), []);
 

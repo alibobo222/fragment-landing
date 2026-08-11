@@ -488,6 +488,14 @@ function ExplodedModel({
   // en laisse une derrière lui.
   useEffect(() => () => thread?.geometry.dispose(), [thread]);
 
+  // Libère les matériaux créés par ce montage (un par pièce, voir useMemo
+  // ci-dessus) : même raison que la géométrie du filet ci-dessus.
+  useEffect(() => {
+    return () => {
+      for (const mat of Object.values(materials)) mat?.dispose();
+    };
+  }, [materials]);
+
   // Ancre de l'ombre de contact : suit le pied dans les TROIS axes, lue chaque
   // frame sur sa matrice monde (voir useFrame plus bas).
   const shadowAnchorRef = useRef<THREE.Group>(null);

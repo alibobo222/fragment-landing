@@ -1029,6 +1029,9 @@ export function createGrainMaterial(
     envMapIntensity: 0.6,
     clearcoat: 0.05, // non nul → chemin clearcoat compilé, puis modulable
   });
+  // Sans clé stable, un onBeforeCompile personnalisé casse le cache de
+  // programmes de three.js : chaque instance recompile son propre shader.
+  mat.customProgramCacheKey = () => "lamp-grain-v1";
   // Le grain ET la matière composite sont stockés dans userData → l'init du
   // shader (onBeforeCompile, lazy) lit ces valeurs, quel que soit l'ordre
   // vis-à-vis d'applyProfile (sinon la config par défaut garde la texture par
