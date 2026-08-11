@@ -42,6 +42,11 @@ const title = `${siteConfig.productName} — ${siteConfig.baseline}`;
 const description =
   "Noir Minéral est une lampe sculpturale brutaliste, composée de matières que vous choisissez : porcelaine, brique, verre, inox, laiton. Une forme, plusieurs matières, votre composition.";
 
+// siteUrl porte le sous-chemin GitHub Pages (/fragment-landing) : une URL
+// relative commençant par "/" résolue contre metadataBase l'écraserait
+// (RFC 3986). On le réinjecte donc explicitement dans les chemins relatifs.
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";
+
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.siteUrl),
   title: {
@@ -50,7 +55,7 @@ export const metadata: Metadata = {
   },
   description,
   applicationName: siteConfig.brandName,
-  alternates: { canonical: "/" },
+  alternates: { canonical: `${basePath}/` },
   openGraph: {
     type: "website",
     locale: "fr_FR",
@@ -60,7 +65,7 @@ export const metadata: Metadata = {
     description,
     images: [
       {
-        url: "/images/og.webp",
+        url: `${basePath}/images/og.webp`,
         width: 1200,
         height: 630,
         alt: "La lampe sculpturale Noir Minéral.",
@@ -71,7 +76,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title,
     description,
-    images: ["/images/og.webp"],
+    images: [`${basePath}/images/og.webp`],
   },
   robots: { index: true, follow: true },
   icons: {

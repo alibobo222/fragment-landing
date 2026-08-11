@@ -74,8 +74,8 @@ export const siteConfig: SiteConfig = {
   analyticsProvider: "none",
   analyticsId: null,
 
-  // TODO: remplacer par le domaine de production une fois déployé.
-  siteUrl: "https://noirmineral.studio",
+  // URL GitHub Pages réelle du dépôt (alibobo222/fragment-landing).
+  siteUrl: "https://alibobo222.github.io/fragment-landing",
 };
 
 /** Libellé du CTA final dérivé du mode commercial. */
