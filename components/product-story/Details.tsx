@@ -4,10 +4,13 @@ import { productSpecs } from "@/data/product";
 
 /**
  * Fiche technique — datasheet mono (nomenclature). Uniquement les données
- * réellement disponibles ; les champs non renseignés → « à venir » (aucune
- * valeur inventée). Aucune donnée commerciale.
+ * réellement disponibles ; les champs non renseignés (`value: null` dans
+ * `data/product.ts`) sont filtrés à l'affichage, pas inventés. Le paragraphe
+ * qui suit explique déjà qu'ils se précisent au cas par cas. Aucune donnée
+ * commerciale.
  */
 export function Details() {
+  const specs = productSpecs.filter((spec) => spec.value !== null);
   return (
     <section id="details" aria-labelledby="details-title" className="scroll-mt-16 bg-white pt-4 pb-20">
       <SectionHeading
@@ -19,7 +22,7 @@ export function Details() {
       <div className="u-container">
         <Reveal delay={0.05}>
           <dl className="mt-1 border-t border-ink">
-            {productSpecs.map((spec) => (
+            {specs.map((spec) => (
               <div
                 key={spec.key}
                 className="flex items-baseline justify-between gap-5 border-b border-line py-3.5"
@@ -27,13 +30,7 @@ export function Details() {
                 <dt className="u-mono shrink-0 text-[0.72rem] uppercase tracking-[0.12em] text-ink-muted">
                   {spec.label}
                 </dt>
-                <dd
-                  className={`u-mono text-right text-[0.82rem] ${
-                    spec.value ? "text-ink" : "text-ink-muted/60"
-                  }`}
-                >
-                  {spec.value ?? "— à venir"}
-                </dd>
+                <dd className="u-mono text-right text-[0.82rem] text-ink">{spec.value}</dd>
               </div>
             ))}
           </dl>
