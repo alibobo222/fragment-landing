@@ -294,42 +294,76 @@ function closeHoles(part, weldTol = 1.4) {
 }
 
 /**
- * Lisse les normales aux coutures entre patchs : moyenne les normales des
- * sommets COÏNCIDENTS (même position) SANS toucher à la géométrie ni à la
- * topologie → supprime les crêtes de couture, sans bosseler (contrairement à
- * un recalcul complet sur maillage grossier).
+ * Soude les sommets EXACTEMENT coïncidents (jonctions de patchs OCCT) et
+ * recalcule leurs normales à partir de la topologie fusionnée, plutôt que de
+ * faire confiance aux normales analytiques d'occt à ces coutures.
+ *
+ * Pourquoi pas smoothSeamNormals (ancienne tentative, jamais branchée) : elle
+ * moyennait les normales EXISTANTES sans souder la topologie. Or, vérifié sur
+ * lampe-optimisee.glb : à position strictement identique, les normales
+ * analytiques d'occt divergent en médiane de 90 à 110° selon la pièce (jusqu'à
+ * 175° sur Cable) — pas un bruit de tessellation, une vraie incohérence
+ * d'orientation entre patchs adjacents (l'orientation FORWARD/REVERSED du
+ * patch dans le B-Rep IGES, honorée indépendamment par occt à la
+ * tessellation). MOYENNER des normales qui pointent à moitié en sens opposé
+ * produit un vecteur quasi nul ou faux → c'est exactement la source des
+ * « dents de scie, plis » qui avaient fait abandonner cette piste.
+ *
+ * Le winding (ordre des sommets), lui, EST fiable : vérifié cohérent avec la
+ * normale analytique sur les 652 triangles de l'abat-jour (produit scalaire
+ * entre 0,97 et 1 partout, aucune inversion). En soudant la topologie puis en
+ * dérivant les normales des normales de FACE (produit vectoriel des arêtes,
+ * pondéré par l'aire — magnitude du produit vectoriel non normalisé), le
+ * résultat est correct par construction : plus aucune moyenne de vecteurs
+ * contradictoires, une normale de sommet unique et lisse à chaque couture.
  */
-function smoothSeamNormals(part, tol = 0.3) {
-  const { pos, nrm } = part;
-  if (!nrm) return part;
+function weldAndSmoothNormals(part) {
+  const { pos, idx } = part;
   const n = pos.length / 3;
-  const key = (i) =>
-    `${Math.round(pos[i * 3] / tol)}_${Math.round(pos[i * 3 + 1] / tol)}_${Math.round(pos[i * 3 + 2] / tol)}`;
-  const groups = new Map();
+  const key = (i) => `${pos[i * 3]}_${pos[i * 3 + 1]}_${pos[i * 3 + 2]}`;
+  const map = new Map();
+  const remap = new Int32Array(n);
+  const P = [];
   for (let i = 0; i < n; i++) {
     const k = key(i);
-    if (!groups.has(k)) groups.set(k, []);
-    groups.get(k).push(i);
+    if (!map.has(k)) {
+      map.set(k, P.length / 3);
+      P.push(pos[i * 3], pos[i * 3 + 1], pos[i * 3 + 2]);
+    }
+    remap[i] = map.get(k);
   }
-  const out = new Float32Array(nrm);
-  for (const g of groups.values()) {
-    if (g.length < 2) continue;
-    let ax = 0, ay = 0, az = 0;
-    for (const i of g) { ax += nrm[i * 3]; ay += nrm[i * 3 + 1]; az += nrm[i * 3 + 2]; }
-    const l = Math.hypot(ax, ay, az) || 1;
-    ax /= l; ay /= l; az /= l;
-    for (const i of g) { out[i * 3] = ax; out[i * 3 + 1] = ay; out[i * 3 + 2] = az; }
+  const I = new Uint32Array(idx.length);
+  for (let t = 0; t < idx.length; t++) I[t] = remap[idx[t]];
+
+  const nv = P.length / 3;
+  const N = new Float32Array(nv * 3);
+  for (let t = 0; t < I.length; t += 3) {
+    const a = I[t], b = I[t + 1], c = I[t + 2];
+    const ax = P[a * 3], ay = P[a * 3 + 1], az = P[a * 3 + 2];
+    const bx = P[b * 3], by = P[b * 3 + 1], bz = P[b * 3 + 2];
+    const cx = P[c * 3], cy = P[c * 3 + 1], cz = P[c * 3 + 2];
+    const e1x = bx - ax, e1y = by - ay, e1z = bz - az;
+    const e2x = cx - ax, e2y = cy - ay, e2z = cz - az;
+    // Non normalisé : la magnitude encode l'aire du triangle → pondération
+    // naturelle par aire dans la somme ci-dessous, pas de calcul séparé.
+    const fnx = e1y * e2z - e1z * e2y, fny = e1z * e2x - e1x * e2z, fnz = e1x * e2y - e1y * e2x;
+    N[a * 3] += fnx; N[a * 3 + 1] += fny; N[a * 3 + 2] += fnz;
+    N[b * 3] += fnx; N[b * 3 + 1] += fny; N[b * 3 + 2] += fnz;
+    N[c * 3] += fnx; N[c * 3 + 1] += fny; N[c * 3 + 2] += fnz;
   }
-  return { ...part, nrm: out };
+  for (let i = 0; i < nv; i++) {
+    const l = Math.hypot(N[i * 3], N[i * 3 + 1], N[i * 3 + 2]) || 1;
+    N[i * 3] /= l; N[i * 3 + 1] /= l; N[i * 3 + 2] /= l;
+  }
+  const before = n, after = nv;
+  console.log(`  weldAndSmoothNormals: ${before} → ${after} sommets (${before - after} soudés)`);
+  return { pos: new Float32Array(P), nrm: N, idx: I };
 }
 
 const named = {};
 {
   const [far, near] = byNode.grand.sort((a, b) => b.dist - a.dist);
   named.Cable = far; // composante la plus éloignée = câble + douille
-  // Abat-jour : on garde la géométrie ET les NORMALES EXACTES d'occt (surface
-  // analytique lisse), telles quelles. Toute soudure/moyennage casse ces
-  // normales et produit des artefacts (dents de scie à l'intérieur, plis).
   named.Shade = near;
 }
 {
@@ -361,6 +395,14 @@ named.Bulb = byNode.ampoule2[0];
 console.log("Classification :");
 for (const [k, v] of Object.entries(named))
   console.log(`  ${k.padEnd(9)} tris=${v.idx.length / 3}`);
+
+// Soudure + normales lisses sur CHAQUE pièce (voir weldAndSmoothNormals) :
+// la couture de patchs OCCT n'est pas propre à l'abat-jour.
+console.log("Soudure des coutures de patchs :");
+for (const name of Object.keys(named)) {
+  console.log(`  ${name} :`);
+  named[name] = weldAndSmoothNormals(named[name]);
+}
 
 // mm→m + centrage sur la bbox globale (orientation réglée côté three.js).
 const SCALE = 0.001;
