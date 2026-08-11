@@ -19,6 +19,7 @@ import {
   shadeTransmission,
   canEmit,
   lampLightConfig as cfg,
+  kelvinToRGB,
   type LampPart,
 } from "@/data/lampModel";
 import {
@@ -226,14 +227,15 @@ const _projV = new THREE.Vector3();
 function ExplodedModel({
   partVariants,
   lampOn,
-  warm,
+  kelvin,
   perforation,
   progressRef,
   anchorsRef,
 }: {
   partVariants: PartVariants;
   lampOn: boolean;
-  warm: boolean;
+  /** Température de couleur en kelvins — réglage continu (voir `lampLightConfig`). */
+  kelvin: number;
   perforation: PerforationShape;
   progressRef: MutableRefObject<number>;
   /** Reçoit à chaque frame la projection 2D de chaque pièce (pour l'overlay). */
@@ -464,7 +466,7 @@ function ExplodedModel({
     // studio + environnement, inchangé.
     const b = isConfig01 ? CONFIG1_BRIGHTNESS : 1;
     const on = lampOn ? 1 : 0;
-    const lightColor = new THREE.Color(warm ? cfg.colorWarm : cfg.colorCold);
+    const lightColor = new THREE.Color(kelvinToRGB(kelvin));
     if (materials.bulb) {
       materials.bulb.emissive.copy(lightColor);
       materials.bulb.emissiveIntensity = cfg.emissiveIntensity * on * b;
@@ -478,7 +480,7 @@ function ExplodedModel({
         b;
     }
     invalidate();
-  }, [materials, partVariants, lampOn, warm, perforation, invalidate]);
+  }, [materials, partVariants, lampOn, kelvin, perforation, invalidate]);
 
   // La géométrie du filet est la SEULE que ce composant crée — les autres
   // viennent du GLTF mis en cache par drei et sont partagées, donc à ne jamais
@@ -614,7 +616,7 @@ function ProceduralEnv() {
 export function ExplodedLamp3D({
   partVariants,
   lampOn,
-  warm,
+  kelvin,
   perforation = defaultPerforation,
   progressRef,
   active,
@@ -623,7 +625,8 @@ export function ExplodedLamp3D({
 }: {
   partVariants: PartVariants;
   lampOn: boolean;
-  warm: boolean;
+  /** Température de couleur en kelvins — réglage continu (voir `lampLightConfig`). */
+  kelvin: number;
   /** Géométrie des perforations de la pièce d'assemblage. */
   perforation?: PerforationShape;
   progressRef: MutableRefObject<number>;
@@ -650,7 +653,7 @@ export function ExplodedLamp3D({
       <ExplodedModel
         partVariants={partVariants}
         lampOn={lampOn}
-        warm={warm}
+        kelvin={kelvin}
         perforation={perforation}
         progressRef={progressRef}
         anchorsRef={anchorsRef}

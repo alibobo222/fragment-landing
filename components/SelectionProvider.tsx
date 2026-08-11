@@ -15,6 +15,7 @@ import {
   type PerforationShape,
   type ProductVariant,
 } from "@/data/product";
+import { lampLightConfig } from "@/data/lampModel";
 import { track } from "@/lib/analytics";
 
 interface SelectionContextValue {
@@ -27,9 +28,11 @@ interface SelectionContextValue {
   /** État lumineux partagé de la lampe 3D (hero + atelier). */
   lampOn: boolean;
   setLampOn: (on: boolean) => void;
-  /** Température de lumière : chaude (true) / froide (false). */
-  warm: boolean;
-  setWarm: (warm: boolean) => void;
+  /** Température de couleur de la lumière, en kelvins — réglage CONTINU entre
+   *  `lampLightConfig.kelvinMin` et `kelvinMax` (mélange des deux canaux d'un
+   *  module LED Tunable White), et non un choix binaire chaud/froid. */
+  kelvin: number;
+  setKelvin: (kelvin: number) => void;
   /** Géométrie des perforations de la pièce d'assemblage. */
   perforation: PerforationShape;
   setPerforation: (shape: PerforationShape) => void;
@@ -48,7 +51,7 @@ export function SelectionProvider({ children }: { children: React.ReactNode }) {
   // matières telles quelles, sous le seul éclairage de studio ; la lumière n'est
   // ajoutée que si on la demande. Le bouton reflète cet état dès le départ.
   const [lampOn, setLampOn] = useState<boolean>(false);
-  const [warm, setWarm] = useState<boolean>(true);
+  const [kelvin, setKelvinState] = useState<number>(lampLightConfig.defaultKelvin);
   // Option produit, mémorisée le temps de la session comme la variante.
   const [perforation, setPerforationState] =
     useState<PerforationShape>(defaultPerforation);
@@ -84,6 +87,14 @@ export function SelectionProvider({ children }: { children: React.ReactNode }) {
     } catch {
       /* sessionStorage indisponible : on garde la valeur par défaut. */
     }
+  }, []);
+
+  // Non persisté entre sessions, comme l'ancien réglage chaud/froid qu'il
+  // remplace : c'est une préférence d'ambiance du moment, pas un choix produit.
+  const setKelvin = useCallback((k: number) => {
+    setKelvinState(
+      Math.min(lampLightConfig.kelvinMax, Math.max(lampLightConfig.kelvinMin, k))
+    );
   }, []);
 
   const setPerforation = useCallback((shape: PerforationShape) => {
@@ -125,12 +136,12 @@ export function SelectionProvider({ children }: { children: React.ReactNode }) {
       setQuantity: (n: number) => setQuantity(Math.min(9, Math.max(1, n))),
       lampOn,
       setLampOn,
-      warm,
-      setWarm,
+      kelvin,
+      setKelvin,
       perforation,
       setPerforation,
     }),
-    [selectedId, quantity, select, lampOn, warm, perforation, setPerforation]
+    [selectedId, quantity, select, lampOn, kelvin, setKelvin, perforation, setPerforation]
   );
 
   return (

@@ -98,17 +98,27 @@ export function finishFor(
 
 /**
  * Éclairage de la lampe — tous les paramètres centralisés et faciles à ajuster.
- * La température est un blanc chaud *visuel* : ce n'est PAS une caractéristique
- * technique du produit (aucune valeur en kelvin affichée nulle part).
+ *
+ * La température de couleur simule un module LED Tunable White à DEUX CANAUX
+ * (Warm White ≈ 2 700 K, Cool White ≈ 6 500 K) : le réglage utilisateur pilote
+ * un mélange continu de ces deux canaux, exactement comme le ferait un driver
+ * CCT physique — jamais un choix binaire entre deux états. Ces trois valeurs
+ * (min/milieu/max) sont donc de vraies bornes techniques de prototype, pas un
+ * habillage visuel : elles pourront être reportées telles quelles sur un
+ * driver CCT réel.
  */
 export const lampLightConfig = {
   enabled: true,
   // Blanc chaud doux (visuel — pas une valeur technique produit).
   color: "#ffedd2",
-  /** Températures de couleur sélectionnables (visuel, luminance ~égale).
-   *  Contraste accentué : ambre franc (chaud) ↔ bleu franc (froid). */
-  colorWarm: "#ffc46b", // ~2700 K : blanc chaud, dominante ambrée marquée
-  colorCold: "#aac8ff", // ~6000 K : blanc froid, dominante bleutée marquée
+  /** Borne basse : canal Warm White du module CCT. */
+  kelvinMin: 2700,
+  /** Point neutre approximatif (mélange ~50/50 des deux canaux). */
+  kelvinMid: 4000,
+  /** Borne haute : canal Cool White du module CCT. */
+  kelvinMax: 6500,
+  /** Réglage par défaut au chargement — canal Warm White seul (2 700 K). */
+  defaultKelvin: 2700,
   /** Transition douce entre températures (ms). */
   tempTransitionMs: 320,
   /** Lumière dirigée (SpotLight) sortant par l'ouverture de l'abat-jour. */
@@ -133,6 +143,64 @@ export const lampLightConfig = {
   /** Ombres dynamiques : coûteuses — désactivées par défaut (mobile). */
   shadows: false,
 } as const;
+
+const clamp01to255 = (v: number) => Math.max(0, Math.min(255, v));
+const toHexByte = (v: number) => Math.round(clamp01to255(v)).toString(16).padStart(2, "0");
+
+/**
+ * Approxime la couleur RVB perçue d'un corps noir à une température de couleur
+ * donnée (méthode de Tanner Helland, valide de 1000 K à 40000 K) — la même
+ * base de calcul que celle qu'utilisent les fiches techniques de LED pour
+ * illustrer un CCT. Aucune couleur choisie à la main : c'est un vrai calcul.
+ */
+function blackbodyRGB(kelvin: number): [number, number, number] {
+  const k = kelvin / 100;
+
+  let r: number;
+  if (k <= 66) r = 255;
+  else r = 329.698727446 * Math.pow(k - 60, -0.1332047592);
+
+  let g: number;
+  if (k <= 66) g = 99.4708025861 * Math.log(k) - 161.1195681661;
+  else g = 288.1221695283 * Math.pow(k - 60, -0.0755148492);
+
+  let b: number;
+  if (k >= 66) b = 255;
+  else if (k <= 19) b = 0;
+  else b = 138.5177312231 * Math.log(k - 10) - 305.0447927307;
+
+  return [clamp01to255(r), clamp01to255(g), clamp01to255(b)];
+}
+
+/**
+ * Kelvin → couleur hexadécimale, pour l'ampoule 3D ET le curseur de l'interface
+ * (même fonction, même résultat : le curseur montre littéralement la couleur
+ * qu'il produit).
+ *
+ * Le corps noir pur reste très proche du blanc à 6500 K (à peine bleuté) — trop
+ * discret pour se lire clairement à l'écran sur un petit curseur. On renforce
+ * donc légèrement la teinte au fur et à mesure qu'on s'éloigne du point neutre
+ * (`kelvinMid`), vers l'ambre côté chaud et vers un bleu doux côté froid,
+ * jusqu'à 18 % maximum aux bornes : assez pour que la variation soit lisible
+ * au premier coup d'œil, jamais jusqu'à un orange ou un bleu saturés — la
+ * transition reste celle d'un blanc qui se réchauffe ou se refroidit, pas
+ * un dégradé arc-en-ciel.
+ */
+export function kelvinToRGB(kelvinRaw: number): string {
+  const { kelvinMin, kelvinMid, kelvinMax } = lampLightConfig;
+  const kelvin = Math.max(kelvinMin, Math.min(kelvinMax, kelvinRaw));
+  const [r, g, b] = blackbodyRGB(kelvin);
+
+  const cold = kelvin >= kelvinMid;
+  const span = cold ? kelvinMax - kelvinMid : kelvinMid - kelvinMin;
+  const t = span > 0 ? Math.abs(kelvin - kelvinMid) / span : 0;
+  const boost = t * 0.18;
+  // Ambre (chaud) / bleu doux (froid) — accentuation, pas une couleur de repli.
+  const tint = cold ? ([173, 200, 255] as const) : ([255, 190, 120] as const);
+
+  const mix = (base: number, target: number) => base + (target - base) * boost;
+  return `#${toHexByte(mix(r, tint[0]))}${toHexByte(mix(g, tint[1]))}${toHexByte(mix(b, tint[2]))}`;
+}
 
 /**
  * Part de lumière « traversant » l'abat-jour selon sa matière (0 = opaque).

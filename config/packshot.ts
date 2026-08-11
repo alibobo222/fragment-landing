@@ -67,4 +67,7 @@ export const BACKGROUND = "#ffffff";
  * s'applique : identique pour les sept.
  */
 export const LAMP_ON = false;
-export const WARM = true;
+/** Température de couleur (K) transmise à `Lamp3D` — sans effet tant que
+ *  `LAMP_ON` est faux, mais garde une valeur cohérente avec le réglage par
+ *  défaut de l'interface (`lampLightConfig.defaultKelvin`). */
+export const KELVIN = 2700;

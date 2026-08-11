@@ -247,7 +247,7 @@ function VariantPicker({
       ref={rowRef}
       role="radiogroup"
       aria-label="Configurations disponibles"
-      className="mt-9 flex snap-x snap-mandatory gap-1 overflow-x-auto px-[0.9rem] pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      className="mt-[7.5rem] flex snap-x snap-mandatory gap-1 overflow-x-auto px-[0.9rem] pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
     >
       {variants.map((v) => {
         const active = v.id === selectedId;

@@ -48,7 +48,7 @@ export function Packshot({ index }: { index: number }) {
         spin={false}
         controls={false}
         lampOn={DA.LAMP_ON}
-        warm={DA.WARM}
+        kelvin={DA.KELVIN}
         camera={DA.CAMERA}
         fov={DA.FOV}
         onCreated={() => setReady(true)}

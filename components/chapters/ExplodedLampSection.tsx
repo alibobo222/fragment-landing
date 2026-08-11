@@ -96,7 +96,7 @@ function StaticEclate() {
  * de lecture où plus rien ne bouge. Le fondu de sortie n'intervient qu'après.
  */
 function ExplodedScrollTrack() {
-  const { variant, lampOn, warm, perforation } = useSelection();
+  const { variant, lampOn, kelvin, perforation } = useSelection();
   const reduce = useReducedMotion();
 
   const trackRef = useRef<HTMLDivElement>(null);
@@ -204,7 +204,7 @@ function ExplodedScrollTrack() {
             <ExplodedLamp3D
               partVariants={parts}
               lampOn={lampOn}
-              warm={warm}
+              kelvin={kelvin}
               perforation={perforation}
               progressRef={progressRef}
               active={mounted}

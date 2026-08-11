@@ -18,6 +18,7 @@ import {
   finishFor,
   shadeTransmission,
   canEmit,
+  kelvinToRGB,
   lampLightConfig as cfg,
   type LampPart,
 } from "@/data/lampModel";
@@ -52,19 +53,16 @@ for (const [part, names] of Object.entries(lampMeshMapping))
 
 const easeOut = (t: number) => 1 - (1 - t) * (1 - t);
 
-// Couleurs cibles des deux températures (constantes, réutilisées chaque frame).
-const WARM_COLOR = new THREE.Color(cfg.colorWarm);
-const COLD_COLOR = new THREE.Color(cfg.colorCold);
-
 function LampModel({
   partVariants,
   lampOn,
-  warm,
+  kelvin,
   perforation,
 }: {
   partVariants: PartVariants;
   lampOn: boolean;
-  warm: boolean;
+  /** Température de couleur courante, en kelvins (curseur continu). */
+  kelvin: number;
   perforation: PerforationShape;
 }) {
   const { scene } = useGLTF(LAMP_MODEL_URL);
@@ -198,10 +196,19 @@ function LampModel({
   // Multiplicateur de luminosité de la lampe (réduit pour la config 01).
   const brightnessRef = useRef(1);
   const lit = useRef(0); // progression de l'allumage 0→1
-  // Couleur de lumière courante (interpolée entre chaud et froid). Initialisée
+  // Couleur de lumière courante (interpolée en continu vers la cible). Initialisée
   // à la couleur d'init des lumières : le 1er frame interpole vers la teinte
-  // chaude cible, ce qui unifie toutes les sources (spot/point/ampoule/glow).
+  // cible, ce qui unifie toutes les sources (spot/point/ampoule/glow).
   const lightColor = useRef(new THREE.Color(cfg.color));
+  // Cible de couleur du curseur Kelvin — recalculée uniquement quand `kelvin`
+  // change (pas à chaque frame), puis lue par `useFrame` ci-dessous, qui
+  // continue de lisser `lightColor` vers elle. Le curseur peut envoyer une
+  // rafale de valeurs très proches pendant un glissement : ce lissage évite
+  // tout saut visuel, même si l'utilisateur relâche brutalement le curseur.
+  const tempTarget = useRef(new THREE.Color(kelvinToRGB(kelvin)));
+  useEffect(() => {
+    tempTarget.current.set(kelvinToRGB(kelvin));
+  }, [kelvin]);
   useEffect(() => {
     const apply = (part: Exclude<LampPart, "bulb">, idx: number) => {
       const m = materials[part] as THREE.MeshPhysicalMaterial | undefined;
@@ -292,19 +299,21 @@ function LampModel({
       needsRender = true;
     }
 
-    // Température de couleur : interpolation douce entre chaud et froid.
-    // N'affecte QUE la couleur des lumières (spot/point/ampoule/glow), jamais
-    // les intensités. Quand la lampe est éteinte (intensités 0), aucun effet
-    // visible ; la température reste mémorisée et se restaure au rallumage.
-    const tempTarget = warm ? WARM_COLOR : COLD_COLOR;
+    // Température de couleur : interpolation douce et CONTINUE vers la cible
+    // pilotée par le curseur Kelvin (`tempTarget`, recalculée dans l'effet
+    // ci-dessus à chaque valeur du curseur). N'affecte QUE la couleur des
+    // lumières (spot/point/ampoule/glow), jamais les intensités. Quand la
+    // lampe est éteinte (intensités 0), aucun effet visible ; la température
+    // reste mémorisée et se restaure au rallumage.
+    const colorTarget = tempTarget.current;
     const c = lightColor.current;
     const cd =
-      Math.abs(c.r - tempTarget.r) +
-      Math.abs(c.g - tempTarget.g) +
-      Math.abs(c.b - tempTarget.b);
+      Math.abs(c.r - colorTarget.r) +
+      Math.abs(c.g - colorTarget.g) +
+      Math.abs(c.b - colorTarget.b);
     if (cd > 0.0008) {
       const k = reduce ? 1 : 1 - Math.exp((-dt * 1000) / (cfg.tempTransitionMs / 3));
-      c.lerp(tempTarget, reduce ? 1 : k);
+      c.lerp(colorTarget, reduce ? 1 : k);
       spot.color.copy(c);
       point.color.copy(c);
       // Seules les pièces autorisées suivent la couleur de la lumière. La
@@ -402,7 +411,7 @@ export function Lamp3D({
   partVariants,
   spin,
   lampOn,
-  warm,
+  kelvin,
   perforation = defaultPerforation,
   onCreated,
   camera = CAMERA,
@@ -413,7 +422,8 @@ export function Lamp3D({
   /** Rotation automatique au repos (et boucle de rendu continue). */
   spin: boolean;
   lampOn: boolean;
-  warm: boolean;
+  /** Température de couleur en kelvins — réglage continu (voir `lampLightConfig`). */
+  kelvin: number;
   /** Géométrie des perforations de la pièce d'assemblage. */
   perforation?: PerforationShape;
   onCreated?: () => void;
@@ -442,7 +452,7 @@ export function Lamp3D({
       <LampModel
         partVariants={partVariants}
         lampOn={lampOn}
-        warm={warm}
+        kelvin={kelvin}
         perforation={perforation}
       />
       {controls && (
