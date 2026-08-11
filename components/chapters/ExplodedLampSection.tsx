@@ -101,6 +101,7 @@ function ExplodedScrollTrack() {
   const trackRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
   const [ready, setReady] = useState(false);
+  const [tabHidden, setTabHidden] = useState(false);
   // 0 = désassemblage en cours, 1 = nomenclature (tracé puis lecture).
   const [act, setAct] = useState<0 | 1>(0);
   const progressRef = useRef(0);
@@ -174,6 +175,13 @@ function ExplodedScrollTrack() {
     return () => obs.disconnect();
   }, []);
 
+  // Pause quand l'onglet n'est plus visible — même garde-fou que LampStage.
+  useEffect(() => {
+    const onVis = () => setTabHidden(document.hidden);
+    document.addEventListener("visibilitychange", onVis);
+    return () => document.removeEventListener("visibilitychange", onVis);
+  }, []);
+
   return (
     <div ref={trackRef} className="relative" style={{ height: "360svh" }}>
       {/* z-30 + fond blanc : la planche passe PAR-DESSUS le titre de chapitre
@@ -206,7 +214,7 @@ function ExplodedScrollTrack() {
               kelvin={kelvin}
               perforation={perforation}
               progressRef={progressRef}
-              active={mounted}
+              active={mounted && !tabHidden}
               onCreated={() => setReady(true)}
               anchorsRef={anchorsRef}
             />

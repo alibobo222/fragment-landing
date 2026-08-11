@@ -451,7 +451,8 @@ export function ExplodedAnnotations({
 
     // Boucle rAF tant que la couche est montée : suit le scroll ET le lissage des
     // pièces après l'arrêt du scroll. Sortie anticipée bon marché tant qu'on est
-    // loin de la fenêtre de révélation.
+    // loin de la fenêtre de révélation. Coupée quand l'onglet passe en
+    // arrière-plan (voir onVisibility) : rien à dessiner tant que rien ne se voit.
     let raf = 0;
     let hiddenApplied = false;
     const loop = () => {
@@ -472,7 +473,20 @@ export function ExplodedAnnotations({
       }
       raf = requestAnimationFrame(loop);
     };
-    raf = requestAnimationFrame(loop);
+    const startLoop = () => {
+      if (!raf) raf = requestAnimationFrame(loop);
+    };
+    const stopLoop = () => {
+      cancelAnimationFrame(raf);
+      raf = 0;
+    };
+    if (!document.hidden) startLoop();
+
+    const onVisibility = () => {
+      if (document.hidden) stopLoop();
+      else startLoop();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
 
     const ro = new ResizeObserver(() => {
       measure();
@@ -481,8 +495,9 @@ export function ExplodedAnnotations({
     ro.observe(container);
 
     return () => {
-      cancelAnimationFrame(raf);
+      stopLoop();
       ro.disconnect();
+      document.removeEventListener("visibilitychange", onVisibility);
     };
   }, [scrollYProgress, anchorsRef, reduce]);
 
