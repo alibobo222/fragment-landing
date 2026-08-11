@@ -872,7 +872,7 @@ let woodTex: THREE.Texture | null = null;
  * face intérieure de l'abat-jour (config 01). Aucune retouche, aucun relief ;
  * seuls l'échelle (uInteriorScale) et le placage triplanar sont adaptés.
  */
-const WOOD_VENEER_URL = "/textures/placage-bois.jpg";
+const WOOD_VENEER_URL = "/textures/placage-bois.webp";
 /** Échelle du veinage à l'intérieur de l'abat-jour (tiling triplanar). */
 const WOOD_VENEER_SCALE = 8;
 

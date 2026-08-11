@@ -9,7 +9,7 @@
  * Usage : npm run assets
  */
 import sharp from "sharp";
-import { mkdir, access } from "node:fs/promises";
+import { mkdir, access, rm } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
@@ -18,9 +18,15 @@ const root = join(__dirname, "..");
 const srcDir = join(root, "..", "Etnisi");
 const outVariants = join(root, "public", "images", "variants");
 const outPrototype = join(root, "public", "images", "prototype");
+const texturesDir = join(root, "public", "textures");
 
 const BOARD = join(srcDir, "Capture d’écran 2026-07-23 192037.png");
 const PHOTOS = join(srcDir, "Capture d’écran 2026-07-23 192123.png");
+
+/** Image de placage bois (intérieur abat-jour config 01, tuilage ×8 — voir
+ *  WOOD_VENEER_SCALE dans lib/lampTextures.ts). Sa résolution native dépasse
+ *  très largement ce que ce tuilage rend visible. */
+const WOOD_VENEER = "placage-bois.jpg";
 
 /** planche variantes : grille 3×2, colonnes de 217px, rendus sur fond blanc. */
 const variantCrops = [
@@ -49,14 +55,18 @@ async function exists(p) {
   }
 }
 
-async function run() {
+/**
+ * Découpe les planches éditoriales (variantes + prototype) — dépend des
+ * sources ../Etnisi/, absentes du dépôt. Ignoré proprement (pas d'échec) si
+ * elles ne sont pas là : c'est un outil de dépose de l'atelier, pas une étape
+ * requise après `git clone`.
+ */
+async function prepareBoardAssets() {
   if (!(await exists(BOARD)) || !(await exists(PHOTOS))) {
-    console.error(
-      "Sources introuvables. Attendu dans ../Etnisi/ :\n" +
-        " - Capture d’écran 2026-07-23 192037.png\n" +
-        " - Capture d’écran 2026-07-23 192123.png"
+    console.log(
+      "Planches sources introuvables (../Etnisi/) — découpe des visuels ignorée."
     );
-    process.exit(1);
+    return;
   }
 
   await mkdir(outVariants, { recursive: true });
@@ -89,7 +99,25 @@ async function run() {
     .webp({ quality: 84 })
     .toFile(join(root, "public", "images", "og.webp"));
   console.log("og → public/images/og.webp");
+}
 
+/**
+ * Allège les textures déjà présentes dans le dépôt (public/textures/).
+ * Aucune dépendance externe : s'exécute après n'importe quel `git clone`.
+ */
+async function prepareTextureAssets() {
+  const veneerSrc = join(texturesDir, WOOD_VENEER);
+  if (await exists(veneerSrc)) {
+    const out = join(texturesDir, WOOD_VENEER.replace(/\.jpg$/, ".webp"));
+    await sharp(veneerSrc).resize({ width: 1024 }).webp({ quality: 75 }).toFile(out);
+    await rm(veneerSrc);
+    console.log("placage bois →", out);
+  }
+}
+
+async function run() {
+  await prepareBoardAssets();
+  await prepareTextureAssets();
   console.log("\nAssets générés avec succès.");
 }
 
