@@ -49,7 +49,6 @@ export function RevealImage({
   priority = false,
   y = 0,
   zoom = 1.12,
-  unoptimized = false,
 }: {
   src: string;
   alt: string;
@@ -62,8 +61,6 @@ export function RevealImage({
   y?: number;
   /** Zoom d'entrée (1 = aucun). */
   zoom?: number;
-  /** Sert le fichier tel quel (aucun ré-encodage next/image) → rendu identique à la source. */
-  unoptimized?: boolean;
 }) {
   const reduce = useReducedMotion();
   return (
@@ -82,7 +79,6 @@ export function RevealImage({
           fill
           sizes={sizes}
           priority={priority}
-          unoptimized={unoptimized}
           className={imgClassName}
         />
       </motion.div>

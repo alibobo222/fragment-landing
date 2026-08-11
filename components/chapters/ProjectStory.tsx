@@ -72,7 +72,6 @@ export function ProjectStory() {
             ratio="aspect-[3/4]"
             sizes={SIZES}
             imgClassName="object-contain"
-            unoptimized
             y={18}
             zoom={1.03}
           />
@@ -94,7 +93,6 @@ export function ProjectStory() {
             ratio="aspect-[933/821]"
             sizes={SIZES}
             imgClassName="object-cover object-center"
-            unoptimized
             y={18}
             zoom={1.03}
           />
@@ -127,7 +125,6 @@ export function ProjectStory() {
             ratio="aspect-[4/3]"
             sizes={SIZES}
             imgClassName="object-cover object-center"
-            unoptimized
             y={18}
             zoom={1.03}
           />

@@ -53,7 +53,6 @@ export function SiteHeader() {
             width={777}
             height={180}
             priority
-            unoptimized
             className="h-[1.7rem] w-auto"
           />
         </a>

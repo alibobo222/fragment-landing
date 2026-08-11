@@ -76,7 +76,6 @@ function StaticEclate() {
         ratio="aspect-square"
         sizes={SIZES}
         imgClassName="object-cover"
-        unoptimized
         y={18}
         zoom={1.03}
       />

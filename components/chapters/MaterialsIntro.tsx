@@ -39,7 +39,6 @@ export function MaterialsIntro() {
               alt="Échantillons de matières : composites recyclés vert olive, béton clair, verre bleuté, coquilles sombres et brique."
               ratio="aspect-[770/536]"
               sizes="480px"
-              unoptimized
             />
             {/* Crédit matière (partenaire), fond blanc du logo neutralisé. */}
             <Image

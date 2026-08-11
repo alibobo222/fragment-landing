@@ -45,7 +45,6 @@ export function Hero() {
           alt="La lampe Noir Minéral : abat-jour incliné révélant un intérieur en pierre veinée, ampoule allumée, pied cylindrique sombre et câble textile bleu."
           fill
           priority
-          unoptimized
           sizes="480px"
           className="object-cover object-center"
         />
