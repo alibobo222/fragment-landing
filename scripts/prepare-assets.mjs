@@ -28,6 +28,20 @@ const PHOTOS = join(srcDir, "Capture d’écran 2026-07-23 192123.png");
  *  très largement ce que ce tuilage rend visible. */
 const WOOD_VENEER = "placage-bois.jpg";
 
+/** Textures dont le nuancier du configurateur affiche une vignette réelle
+ *  (22 px — voir lib/materialSwatch.ts). Dérivées en 64 px sous
+ *  public/textures/swatch/ : largement suffisant (2× un écran Retina) pour
+ *  une fraction du poids des textures pleine résolution, réservées au rendu 3D. */
+const SWATCH_SOURCES = [
+  "brique.png",
+  "verre-bleu.png",
+  "verre-bouteille.png",
+  "coquilles-huitres.png",
+  "westerial-coquilles-moules.png",
+  "beton-bleute.png",
+  "bois-brule.png",
+];
+
 /** planche variantes : grille 3×2, colonnes de 217px, rendus sur fond blanc. */
 const variantCrops = [
   { name: "porcelaine-acier-noir", left: 6, top: 30, width: 206, height: 182 },
@@ -112,6 +126,19 @@ async function prepareTextureAssets() {
     await sharp(veneerSrc).resize({ width: 1024 }).webp({ quality: 75 }).toFile(out);
     await rm(veneerSrc);
     console.log("placage bois →", out);
+  }
+
+  const swatchDir = join(texturesDir, "swatch");
+  await mkdir(swatchDir, { recursive: true });
+  for (const name of SWATCH_SOURCES) {
+    const src = join(texturesDir, name);
+    if (!(await exists(src))) continue;
+    const out = join(swatchDir, name.replace(/\.png$/, ".webp"));
+    await sharp(src)
+      .resize({ width: 64, height: 64, fit: "cover" })
+      .webp({ quality: 80 })
+      .toFile(out);
+    console.log("pastille →", out);
   }
 }
 
