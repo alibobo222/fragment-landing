@@ -449,9 +449,15 @@ function ExplodedModel({
     const connectorMat = materials.connector as THREE.MeshPhysicalMaterial | undefined;
     if (connectorMat) applyPerforation(connectorMat, perforation);
 
+    // Le placage bois intérieur est une DONNÉE, pas un cas particulier du
+    // rendu : la variante le déclare via `shadeInner`. Ajouter demain une
+    // configuration à intérieur bois ne demandera aucune retouche ici.
+    // La luminosité, elle, reste indexée sur l'identifiant : c'est un réglage
+    // d'éclairage propre au prototype, sans rapport avec la matière.
     const isConfig01 = variants[partVariants.shade].id === defaultVariantId;
     const shadeMat = materials.shade as THREE.MeshPhysicalMaterial | undefined;
-    if (shadeMat) applyInteriorVeneer(shadeMat, isConfig01);
+    if (shadeMat)
+      applyInteriorVeneer(shadeMat, Boolean(variants[partVariants.shade].shadeInner));
 
     // Émission (source lumineuse) : reflète l'état allumé/éteint + température,
     // sans lumière projetée (les pièces sont séparées). Éclairage principal =

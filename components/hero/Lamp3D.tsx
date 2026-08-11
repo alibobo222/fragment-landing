@@ -237,11 +237,16 @@ function LampModel({
     const connectorMat = materials.connector as THREE.MeshPhysicalMaterial | undefined;
     if (connectorMat) applyPerforation(connectorMat, perforation);
 
-    // Placage bois à l'INTÉRIEUR de l'abat-jour, uniquement pour la config 01
-    // (prototype « Coquilles de moules »). L'extérieur reste inchangé.
+    // Placage bois à l'INTÉRIEUR de l'abat-jour. L'extérieur reste inchangé.
+    // Le placage bois intérieur est une DONNÉE, pas un cas particulier du
+    // rendu : la variante le déclare via `shadeInner`. Ajouter demain une
+    // configuration à intérieur bois ne demandera aucune retouche ici.
+    // La luminosité, elle, reste indexée sur l'identifiant : c'est un réglage
+    // d'éclairage propre au prototype, sans rapport avec la matière.
     const isConfig01 = variants[partVariants.shade].id === defaultVariantId;
     const shadeMat = materials.shade as THREE.MeshPhysicalMaterial | undefined;
-    if (shadeMat) applyInteriorVeneer(shadeMat, isConfig01);
+    if (shadeMat)
+      applyInteriorVeneer(shadeMat, Boolean(variants[partVariants.shade].shadeInner));
 
     // Luminosité de la lampe : légèrement réduite pour la config 01. On
     // ré-applique immédiatement (le fade-in peut être terminé au changement).

@@ -11,5 +11,8 @@ export function materialTexture(label: string): string | null {
   if (/coquilles? d'?huîtres?|huitre/.test(l)) return "/textures/coquilles-huitres.png";
   if (/coquilles de moules|westerial/.test(l)) return "/textures/westerial-coquilles-moules.png";
   if (/béton bleut|beton bleut/.test(l)) return "/textures/beton-bleute.png";
+  // Vignette dédiée, et non /textures/placage-bois.jpg : l'image de placage
+  // employée par la 3D pèse 1,8 Mo pour un carré de 22 px.
+  if (/bois/.test(l)) return "/textures/bois-brule.png";
   return null;
 }

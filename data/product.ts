@@ -41,6 +41,14 @@ export interface ProductVariant {
    */
   accentOnDark: string;
   shade: PartFinish;
+  /**
+   * Finition de la FACE INTÉRIEURE de l'abat-jour, quand elle diffère de
+   * l'extérieur (prototype 01 : placage de bois brûlé révélé à l'ouverture).
+   * Absente sur les configurations dont l'abat-jour est de la même matière
+   * dedans et dehors — c'est ce champ, et non un identifiant en dur, qui
+   * décide du placage dans les scènes 3D.
+   */
+  shadeInner?: PartFinish;
   assembly: PartFinish;
   base: PartFinish;
   cable: PartFinish;
@@ -62,6 +70,9 @@ export const variants: ProductVariant[] = [
     accent: "#2a3fe6",
     accentOnDark: "#6f83ff",
     shade: { label: "WESTERIAL - Coquilles de moules", color: "#1a1a1c" },
+    // Intérieur de l'abat-jour : placage de bois brûlé (image réelle,
+    // /public/textures). Couleur de repli = moyenne mesurée sur l'image.
+    shadeInner: { label: "Bois brûlé", color: "#817f77" },
     assembly: { label: "Acier brut", color: "#b7bab8" },
     base: { label: "WESTERIAL - Coquilles de moules", color: "#1a1a1c" },
     // Bleu Klein (International Klein Blue, outremer profond). Seule la couleur
