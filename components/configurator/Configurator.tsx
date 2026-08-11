@@ -37,9 +37,6 @@ import { ProductThumb } from "@/components/ui/ProductThumb";
  * la nomenclature matière sur deux colonnes ont disparu — elles doublaient le
  * carré et la scène 3D, et la hauteur qu'elles occupaient revient à la lampe,
  * qui devient le point focal de la section.
- *
- * La scène et le sélecteur restent dans un bloc épinglé : sur un écran court,
- * la lampe demeure visible pendant qu'on parcourt la fiche.
  */
 export function Configurator() {
   const { selectedId, variant, select } = useSelection();
@@ -58,7 +55,11 @@ export function Configurator() {
     <section
       id="configurateur"
       aria-labelledby="configurateur-title"
-      className="scroll-mt-16 bg-white pt-4 pb-24"
+      // pt-1 et non pt-4 : trois marges s'additionnaient à cette jonction —
+      // le bas du chapitre précédent, le haut de celui-ci, et le pt-6 du titre
+      // de section. Près de 120 px de vide pour une simple respiration entre
+      // deux chapitres. Réduites ensemble, elles en laissent environ 65.
+      className="scroll-mt-16 bg-white pt-1 pb-12"
     >
       {/* Titre NON épinglé : la place en haut d'écran revient à la scène 3D. */}
       <SectionHeading
@@ -113,32 +114,39 @@ export function Configurator() {
         </motion.div>
       </div>
 
-      {/* ---------- Bloc épinglé : la scène et le choix ne se quittent jamais ---------- */}
-      <div className="sticky top-14 z-10 mt-8 bg-white pb-4">
+      {/* ---------- Scène et sélecteur ----------
+          ⚠️ CE BLOC N'EST PLUS ÉPINGLÉ, et c'est volontaire.
+          L'épinglage servait à garder la lampe visible pendant qu'on parcourait
+          un long catalogue placé EN DESSOUS. Ce catalogue a disparu, puis le nom,
+          la description et la composition matière sont remontés au-dessus de la
+          scène : il ne reste plus rien à faire défiler sous elle, sinon le bouton
+          de contact — qui passait donc dessous et disparaissait.
+          Un bloc épinglé sans contenu à survoler ne rend aucun service et masque
+          ce qui le suit. Le retirer règle le défaut sans rien compenser. */}
+      <div className="mt-1 bg-white pb-4">
         {/* ⚠️ HAUTEUR FIXE, LARGEUR LIBRE — et c'est tout le point.
             La boîte était `aspect-square max-w-[40svh] overflow-hidden` : un carré
             d'environ 296 px dans une colonne qui en fait 480. Le câble, qui
             s'étale latéralement, était donc coupé par le CSS — pas par la 3D.
-            La focale d'une caméra perspective étant VERTICALE, élargir la boîte
-            révèle davantage de scène sur les côtés SANS changer d'un pixel la
-            taille apparente de la lampe. Augmenter la hauteur, à l'inverse, la
-            grossirait : c'est pourquoi `h-[40svh]` est conservé tel quel.
-            `u-bleed` annule la gouttière pour occuper toute la largeur utile. */}
+            `u-bleed` annule la gouttière pour occuper toute la largeur utile.
+
+            La focale d'une caméra perspective étant VERTICALE, la HAUTEUR de la
+            boîte fixe à elle seule la taille apparente de la lampe : on est passé
+            de 40svh à 54svh, soit un objet ~35 % plus grand, sans toucher ni à la
+            caméra ni au modèle. La place vient du cartel, allégé de sa phrase
+            descriptive et de sa nomenclature matière.
+            ⚠️ NE PAS monter plus haut sans vérifier le rendu : au-delà d'environ
+            56svh le champ latéral se resserre au point de rogner l'abat-jour, la
+            largeur visible valant hauteur × (largeur/hauteur de boîte). */}
         <div className="u-container">
           <LampStage
             camera={[0.12, 0.14, 0.5]}
             fov={30}
             imageSizes="480px"
-            className="u-bleed h-[40svh] bg-white"
+            className="u-bleed h-[54svh] bg-white"
           />
         </div>
         <VariantPicker selectedId={selectedId} onChoose={onChoose} />
-        {/* Le filet qui fermait ce bloc est remplacé par un fondu : le contenu
-            se dissout en glissant dessous au lieu d'être tranché par un trait. */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-full h-5 bg-gradient-to-b from-white to-transparent"
-        />
       </div>
 
       {/* ---------- Invitation à échanger (pas d'achat) ---------- */}
@@ -194,7 +202,7 @@ function VariantPicker({
       ref={rowRef}
       role="radiogroup"
       aria-label="Configurations disponibles"
-      className="mt-16 flex snap-x snap-mandatory gap-1 overflow-x-auto px-[0.9rem] pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      className="mt-9 flex snap-x snap-mandatory gap-1 overflow-x-auto px-[0.9rem] pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
     >
       {variants.map((v) => {
         const active = v.id === selectedId;
