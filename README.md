@@ -366,3 +366,7 @@ npm run dev
 **Si l'e-mail échoue, la demande est quand même enregistrée** et l'erreur est
 consignée dans `email_error`. C'est délibéré : on ne perd pas un contact parce
 qu'un quota Resend est atteint ou qu'un domaine n'est pas encore vérifié.
+
+## 15. Régression visuelle des 7 configurations
+
+Outil manuel (`NEXT_PUBLIC_PACKSHOT=1 npm run dev` puis `npm run visual`, `-- --update` pour rafraîchir la base) — à lancer avant toute tâche annoncée « sans changement visuel ». Détails dans `scripts/visual-regression.mjs`.

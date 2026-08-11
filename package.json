@@ -15,6 +15,7 @@
     "assets": "node scripts/prepare-assets.mjs",
     "cad": "node scripts/convert-cad.mjs",
     "packshots": "node scripts/render-packshots.mjs",
+    "visual": "node scripts/visual-regression.mjs",
     "sb:link": "npx supabase@latest link",
     "sb:push": "npx supabase@latest db push",
     "sb:secrets": "npx supabase@latest secrets set --env-file supabase/.env.local",

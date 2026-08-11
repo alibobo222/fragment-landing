@@ -11,3 +11,6 @@ tsconfig.tsbuildinfo
 supabase/.branches/
 supabase/.temp/
 supabase/.env.local
+
+# Régression visuelle — images de différence, transitoires (voir npm run visual)
+tests/visual-diff/
