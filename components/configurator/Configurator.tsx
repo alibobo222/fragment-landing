@@ -3,13 +3,16 @@
 import { useEffect, useRef } from "react";
 import Image from "next/image";
 import { motion, useReducedMotion } from "framer-motion";
-import { variants, partLabels } from "@/data/product";
+import {
+  variants,
+  type PartFinish,
+  type ProductVariant,
+} from "@/data/product";
 import { useSelection } from "@/components/SelectionProvider";
 import { track } from "@/lib/analytics";
 import { scrollToId } from "@/lib/scroll";
 import { materialTexture } from "@/lib/materialSwatch";
 import { splitFinishLabel, capitalise } from "@/lib/materialLabel";
-import { Reveal } from "@/components/ui/Reveal";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { LampStage } from "@/components/lamp/LampStage";
 import { buttonMotion } from "@/components/ui/motion";
@@ -27,9 +30,13 @@ import { ProductThumb } from "@/components/ui/ProductThumb";
  * Une première correction a ajouté une rangée horizontale épinglée sous la
  * scène — mais elle faisait alors DOUBLON avec le catalogue vertical (le même
  * choix, offert deux fois, à deux endroits). Le catalogue vertical a donc été
- * supprimé et ses informations remontées ici : nom, composition matière et
- * description de la configuration active se lisent maintenant à côté du rendu,
- * et changent avec lui.
+ * supprimé et ses informations remontées ici.
+ *
+ * Ce cartel a ensuite été RÉDUIT à l'essentiel : le nom de la configuration et
+ * un nuancier (un carré, une couleur, son intitulé). La phrase sensorielle et
+ * la nomenclature matière sur deux colonnes ont disparu — elles doublaient le
+ * carré et la scène 3D, et la hauteur qu'elles occupaient revient à la lampe,
+ * qui devient le point focal de la section.
  *
  * La scène et le sélecteur restent dans un bloc épinglé : sur un écran court,
  * la lampe demeure visible pendant qu'on parcourt la fiche.
@@ -61,14 +68,49 @@ export function Configurator() {
         id="configurateur-title"
         title="Composez votre pièce."
       />
+      {/* ---------- Cartel : le nom, puis le nuancier ----------
+          Le nom de la configuration tient lieu de titre courant : il change
+          avec la sélection et légende la scène qui le suit.
+
+          ⚠️ CE BLOC NE PORTE PLUS DE TEXTE DESCRIPTIF, et c'est délibéré.
+          Il contenait une phrase sensorielle (« un noir brut et mat… ») et une
+          nomenclature matière sur deux colonnes, chaque ligne répétant en toutes
+          lettres ce que la pastille montrait déjà. Trois registres — nom, récit,
+          nomenclature — se disputaient la lecture AVANT l'objet, et repoussaient
+          la lampe de près de 200 px vers le bas.
+          Ne reste que le nuancier : un carré, une couleur, son intitulé. La
+          matière se voit dans la texture du carré et dans la scène 3D ; l'écrire
+          en plus était une redite. */}
       <div className="u-container">
-        <Reveal delay={0.05}>
-          <p className="mt-1 max-w-[50ch] text-sm leading-relaxed text-ink-soft">
-            Sept associations de matières. Choisissez une combinaison : la lampe
-            se met à jour en douceur. Faites-la tourner, allumez-la, changez la
-            température de lumière.
+        <motion.div
+          key={variant.id}
+          initial={reduce ? false : { opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+        >
+          {/* ⚠️ PAS de repère mono ici. « 01 / 07 » reprenait exactement le
+              dispositif du titre de chapitre — index mono, filet, étiquette —
+              placé quelques pixels plus bas : deux en-têtes de même facture se
+              disputaient la lecture. Et l'information était déjà donnée deux
+              fois, puisque le sélecteur affiche son numéro sous chaque vignette.
+              Reste le nom seul, dans un corps nettement inférieur au titre de
+              chapitre : il se lit alors comme la LÉGENDE de la scène, pas comme
+              un second titre. */}
+          <p className="-mt-3 font-display text-[1.35rem] leading-tight text-ink">
+            {variant.name}
           </p>
-        </Reveal>
+          {/* Nuancier — la liste des couleurs et matières de la composition,
+              rien d'autre. Pas de nom de pièce : l'objet est juste en dessous,
+              on voit où va chaque matière. Empilés plutôt que rangés sur deux
+              colonnes, les carrés forment une bande étroite et régulière qui
+              n'entre jamais en concurrence avec la scène : la largeur libérée
+              revient à la lampe. */}
+          <ul className="mt-4 space-y-2.5">
+            {colorKey(variant).map((entry) => (
+              <ColorSwatch key={entry.finish.label} entry={entry} />
+            ))}
+          </ul>
+        </motion.div>
       </div>
 
       {/* ---------- Bloc épinglé : la scène et le choix ne se quittent jamais ---------- */}
@@ -99,34 +141,8 @@ export function Configurator() {
         />
       </div>
 
-      {/* ---------- Fiche de la configuration active ---------- */}
+      {/* ---------- Invitation à échanger (pas d'achat) ---------- */}
       <div className="u-container">
-        <motion.div
-          key={variant.id}
-          initial={reduce ? false : { opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-        >
-          {/* Plus de filet : le rapport de graisse et de couleur entre le
-              repère mono et le nom en display porte seul la hiérarchie. */}
-          <p className="u-eyebrow mt-10">{variant.index} / 07</p>
-          <p className="mt-2 font-display text-2xl leading-tight text-ink">
-            {variant.name}
-          </p>
-
-          <p className="mt-3 max-w-[50ch] text-sm leading-relaxed text-ink-soft">
-            {variant.description}
-          </p>
-
-          <dl className="mt-8 grid grid-cols-2 gap-x-5 gap-y-7">
-            <MaterialRow label={partLabels.shade} finish={variant.shade} />
-            <MaterialRow label={partLabels.base} finish={variant.base} />
-            <MaterialRow label="Structure" finish={variant.assembly} />
-            <MaterialRow label="Câble textile" finish={variant.cable} />
-          </dl>
-        </motion.div>
-
-        {/* Invitation à échanger (pas d'achat). */}
         <motion.button
           type="button"
           {...buttonMotion}
@@ -134,7 +150,7 @@ export function Configurator() {
             track("configurator_contact_click", { variant: selectedId });
             scrollToId("contact");
           }}
-          className="btn-glass btn-glass-secondary group mt-12 inline-flex items-center gap-2.5 px-6 py-3 text-[0.95rem] font-medium"
+          className="btn-glass btn-glass-secondary group mt-6 inline-flex items-center gap-2.5 px-6 py-3 text-[0.95rem] font-medium"
         >
           <span>Échanger autour de cette pièce</span>
           <span aria-hidden className="transition-transform duration-300 group-hover:translate-x-1.5">→</span>
@@ -237,34 +253,76 @@ function VariantPicker({
   );
 }
 
-function MaterialRow({
-  label,
-  finish,
-}: {
+/**
+ * Intitulé de pièce à retirer du libellé de finition. `data/product.ts` décrit
+ * le câble par un libellé autonome — « Câble textile bleu » — parce qu'il sert
+ * aussi seul ailleurs. Dans un nuancier, seule la couleur nous intéresse :
+ * « Bleu ». Les autres pièces nomment déjà une matière (« Acier brut »,
+ * « Porcelaine »), il n'y a rien à retirer.
+ */
+const CABLE_PART = "Câble textile";
+
+interface ColorEntry {
+  finish: PartFinish;
+  /** Libellé affiché — matière ou couleur, jamais un nom de pièce. */
   label: string;
-  finish: { label: string; color: string };
-}) {
-  const texture = materialTexture(finish.label);
-  // « Câble textile » en intitulé + « Câble textile bleu » en valeur : on
-  // n'écrit pas deux fois la même chose (voir lib/materialLabel.ts).
-  const parts = splitFinishLabel(label, finish.label);
-  const value = parts.suffix ? capitalise(parts.suffix) : parts.full ?? finish.label;
+}
+
+/**
+ * Les couleurs et matières de la composition, dans l'ordre de lecture de
+ * l'objet : abat-jour, son intérieur s'il diffère, structure, pied, câble.
+ *
+ * DÉDOUBLONNÉ, et c'est nécessaire depuis que les intitulés de pièce ont
+ * disparu. Plusieurs configurations emploient la même matière pour l'abat-jour
+ * et le pied ; sans nom de pièce pour les distinguer, deux lignes rigoureusement
+ * identiques se seraient suivies et auraient passé pour un défaut. Un nuancier
+ * liste des matières, pas des pièces : chacune n'y figure qu'une fois.
+ */
+function colorKey(variant: ProductVariant): ColorEntry[] {
+  const parts: { finish?: PartFinish; part?: string }[] = [
+    { finish: variant.shade },
+    { finish: variant.shadeInner },
+    { finish: variant.assembly },
+    { finish: variant.base },
+    { finish: variant.cable, part: CABLE_PART },
+  ];
+  const seen = new Set<string>();
+  const entries: ColorEntry[] = [];
+  for (const { finish, part } of parts) {
+    if (!finish || seen.has(finish.label)) continue;
+    seen.add(finish.label);
+    const split = part ? splitFinishLabel(part, finish.label) : null;
+    entries.push({
+      finish,
+      label: split?.suffix ? capitalise(split.suffix) : finish.label,
+    });
+  }
+  return entries;
+}
+
+/**
+ * Un carré, sa couleur ou sa matière — rien d'autre.
+ *
+ * Le carré montre, l'intitulé nomme : texture réelle quand elle existe dans
+ * /public/textures, aplat de la couleur du produit sinon. Le libellé vient de
+ * `data/product.ts`, seule source de vérité des matières, débarrassé du seul
+ * nom de pièce qui s'y glissait (voir `CABLE_PART`).
+ */
+function ColorSwatch({ entry }: { entry: ColorEntry }) {
+  const texture = materialTexture(entry.finish.label);
   return (
-    <div className="flex items-start gap-3">
+    <li className="flex items-center gap-3">
       <span
         aria-hidden
         // Seul cerne conservé de toute la section, parce qu'il a une utilité :
-        // sans lui, une pastille claire (porcelaine, béton clair) n'aurait aucune
-        // limite sur le fond blanc. Affiné pour rester discret.
-        className="relative mt-0.5 h-7 w-7 shrink-0 overflow-hidden ring-1 ring-ink/10"
-        style={texture ? undefined : { backgroundColor: finish.color }}
+        // sans lui, un carré clair (porcelaine, béton clair) n'aurait aucune
+        // limite sur le fond blanc.
+        className="relative block h-[1.4rem] w-[1.4rem] shrink-0 overflow-hidden ring-1 ring-ink/10"
+        style={texture ? undefined : { backgroundColor: entry.finish.color }}
       >
-        {texture && <Image src={texture} alt="" fill sizes="1.75rem" className="object-cover" />}
+        {texture && <Image src={texture} alt="" fill sizes="1.4rem" className="object-cover" />}
       </span>
-      <span className="min-w-0">
-        <span className="u-eyebrow block">{label}</span>
-        <span className="mt-1 block text-sm leading-snug text-ink">{value}</span>
-      </span>
-    </div>
+      <span className="text-sm leading-snug text-ink">{entry.label}</span>
+    </li>
   );
 }
