@@ -28,7 +28,6 @@ import {
   applyInteriorVeneer,
   applyPerforation,
   materialProfile,
-  disposeLampTextures,
   getWeaveTexture,
 } from "@/lib/lampTextures";
 
@@ -279,9 +278,6 @@ function LampModel({
       for (const mat of Object.values(materials)) mat?.dispose();
     };
   }, [materials]);
-
-  // Libère la texture de bruit au démontage.
-  useEffect(() => () => disposeLampTextures(), []);
 
   useFrame((_, dt) => {
     let needsRender = false;
