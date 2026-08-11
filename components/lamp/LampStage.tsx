@@ -9,6 +9,7 @@ import {
   perforationOptions,
   type PerforationShape,
 } from "@/data/product";
+import { lampLightConfig } from "@/data/lampModel";
 import { useSelection } from "@/components/SelectionProvider";
 import { buttonMotion } from "@/components/ui/motion";
 import type { PartVariants } from "@/components/hero/Lamp3D";
@@ -289,9 +290,75 @@ function LightTempControl({
 }) {
   return (
     <div role="group" aria-label="Température de lumière" className="btn-glass-group">
-      <TempOption active={warm} onClick={() => onSelect(true)} label="Lumière chaude" icon={<SunIcon />} />
-      <TempOption active={!warm} onClick={() => onSelect(false)} label="Lumière froide" icon={<SnowIcon />} />
+      <TempSegment
+        active={warm}
+        onClick={() => onSelect(true)}
+        label="Lumière chaude"
+        word="Chaude"
+        color={lampLightConfig.colorWarm}
+      />
+      <TempSegment
+        active={!warm}
+        onClick={() => onSelect(false)}
+        label="Lumière froide"
+        word="Froide"
+        color={lampLightConfig.colorCold}
+      />
     </div>
+  );
+}
+
+/**
+ * Segment de température — PASTILLE À LA COULEUR RÉELLE + mot.
+ *
+ * Les pictogrammes précédents, un soleil et un flocon, parlaient de météo : ils
+ * disaient « chaud » et « froid » au sens de la température de l'air, pas de
+ * celle de la lumière. D'où l'incompréhension.
+ *
+ * La pastille reprend EXACTEMENT la teinte que le bouton applique à la scène
+ * (`colorWarm` / `colorCold` de `lampLightConfig`) : le contrôle montre donc son
+ * propre effet, ce qu'aucun symbole ne peut faire aussi directement. Le mot lève
+ * le doute restant — sans lui, deux pastilles colorées passeraient pour un
+ * ornement. Aucune valeur en kelvin n'est affichée : ce n'est pas une
+ * caractéristique technique du produit, seulement un réglage visuel.
+ */
+function TempSegment({
+  active,
+  onClick,
+  label,
+  word,
+  color,
+}: {
+  active: boolean;
+  onClick: () => void;
+  label: string;
+  word: string;
+  color: string;
+}) {
+  return (
+    <motion.button
+      type="button"
+      {...buttonMotion}
+      onClick={onClick}
+      aria-label={label}
+      aria-pressed={active}
+      title={label}
+      data-active={active}
+      className="btn-glass-segment inline-flex h-10 items-center gap-1.5 px-2.5"
+    >
+      <span
+        aria-hidden
+        className="h-[9px] w-[9px] shrink-0 rounded-full ring-1 ring-ink/25"
+        style={{
+          backgroundColor: color,
+          // Halo discret : évoque le rayonnement sans alourdir le contrôle.
+          boxShadow: active ? `0 0 6px ${color}` : "none",
+        }}
+      />
+      <span className="u-index text-[0.6rem] uppercase tracking-[0.08em]">
+        {word}
+      </span>
+    </motion.button>
   );
 }
 
@@ -319,24 +386,6 @@ function TempOption({
     >
       {icon}
     </motion.button>
-  );
-}
-
-function SunIcon() {
-  return (
-    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden>
-      <circle cx="12" cy="12" r="4" />
-      <path d="M12 2.5v2M12 19.5v2M4.6 4.6l1.4 1.4M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4 6 18M18 6l1.4-1.4" />
-    </svg>
-  );
-}
-
-function SnowIcon() {
-  return (
-    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d="M12 2v20M2.7 6.8l18.6 10.4M21.3 6.8 2.7 17.2" />
-      <path d="M12 6.5 9.6 4.9M12 6.5l2.4-1.6M12 17.5l-2.4 1.6M12 17.5l2.4 1.6" />
-    </svg>
   );
 }
 
