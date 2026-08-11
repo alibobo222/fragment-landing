@@ -26,8 +26,20 @@ const UPDATE = process.argv.includes("--update");
 /** Tolérance par canal (0-255) avant qu'un pixel compte comme « différent » —
  *  absorbe le bruit d'anti-aliasing du rendu WebGL, pas un vrai écart. */
 const CHANNEL_TOLERANCE = 12;
-/** Part de pixels différents au-delà de laquelle une configuration échoue. */
-const FAIL_RATIO = 0.001; // 0,1 %
+/**
+ * Part de pixels différents au-delà de laquelle une configuration échoue.
+ *
+ * Les textures de grain (bruit, moucheté, rugosité) sont régénérées par
+ * `Math.random()` à CHAQUE chargement de page (voir lib/lampTextures.ts) : deux
+ * captures strictement identiques en code diffèrent donc toujours un peu, de
+ * façon non déterministe — mesuré jusqu'à 0,61 % sur trois essais consécutifs,
+ * concentré sur les reflets spéculaires des pièces métalliques (la rugosité
+ * varie pixel à pixel avec le bruit). Le seuil doit rester nettement au-dessus
+ * de ce plancher ; une vraie régression (mauvaise matière, mauvaise couleur)
+ * touche des régions entières, pas des pixels épars, et se compte en dizaines
+ * de pourcents.
+ */
+const FAIL_RATIO = 0.02; // 2 %
 
 // Identifiants lus dans les sources, comme render-packshots.mjs : impossible
 // d'en oublier un ou de les désynchroniser de data/product.ts.

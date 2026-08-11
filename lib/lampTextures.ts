@@ -9,22 +9,11 @@
  * Aucune image distante : la texture de bruit est générée en canvas.
  */
 import * as THREE from "three";
-import type { PerforationShape } from "@/data/product";
+import type { PerforationShape, MaterialKind } from "@/data/product";
 
-export type MaterialKind =
-  | "porcelain"
-  | "concrete"
-  | "brick"
-  | "shell"
-  | "glassBottle"
-  | "glassBlue"
-  | "blueGlass"
-  | "blueTerrazzo"
-  | "epoxy"
-  | "metal"
-  | "fabric"
-  | "blackConcrete"
-  | "matte";
+// Réexporté : `data/product.ts` est la source de vérité du type (voir
+// CLAUDE.md), mais les profils de rendu qu'il indexe vivent ici.
+export type { MaterialKind };
 
 export interface MaterialProfile {
   kind: MaterialKind;
@@ -40,68 +29,49 @@ export interface MaterialProfile {
   speckle: number;
   /** Relief (perturbation de normale) — donne le tissage visible du câble. */
   grainBump: number;
+  /**
+   * Part de lumière « traversant » la matière (0 = opaque, 1 = transparent).
+   * N'a d'effet visible que sur l'abat-jour (voir `shadeTransmission` dans
+   * `data/lampModel.ts`) ; renseigné pour toutes les matières par cohérence
+   * du profil.
+   */
+  transmission: number;
 }
 
 const PROFILES: Record<MaterialKind, Omit<MaterialProfile, "kind">> = {
   // grainBump reste à 0 pour les matières au bruit (le relief exploserait) ;
   // seul le câble (motif de tissage structuré) reçoit du relief.
-  porcelain: { roughness: 0.88, metalness: 0, clearcoat: 0.06, clearcoatRoughness: 0.6, grainScale: 10, grainRough: 0.45, speckle: 0.3, grainBump: 0 },
-  concrete: { roughness: 0.94, metalness: 0, clearcoat: 0.04, clearcoatRoughness: 0.8, grainScale: 9, grainRough: 0.55, speckle: 0.42, grainBump: 0 },
+  porcelain: { roughness: 0.88, metalness: 0, clearcoat: 0.06, clearcoatRoughness: 0.6, grainScale: 10, grainRough: 0.45, speckle: 0.3, grainBump: 0, transmission: 0.45 },
+  concrete: { roughness: 0.94, metalness: 0, clearcoat: 0.04, clearcoatRoughness: 0.8, grainScale: 9, grainRough: 0.55, speckle: 0.42, grainBump: 0, transmission: 0.08 },
   // brick : la couleur/le grain viennent de la texture terre cuite (composite).
-  brick: { roughness: 0.9, metalness: 0, clearcoat: 0.03, clearcoatRoughness: 0.8, grainScale: 22, grainRough: 0.14, speckle: 0.04, grainBump: 0 },
+  brick: { roughness: 0.9, metalness: 0, clearcoat: 0.03, clearcoatRoughness: 0.8, grainScale: 22, grainRough: 0.14, speckle: 0.04, grainBump: 0, transmission: 0.08 },
   // shell : composite mat (couleur/grain via la texture coquilles, uComposite).
-  shell: { roughness: 0.9, metalness: 0, clearcoat: 0.03, clearcoatRoughness: 0.8, grainScale: 20, grainRough: 0.14, speckle: 0.04, grainBump: 0 },
+  shell: { roughness: 0.9, metalness: 0, clearcoat: 0.03, clearcoatRoughness: 0.8, grainScale: 20, grainRough: 0.14, speckle: 0.04, grainBump: 0, transmission: 0.25 },
   // Verre de bouteille (d'après la texture fournie) : composite de verre
   // recyclé vert foncé — couleur via la texture (uComposite), mat/légèrement
   // satiné, AUCUN relief.
-  glassBottle: { roughness: 0.55, metalness: 0, clearcoat: 0.12, clearcoatRoughness: 0.45, grainScale: 16, grainRough: 0, speckle: 0, grainBump: 0 },
-  glassBlue: { roughness: 0.42, metalness: 0, clearcoat: 0.4, clearcoatRoughness: 0.3, grainScale: 11, grainRough: 0.28, speckle: 0.28, grainBump: 0 },
+  glassBottle: { roughness: 0.55, metalness: 0, clearcoat: 0.12, clearcoatRoughness: 0.45, grainScale: 16, grainRough: 0, speckle: 0, grainBump: 0, transmission: 1 },
+  glassBlue: { roughness: 0.42, metalness: 0, clearcoat: 0.4, clearcoatRoughness: 0.3, grainScale: 11, grainRough: 0.28, speckle: 0.28, grainBump: 0, transmission: 0.08 },
   // Verre bleu (d'après la texture fournie) : navy dense grisé, mat, très
   // légèrement satiné, fines inclusions claires — couleur via la texture
   // composite (uComposite), AUCUN relief.
-  blueGlass: { roughness: 0.82, metalness: 0, clearcoat: 0.06, clearcoatRoughness: 0.6, grainScale: 16, grainRough: 0, speckle: 0, grainBump: 0 },
+  blueGlass: { roughness: 0.82, metalness: 0, clearcoat: 0.06, clearcoatRoughness: 0.6, grainScale: 16, grainRough: 0, speckle: 0, grainBump: 0, transmission: 0.08 },
   // Béton bleuté (d'après la texture fournie) : composite de verre bleu recyclé
   // concassé (éclats bleus + inclusions noires), mat/légèrement satiné, couleur
   // via la texture composite, AUCUN relief.
-  blueTerrazzo: { roughness: 0.8, metalness: 0, clearcoat: 0.07, clearcoatRoughness: 0.55, grainScale: 16, grainRough: 0, speckle: 0, grainBump: 0 },
-  epoxy: { roughness: 0.5, metalness: 0.08, clearcoat: 0.25, clearcoatRoughness: 0.45, grainScale: 14, grainRough: 0.2, speckle: 0.18, grainBump: 0 },
-  metal: { roughness: 0.34, metalness: 0.92, clearcoat: 0.1, clearcoatRoughness: 0.3, grainScale: 40, grainRough: 0.14, speckle: 0.0, grainBump: 0 },
+  blueTerrazzo: { roughness: 0.8, metalness: 0, clearcoat: 0.07, clearcoatRoughness: 0.55, grainScale: 16, grainRough: 0, speckle: 0, grainBump: 0, transmission: 0.08 },
+  epoxy: { roughness: 0.5, metalness: 0.08, clearcoat: 0.25, clearcoatRoughness: 0.45, grainScale: 14, grainRough: 0.2, speckle: 0.18, grainBump: 0, transmission: 0.08 },
+  metal: { roughness: 0.34, metalness: 0.92, clearcoat: 0.1, clearcoatRoughness: 0.3, grainScale: 40, grainRough: 0.14, speckle: 0.0, grainBump: 0, transmission: 0.08 },
   // Béton noir : couleur via la texture (composite), très mat, AUCUN relief.
-  blackConcrete: { roughness: 0.92, metalness: 0, clearcoat: 0.03, clearcoatRoughness: 0.85, grainScale: 20, grainRough: 0, speckle: 0, grainBump: 0 },
+  blackConcrete: { roughness: 0.92, metalness: 0, clearcoat: 0.03, clearcoatRoughness: 0.85, grainScale: 20, grainRough: 0, speckle: 0, grainBump: 0, transmission: 0.08 },
   // Gaine textile du câble : tissage plat fin (chaîne/trame), mat, relief
   // discret — évoque un câble gainé de tissu haut de gamme sans excès.
-  fabric: { roughness: 0.82, metalness: 0, clearcoat: 0.04, clearcoatRoughness: 0.8, grainScale: 60, grainRough: 0.4, speckle: 0.12, grainBump: 0.32 },
-  matte: { roughness: 0.75, metalness: 0, clearcoat: 0.05, clearcoatRoughness: 0.7, grainScale: 11, grainRough: 0.32, speckle: 0.3, grainBump: 0 },
+  fabric: { roughness: 0.82, metalness: 0, clearcoat: 0.04, clearcoatRoughness: 0.8, grainScale: 60, grainRough: 0.4, speckle: 0.12, grainBump: 0.32, transmission: 0.08 },
+  matte: { roughness: 0.75, metalness: 0, clearcoat: 0.05, clearcoatRoughness: 0.7, grainScale: 11, grainRough: 0.32, speckle: 0.3, grainBump: 0, transmission: 0.08 },
 };
 
-/** Déduit le profil matière d'un libellé (planche des variantes). */
-export function materialProfile(label: string): MaterialProfile {
-  const l = label.toLowerCase();
-  let kind: MaterialKind = "matte";
-  if (/(inox|aluminium|acier|laiton)/.test(l)) kind = "metal";
-  // « WESTERIAL - Coquilles de moules » (ex « Noir mat ») et « Béton noir » →
-  // UN SEUL matériau (composite noir mat, image réelle). Placé AVANT la règle
-  // huîtres/nacre (le libellé contient « coquilles ») et spécifique pour ne PAS
-  // toucher « Câble noir » (fabric) ni « Acier anodisé noir » (metal).
-  else if (
-    /westerial|coquilles de moules/.test(l) ||
-    /noir mat/.test(l) ||
-    /béton noir|beton noir/.test(l)
-  )
-    kind = "blackConcrete";
-  else if (/époxy|epoxy/.test(l)) kind = "epoxy";
-  // « Wasterial® - Billes de verre » (ex « Verre bleu ») → blueGlass. On matche
-  // « billes de verre » (et non « wasterial » nu, sinon « Wasterial® - Brique »
-  // serait capté ici). AVANT la règle générique /verre/.
-  else if (/billes de verre|verre bleu/.test(l)) kind = "blueGlass";
-  else if (/verre/.test(l)) kind = "glassBottle";
-  else if (/porcelaine/.test(l)) kind = "porcelain";
-  else if (/brique/.test(l)) kind = "brick";
-  else if (/(coquille|nacre)/.test(l)) kind = "shell";
-  // « Béton bleuté » AVANT le béton générique (composite verre bleu concassé).
-  else if (/b[ée]ton bleut/.test(l)) kind = "blueTerrazzo";
-  else if (/(béton|beton|terre)/.test(l)) kind = "concrete";
-  else if (/(câble|cable)/.test(l)) kind = "fabric";
+/** Profil matière d'un `MaterialKind` — accès table directe, sans détection. */
+export function materialProfile(kind: MaterialKind): MaterialProfile {
   return { kind, ...PROFILES[kind] };
 }
 

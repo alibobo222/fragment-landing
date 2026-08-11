@@ -220,7 +220,7 @@ function LampModel({
       const startHex = firstColorApply.current
         ? finish.color
         : "#" + m.color.getHexString();
-      applyProfile(m, startHex, materialProfile(finish.label));
+      applyProfile(m, startHex, materialProfile(finish.material));
       // Ré-affirmé après chaque application de profil : changer de matière ne
       // doit en aucun cas rallumer l'émission d'une pièce qui n'y a pas droit.
       if (!canEmit(part)) {
@@ -265,7 +265,7 @@ function LampModel({
 
     shadeGlowTarget.current =
       cfg.glassGlowMax *
-      shadeTransmission(variants[partVariants.shade].shade.label);
+      shadeTransmission(variants[partVariants.shade].shade.material);
     invalidate();
   }, [materials, partVariants, perforation, invalidate, spot, point]);
 

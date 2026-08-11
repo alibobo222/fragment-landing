@@ -363,7 +363,7 @@ function colorKey(variant: ProductVariant): ColorEntry[] {
  * nom de pièce qui s'y glissait (voir `CABLE_PART`).
  */
 function ColorSwatch({ entry }: { entry: ColorEntry }) {
-  const texture = materialTexture(entry.finish.label);
+  const texture = materialTexture(entry.finish);
   return (
     <li className="flex items-center gap-3">
       <span

@@ -434,7 +434,7 @@ function ExplodedModel({
       const m = materials[part] as THREE.MeshPhysicalMaterial | undefined;
       if (!m) return;
       const finish = finishFor(part, variants[idx]);
-      applyProfile(m, finish.color, materialProfile(finish.label));
+      applyProfile(m, finish.color, materialProfile(finish.material));
       if (!canEmit(part)) {
         m.emissive.setRGB(0, 0, 0);
         m.emissiveIntensity = 0;
@@ -475,7 +475,7 @@ function ExplodedModel({
       materials.shade.emissive.copy(lightColor);
       materials.shade.emissiveIntensity =
         cfg.glassGlowMax *
-        shadeTransmission(variants[partVariants.shade].shade.label) *
+        shadeTransmission(variants[partVariants.shade].shade.material) *
         on *
         b;
     }

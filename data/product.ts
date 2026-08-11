@@ -14,11 +14,51 @@
  * + un câble textile.
  */
 
+/**
+ * Type de matière RÉELLE, qui pilote le rendu 3D (profils PBR, textures et
+ * transmission lumineuse — voir `PROFILES` dans `lib/lampTextures.ts`).
+ *
+ * Source de vérité du champ `PartFinish.material` : les valeurs ci-dessous
+ * correspondent exactement aux clés de `PROFILES`. Défini ici plutôt que dans
+ * `lib/lampTextures.ts` parce que `data/product.ts` est la source de vérité
+ * des matières (voir CLAUDE.md) — `lib/lampTextures.ts` réexporte ce type.
+ */
+export type MaterialKind =
+  | "porcelain"
+  | "concrete"
+  | "brick"
+  | "shell"
+  | "glassBottle"
+  | "glassBlue"
+  | "blueGlass"
+  | "blueTerrazzo"
+  | "epoxy"
+  | "metal"
+  | "fabric"
+  | "blackConcrete"
+  | "matte";
+
 export interface PartFinish {
   /** Matière/finition affichée à l'utilisateur. */
   label: string;
   /** Couleur représentative pour les pastilles et l'animation (token CSS). */
   color: string;
+  /**
+   * Matière RÉELLE de la pièce, donnée explicite qui pilote le rendu 3D.
+   * Remplace l'ancienne détection par expression régulière sur `label` :
+   * renommer `label` n'a plus aucun effet sur le rendu, contrairement à
+   * l'ancien comportement (silencieux) qui retombait sur `matte`.
+   */
+  material: MaterialKind;
+  /**
+   * Image RÉELLE de la matière (photographie), pour la vignette du nuancier
+   * (`ColorSwatch` dans le configurateur). Indépendant de `material` : deux
+   * pièces peuvent partager le même `MaterialKind` pour le rendu 3D sans
+   * partager la même vignette — le catalogue photo ne couvre encore qu'une
+   * partie des matières (voir PHASE B, `TASKS.md`). Absent → la vignette
+   * retombe sur un aplat de `color`.
+   */
+  textureImage?: string;
 }
 
 export interface ProductVariant {
@@ -69,15 +109,30 @@ export const variants: ProductVariant[] = [
     // Accent : le bleu franc du câble textile, signature de la pièce d'origine.
     accent: "#2a3fe6",
     accentOnDark: "#6f83ff",
-    shade: { label: "WESTERIAL - Coquilles de moules", color: "#1a1a1c" },
+    shade: {
+      label: "WESTERIAL - Coquilles de moules",
+      color: "#1a1a1c",
+      material: "blackConcrete",
+      textureImage: "/textures/westerial-coquilles-moules.png",
+    },
     // Intérieur de l'abat-jour : placage de bois brûlé (image réelle,
     // /public/textures). Couleur de repli = moyenne mesurée sur l'image.
-    shadeInner: { label: "Bois brûlé", color: "#817f77" },
-    assembly: { label: "Acier brut", color: "#b7bab8" },
-    base: { label: "WESTERIAL - Coquilles de moules", color: "#1a1a1c" },
+    shadeInner: {
+      label: "Bois brûlé",
+      color: "#817f77",
+      material: "matte",
+      textureImage: "/textures/bois-brule.png",
+    },
+    assembly: { label: "Acier brut", color: "#b7bab8", material: "metal" },
+    base: {
+      label: "WESTERIAL - Coquilles de moules",
+      color: "#1a1a1c",
+      material: "blackConcrete",
+      textureImage: "/textures/westerial-coquilles-moules.png",
+    },
     // Bleu Klein (International Klein Blue, outremer profond). Seule la couleur
     // de base change ; le kind reste « fabric » (texture de tissage inchangée).
-    cable: { label: "Câble textile bleu", color: "#002FA7" },
+    cable: { label: "Câble textile bleu", color: "#002FA7", material: "fabric" },
     description:
       "Le prototype d'origine : un noir brut et mat, l'âme claire du bois révélée à l'ouverture, ponctuée du bleu franc du câble textile.",
     image: "/images/prototype/trois-quarts.webp",
@@ -90,15 +145,15 @@ export const variants: ProductVariant[] = [
     materialsSummary: "Porcelaine · Acier anodisé noir",
     accent: "#26262b",
     accentOnDark: "#e2ddd2",
-    shade: { label: "Porcelaine", color: "#e7e2d8" },
+    shade: { label: "Porcelaine", color: "#e7e2d8", material: "porcelain" },
     // Teinte gris anthracite (au lieu du quasi-noir #1c1c1e). Seule la couleur
     // de base change ; le kind reste « metal » (metalness / roughness / reflets
     // / texture inchangés) → acier anodisé anthracite, aspect métallique conservé.
-    assembly: { label: "Acier anodisé noir", color: "#3a3e44" },
-    base: { label: "Béton clair", color: "#9d9a91" },
+    assembly: { label: "Acier anodisé noir", color: "#3a3e44", material: "metal" },
+    base: { label: "Béton clair", color: "#9d9a91", material: "concrete" },
     // Noir profond : le tissage textile éclaircit légèrement la teinte de base
     // sous l'éclairage ; une base plus sombre garantit un câble clairement noir.
-    cable: { label: "Câble textile noir", color: "#060608" },
+    cable: { label: "Câble textile noir", color: "#060608", material: "fabric" },
     description:
       "Le grain minéral de la porcelaine contre la sècheresse du métal noir. Une lumière retenue, presque monacale.",
     image: "/images/variants/porcelaine-acier-noir.webp",
@@ -111,10 +166,20 @@ export const variants: ProductVariant[] = [
     materialsSummary: "Wasterial® - Brique · Aluminium",
     accent: "#a8371f",
     accentOnDark: "#d9663f",
-    shade: { label: "Wasterial® - Brique", color: "#9c4a39" },
-    assembly: { label: "Aluminium", color: "#c7c9cb" },
-    base: { label: "Wasterial® - Brique", color: "#9c4a39" },
-    cable: { label: "Câble textile noir", color: "#111113" },
+    shade: {
+      label: "Wasterial® - Brique",
+      color: "#9c4a39",
+      material: "brick",
+      textureImage: "/textures/brique.png",
+    },
+    assembly: { label: "Aluminium", color: "#c7c9cb", material: "metal" },
+    base: {
+      label: "Wasterial® - Brique",
+      color: "#9c4a39",
+      material: "brick",
+      textureImage: "/textures/brique.png",
+    },
+    cable: { label: "Câble textile noir", color: "#111113", material: "fabric" },
     description:
       "La terre cuite chaude réveille l'aluminium froid. Une matière qui garde la mémoire du feu.",
     image: "/images/variants/brique-aluminium.webp",
@@ -127,10 +192,20 @@ export const variants: ProductVariant[] = [
     materialsSummary: "Wasterial® - Coquilles d'huître · Inox",
     accent: "#47624b",
     accentOnDark: "#86a583",
-    shade: { label: "Wasterial® - Coquilles d'huître", color: "#5e6440" },
-    assembly: { label: "Inox", color: "#b7bab8" },
-    base: { label: "Wasterial® - Verre de bouteille", color: "#2e3b2c" },
-    cable: { label: "Câble textile noir", color: "#111113" },
+    shade: {
+      label: "Wasterial® - Coquilles d'huître",
+      color: "#5e6440",
+      material: "shell",
+      textureImage: "/textures/coquilles-huitres.png",
+    },
+    assembly: { label: "Inox", color: "#b7bab8", material: "metal" },
+    base: {
+      label: "Wasterial® - Verre de bouteille",
+      color: "#2e3b2c",
+      material: "glassBottle",
+      textureImage: "/textures/verre-bouteille.png",
+    },
+    cable: { label: "Câble textile noir", color: "#111113", material: "fabric" },
     description:
       "Le vert profond du verre recyclé, poli comme un galet. L'inox y dépose un reflet net.",
     image: "/images/variants/verre-bouteille-inox.webp",
@@ -143,10 +218,15 @@ export const variants: ProductVariant[] = [
     materialsSummary: "Wasterial® - Coquilles d'huîtres · Laiton",
     accent: "#5e6440",
     accentOnDark: "#9aa06e",
-    shade: { label: "Wasterial® - Coquilles d'huîtres", color: "#5e6440" },
-    assembly: { label: "Laiton", color: "#b08a52" },
-    base: { label: "Béton noir", color: "#1a1a1c" },
-    cable: { label: "Câble textile bordeaux", color: "#6d2a2f" },
+    shade: {
+      label: "Wasterial® - Coquilles d'huîtres",
+      color: "#5e6440",
+      material: "shell",
+      textureImage: "/textures/coquilles-huitres.png",
+    },
+    assembly: { label: "Laiton", color: "#b08a52", material: "metal" },
+    base: { label: "Béton noir", color: "#1a1a1c", material: "blackConcrete" },
+    cable: { label: "Câble textile bordeaux", color: "#6d2a2f", material: "fabric" },
     description:
       "Un composite vert olive de coquilles d'huîtres broyées, mat et minéral, réchauffé par le laiton. Une matière recyclée, artisanale.",
     image: "/images/variants/coquille-laiton.webp",
@@ -159,16 +239,26 @@ export const variants: ProductVariant[] = [
     materialsSummary: "Wasterial® - Billes de verre · Acier anodisé",
     accent: "#45566f",
     accentOnDark: "#8ea3c4",
-    shade: { label: "Wasterial® - Billes de verre", color: "#2b3a54" },
+    shade: {
+      label: "Wasterial® - Billes de verre",
+      color: "#2b3a54",
+      material: "blueGlass",
+      textureImage: "/textures/verre-bleu.png",
+    },
     // Acier anodisé teinté de la couleur des « Billes de verre » (#2b3a54).
     // Seule la couleur de base change ; le kind reste « metal » (metalness /
     // roughness / reflets inchangés) → aspect métallique conservé, teinte navy.
-    assembly: { label: "Acier anodisé", color: "#2b3a54" },
-    base: { label: "Wasterial® - Billes de verre", color: "#2b3a54" },
+    assembly: { label: "Acier anodisé", color: "#2b3a54", material: "metal" },
+    base: {
+      label: "Wasterial® - Billes de verre",
+      color: "#2b3a54",
+      material: "blueGlass",
+      textureImage: "/textures/verre-bleu.png",
+    },
     // Câble teinté de la couleur des « Billes de verre » (#2b3a54). Seule la
     // couleur de base change ; le kind reste « fabric » (texture de tissage,
     // relief, roughness inchangés) → câble mat/souple réaliste, teinte navy.
-    cable: { label: "Câble textile bleu", color: "#2b3a54" },
+    cable: { label: "Câble textile bleu", color: "#2b3a54", material: "fabric" },
     description:
       "Un bleu de fumée, granuleux, traversé par la lumière. L'acier anodisé prolonge la fraîcheur.",
     image: "/images/variants/verre-bleu-acier-anodise.webp",
@@ -181,10 +271,10 @@ export const variants: ProductVariant[] = [
     materialsSummary: "Porcelaine · Peinture époxy mate",
     accent: "#2a3fe6",
     accentOnDark: "#6f83ff",
-    shade: { label: "Porcelaine", color: "#e7e2d8" },
-    assembly: { label: "Époxy mat cobalt", color: "#2b4cd4" },
-    base: { label: "Béton clair", color: "#9d9a91" },
-    cable: { label: "Câble textile bleu", color: "#2f4fd0" },
+    shade: { label: "Porcelaine", color: "#e7e2d8", material: "porcelain" },
+    assembly: { label: "Époxy mat cobalt", color: "#2b4cd4", material: "epoxy" },
+    base: { label: "Béton clair", color: "#9d9a91", material: "concrete" },
+    cable: { label: "Câble textile bleu", color: "#2f4fd0", material: "fabric" },
     description:
       "La blancheur de la porcelaine ponctuée d'un cobalt franc. Le geste graphique d'un trait de couleur.",
     image: "/images/variants/porcelaine-epoxy-mat.webp",

@@ -7,6 +7,7 @@
  * l'inspection), pas des suppositions.
  */
 import type { ProductVariant } from "@/data/product";
+import { materialProfile, type MaterialKind } from "@/lib/lampTextures";
 
 export const LAMP_MODEL_URL = "/models/lampe-optimisee.glb";
 
@@ -32,36 +33,6 @@ const FINISH_SOURCE: Record<
   socket: "assembly", // la douille partage la finition métal de l'assemblage
   cable: "cable",
 };
-
-export interface Surface {
-  color: string;
-  roughness: number;
-  metalness: number;
-}
-
-/** Déduit rugosité/métallicité d'une matière à partir de son libellé. */
-export function surfaceFromLabel(label: string): {
-  roughness: number;
-  metalness: number;
-} {
-  const l = label.toLowerCase();
-  if (/(inox|aluminium|acier|laiton)/.test(l)) return { roughness: 0.34, metalness: 0.9 };
-  if (/(époxy|epoxy)/.test(l)) return { roughness: 0.55, metalness: 0.08 };
-  if (/verre/.test(l)) return { roughness: 0.22, metalness: 0.0 };
-  if (/(porcelaine|brique|béton|beton|terre|nacre|coquille)/.test(l))
-    return { roughness: 0.9, metalness: 0.0 };
-  if (/(câble|cable)/.test(l)) return { roughness: 0.8, metalness: 0.0 };
-  return { roughness: 0.7, metalness: 0.0 };
-}
-
-/** Matériau 3D d'une partie pour une variante donnée. */
-export function surfaceFor(part: LampPart, variant: ProductVariant): Surface {
-  if (part === "bulb") {
-    return { color: "#fff2c8", roughness: 0.25, metalness: 0 };
-  }
-  const finish = variant[FINISH_SOURCE[part]];
-  return { color: finish.color, ...surfaceFromLabel(finish.label) };
-}
 
 /**
  * Les SEULES pièces dont le matériau a le droit de devenir émissif, c'est-à-dire
@@ -204,20 +175,10 @@ export function kelvinToRGB(kelvinRaw: number): string {
 
 /**
  * Part de lumière « traversant » l'abat-jour selon sa matière (0 = opaque).
- * Reste faible : c'est le passage par l'ouverture qui domine, pas un néon.
+ * Lecture directe du profil (voir `PROFILES` dans `lib/lampTextures.ts`) :
+ * la transmission est une propriété de la matière au même titre que sa
+ * rugosité, sans détection séparée sur le libellé.
  */
-export function shadeTransmission(label: string): number {
-  const l = label.toLowerCase();
-  // « Wasterial® - Billes de verre » (ex « Verre bleu ») : matière dense/opaque
-  // (d'après la texture fournie), pas un verre translucide → aucune transmission
-  // forcée. On matche « billes de verre » (et non « wasterial » nu, sinon
-  // « Wasterial® - Coquilles d'huître » perdrait sa transmission coquille).
-  if (/billes de verre|verre bleu/.test(l)) return 0.08;
-  // « WESTERIAL - Coquilles de moules » / « Noir mat » / « Béton noir » :
-  // composite noir dense et opaque (placé AVANT la règle coquille/nacre).
-  if (/westerial|coquilles de moules|noir mat|b[ée]ton noir/.test(l)) return 0.08;
-  if (/verre/.test(l)) return 1;
-  if (/porcelaine/.test(l)) return 0.45;
-  if (/(coquille|nacre)/.test(l)) return 0.25;
-  return 0.08; // brique et autres : quasi opaque
+export function shadeTransmission(material: MaterialKind): number {
+  return materialProfile(material).transmission;
 }
