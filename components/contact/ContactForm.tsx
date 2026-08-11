@@ -4,21 +4,30 @@ import { useId, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { useSelection } from "@/components/SelectionProvider";
 import { validateLead, isValid, type LeadErrors } from "@/lib/validation";
+import { buildContactPayload, submitContact } from "@/lib/contact";
 import { track, getSource } from "@/lib/analytics";
 import { siteConfig } from "@/config/site";
 import { buttonMotion } from "@/components/ui/motion";
 
-type Status = "idle" | "loading" | "sent" | "error";
+type Status = "idle" | "loading" | "sent" | "mailto" | "error";
 
 /**
  * Formulaire de CONTACT (aucune logique d'achat). Invite à échanger autour du
  * projet ; la configuration en cours est jointe comme simple contexte.
+ *
+ * L'envoi passe par la fonction Edge Supabase `contact`, qui enregistre la
+ * demande puis notifie l'atelier via Resend. La validation appliquée ici est
+ * la MÊME que celle du serveur (`supabase/functions/_shared/lead.ts`) : elle
+ * sert le confort de saisie, pas la sécurité — le serveur revalide tout.
  */
 export function ContactForm() {
   const { variant } = useSelection();
   const [errors, setErrors] = useState<LeadErrors>({});
   const [status, setStatus] = useState<Status>("idle");
   const startedRef = useRef(false);
+  // Verrou synchrone : `status` ne change qu'au rendu suivant, ce qui laisse
+  // passer un double clic rapide. Ce booléen, lui, est à jour immédiatement.
+  const sendingRef = useRef(false);
   const ids = { firstName: useId(), email: useId(), message: useId(), consent: useId() };
 
   const onFirstInteraction = () => {
@@ -30,6 +39,8 @@ export function ContactForm() {
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (sendingRef.current) return;
+
     const form = e.currentTarget;
     const data = new FormData(form);
     const input = {
@@ -49,40 +60,35 @@ export function ContactForm() {
       return;
     }
 
-    const payload = {
-      ...input,
-      configuration: variant.materialsSummary,
-      source: getSource() ?? "direct",
-    };
-
-    // Site 100 % statique (GitHub Pages) : aucun serveur.
-    // 1) Si un endpoint externe est configuré (Formspree, Getform, Basin…),
-    //    on lui envoie le formulaire directement.
-    // 2) Sinon, repli sans serveur : ouverture du client mail (mailto) prérempli.
-    if (siteConfig.leadEndpoint) {
+    // Chemin normal : la fonction Edge enregistre puis notifie.
+    if (siteConfig.contactEndpoint) {
+      sendingRef.current = true;
       setStatus("loading");
-      try {
-        const res = await fetch(siteConfig.leadEndpoint, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Accept: "application/json" },
-          body: JSON.stringify(payload),
-        });
-        if (!res.ok) {
-          setStatus("error");
-          setErrors({ form: "L'envoi a échoué. Réessayez dans un instant." });
-          return;
-        }
-        track("contact_form_submitted", { variant: variant.id });
-        setStatus("sent");
-        form.reset();
-      } catch {
+      setErrors({});
+
+      const payload = buildContactPayload(input, {
+        configuration: variant.materialsSummary,
+        source: getSource(),
+      });
+      const result = await submitContact(siteConfig.contactEndpoint, payload);
+
+      sendingRef.current = false;
+      if (!result.ok) {
         setStatus("error");
-        setErrors({ form: "Connexion impossible. Vérifiez votre réseau." });
+        setErrors({ form: result.message });
+        return;
       }
+
+      track("contact_form_submitted", { variant: variant.id });
+      form.reset();
+      setStatus("sent");
       return;
     }
 
-    // Repli mailto (aucune dépendance) : ouvre le client mail de l'utilisateur.
+    // Repli quand l'endpoint n'est pas configuré (développement local, ou build
+    // sans `NEXT_PUBLIC_CONTACT_ENDPOINT`) : ouverture du client mail prérempli.
+    // Ce n'est PAS le chemin de production — il perd le message quand aucun
+    // client mail n'est configuré, ce qui est fréquent sur mobile.
     const subject = `Contact FRAGMENT — ${variant.name}`;
     const lines = [
       `Prénom : ${input.firstName}`,
@@ -96,11 +102,20 @@ export function ContactForm() {
     )}&body=${encodeURIComponent(lines.join("\n"))}`;
     track("contact_form_submitted", { variant: variant.id });
     window.location.href = href;
-    setStatus("sent");
     form.reset();
+    setStatus("mailto");
   }
 
   if (status === "sent") {
+    return (
+      <Confirmation
+        title="Message envoyé."
+        body={`Votre demande à propos de « ${variant.name} » nous est bien parvenue. Nous vous répondons à l'adresse indiquée.`}
+      />
+    );
+  }
+
+  if (status === "mailto") {
     return (
       <Confirmation
         title="Message prêt à envoyer."
@@ -172,7 +187,8 @@ export function ContactForm() {
           type="submit"
           {...buttonMotion}
           disabled={status === "loading"}
-          className="btn-glass btn-glass-primary inline-flex min-h-[3rem] w-full items-center justify-center px-7 text-[0.95rem] font-semibold disabled:cursor-not-allowed"
+          aria-busy={status === "loading"}
+          className="btn-glass btn-glass-primary inline-flex min-h-[3rem] w-full items-center justify-center px-7 text-[0.95rem] font-semibold disabled:cursor-not-allowed disabled:opacity-70"
         >
           {status === "loading" ? "Envoi…" : "Prendre contact"}
         </motion.button>

@@ -53,6 +53,8 @@ jobs:
         run: npm run test
 
       - run: npm run build   # next build → export statique dans ./out (lit PAGES_BASE_PATH)
+        env:
+          NEXT_PUBLIC_CONTACT_ENDPOINT: ${{ vars.NEXT_PUBLIC_CONTACT_ENDPOINT }}
 
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

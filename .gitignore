@@ -4,4 +4,10 @@ out/
 .DS_Store
 *.log
 .env*
+!.env.example
 tsconfig.tsbuildinfo
+
+# Supabase — état local de la CLI et secrets de développement
+supabase/.branches/
+supabase/.temp/
+supabase/.env.local

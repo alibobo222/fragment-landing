@@ -14,7 +14,13 @@
     "test:watch": "vitest",
     "assets": "node scripts/prepare-assets.mjs",
     "cad": "node scripts/convert-cad.mjs",
-    "packshots": "node scripts/render-packshots.mjs"
+    "packshots": "node scripts/render-packshots.mjs",
+    "sb:link": "npx supabase@latest link",
+    "sb:push": "npx supabase@latest db push",
+    "sb:secrets": "npx supabase@latest secrets set --env-file supabase/.env.local",
+    "sb:deploy": "npx supabase@latest functions deploy contact",
+    "sb:serve": "npx supabase@latest functions serve contact --env-file supabase/.env.local",
+    "sb:logs": "npx supabase@latest functions logs contact"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.7",

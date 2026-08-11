@@ -280,3 +280,89 @@ Centralisées, jamais inventées. Voir les commentaires `TODO` dans le code :
 - `data/product.ts` (`productSpecs`) : **dimensions**, **source lumineuse**,
   **alimentation**, **poids**, **délai**, **disponibilité** — affichés
   « Information à venir » tant qu'ils sont `null`.
+
+---
+
+## 14. Formulaire de contact — Supabase + Resend
+
+Le site est un export statique : il n'a aucun serveur à lui. Le formulaire
+appelle donc une **fonction Edge Supabase** qui, elle, dispose des droits et des
+secrets nécessaires.
+
+```
+Formulaire (navigateur)
+   └─ POST JSON ─▶ Supabase Edge Function « contact »
+                      ├─ valide (mêmes règles que le client)
+                      ├─ enregistre dans public.contact_leads
+                      └─ notifie l'atelier via l'API Resend
+```
+
+### Ce qui est où
+
+| Fichier | Rôle |
+| --- | --- |
+| `supabase/functions/_shared/lead.ts` | validation et normalisation — **source de vérité**, partagée client/serveur |
+| `supabase/functions/contact/index.ts` | la fonction Edge |
+| `supabase/migrations/*_creation_table_contact_leads.sql` | table, contraintes, index, RLS |
+| `supabase/config.toml` | `verify_jwt = false` sur la fonction |
+| `lib/validation.ts` | ré-export du module partagé, pour le front |
+| `lib/contact.ts` | construction de la charge utile et envoi |
+| `config/site.ts` | `contactEndpoint`, lu depuis `NEXT_PUBLIC_CONTACT_ENDPOINT` |
+
+### Sécurité — les trois règles
+
+1. **La table n'est jamais atteinte par le navigateur.** La RLS est activée
+   *sans aucune policy* : `anon` et `authenticated` n'ont ni lecture ni
+   écriture. Seul `service_role`, qui contourne la RLS, insère — et il ne vit
+   que dans les secrets de la fonction.
+2. **Aucune clé dans le bundle.** La fonction est publique (`verify_jwt = false`)
+   précisément pour qu'aucune clé Supabase n'ait à être publiée côté client. La
+   seule valeur publique est l'URL de la fonction.
+3. **`SUPABASE_URL` et `SUPABASE_SERVICE_ROLE_KEY` ne se déclarent pas.** La
+   plateforme les injecte automatiquement dans les fonctions Edge ; le préfixe
+   `SUPABASE_` est d'ailleurs réservé et refusé par `supabase secrets set`.
+
+### Protections anti-spam
+
+Honeypot invisible (champ `company` — un envoi rempli reçoit un `200` sans être
+enregistré, pour ne rien apprendre au robot), validation serveur intégrale,
+corps de requête borné à 8 Ko, longueurs tronquées avant insertion, et
+limitation à 3 envois par tranche de 10 minutes et par adresse IP — comptée sur
+un **condensé salé** de l'IP, jamais sur l'IP elle-même. Aucun CAPTCHA.
+
+### Mise en service
+
+```bash
+npm run sb:link       # relie le dépôt au projet Supabase (demande la référence)
+npm run sb:push       # applique la migration → table contact_leads
+npm run sb:secrets    # pose les secrets depuis supabase/.env.local (non versionné)
+npm run sb:deploy     # déploie la fonction « contact »
+```
+
+Puis, côté GitHub : `Settings → Secrets and variables → Actions → Variables`,
+ajouter `NEXT_PUBLIC_CONTACT_ENDPOINT` avec l'URL de la fonction. Sans elle, le
+site déployé retombe silencieusement sur le client mail.
+
+### Développement local
+
+```bash
+cp .env.example supabase/.env.local     # puis renseigner les secrets
+npm run sb:serve                        # fonction sur http://localhost:54321
+echo "NEXT_PUBLIC_CONTACT_ENDPOINT=http://localhost:54321/functions/v1/contact" > .env.local
+npm run dev
+```
+
+### Tester
+
+1. Envoyer le formulaire avec une adresse réelle.
+2. Vérifier l'arrivée de l'e-mail, et que **Répondre** vise bien le prospect
+   (`reply-to`), pas l'expéditeur.
+3. Dans Supabase → Table Editor → `contact_leads` : la ligne existe,
+   `email_sent_at` est renseigné et `email_error` est vide.
+4. Renvoyer quatre fois de suite : le quatrième envoi doit répondre `429`.
+5. Depuis la console du navigateur, `fetch` direct sur la table avec la clé
+   anonyme : doit être refusé.
+
+**Si l'e-mail échoue, la demande est quand même enregistrée** et l'erreur est
+consignée dans `email_error`. C'est délibéré : on ne perd pas un contact parce
+qu'un quota Resend est atteint ou qu'un domaine n'est pas encore vérifié.

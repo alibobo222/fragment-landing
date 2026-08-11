@@ -78,6 +78,17 @@ modification qui pourrait faire coexister deux `<Canvas>` est à refuser.
 production. Toute route ajoutée pour le développement (par exemple une route de
 pré-rendu) doit être exclue de l'export.
 
+**Le seul serveur du projet est la fonction Edge Supabase `contact`**, qui vit
+hors du build Next (`supabase/functions/contact`). Le formulaire l'appelle en
+`fetch` ; elle enregistre la demande dans `contact_leads` puis notifie l'atelier
+via Resend. La validation est écrite une seule fois, dans
+`supabase/functions/_shared/lead.ts`, et `lib/validation.ts` la ré-exporte pour
+le front : ne jamais dupliquer ces règles. Aucune clé Supabase ni Resend ne doit
+apparaître côté client — la seule valeur publique est l'URL de la fonction,
+`NEXT_PUBLIC_CONTACT_ENDPOINT`. La table `contact_leads` est en RLS **sans
+aucune policy** : toute policy ajoutée rouvrirait un accès au navigateur, c'est
+à refuser. Détail complet dans `README.md`, section 14.
+
 **`data/product.ts` est la source de vérité** des matières et des
 configurations. Le rendu 3D, les vignettes, les pastilles et les textes doivent
 en dériver — jamais l'inverse.

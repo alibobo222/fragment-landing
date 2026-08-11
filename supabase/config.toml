@@ -1,0 +1,27 @@
+# Configuration Supabase du projet FRAGMENT.
+#
+# `project_id` sert de nom au projet LOCAL (docker) et d'identifiant par défaut
+# pour la CLI. Il ne s'agit pas de la référence du projet hébergé : celle-ci est
+# fournie au moment du `supabase link` et n'a rien à faire dans le dépôt.
+project_id = "fragment-landing"
+
+[db]
+port = 54322
+major_version = 17
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[functions.contact]
+# ENDPOINT PUBLIC, et c'est le point d'architecture central.
+#
+# Le site est un export statique servi par GitHub Pages : il n'a aucun serveur,
+# aucune session, aucun jeton à présenter. Exiger un JWT obligerait à publier la
+# clé anonyme dans le bundle du navigateur. On préfère une fonction ouverte,
+# protégée par ce qu'elle fait elle-même : origine contrôlée, méthode contrôlée,
+# corps borné, honeypot, validation, limitation de fréquence.
+verify_jwt = false

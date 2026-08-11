@@ -28,8 +28,15 @@ export interface SiteConfig {
   instagramUrl: string | null;
   legalNoticeUrl: string | null;
   privacyUrl: string | null;
-  /** Endpoint recevant les demandes/réservations. `null` = mode démonstration. */
-  leadEndpoint: string | null;
+  /**
+   * URL de la fonction Edge Supabase `contact`, qui enregistre la demande puis
+   * envoie la notification par Resend. Lue depuis l'environnement au moment du
+   * build : l'export étant statique, la valeur est figée dans le bundle — d'où
+   * le préfixe `NEXT_PUBLIC_`. Ce n'est pas un secret, c'est une URL publique
+   * appelée depuis le navigateur ; la fonction se protège elle-même.
+   * `null` = non configuré : le formulaire retombe sur le client mail.
+   */
+  contactEndpoint: string | null;
   analyticsProvider: AnalyticsProvider;
   /** Domaine Plausible / Site ID Matomo / Measurement ID GA. */
   analyticsId: string | null;
@@ -66,10 +73,10 @@ export const siteConfig: SiteConfig = {
   legalNoticeUrl: null,
   privacyUrl: null,
 
-  // TODO: brancher l'API de réception des demandes (ex: /api/lead vers un CRM,
-  // Formspree, Resend...). Tant que `null`, le formulaire fonctionne en mode
-  // démonstration et l'indique clairement au développeur (pas au visiteur).
-  leadEndpoint: null,
+  // Renseignée par `NEXT_PUBLIC_CONTACT_ENDPOINT` au build (voir .env.example et
+  // le workflow GitHub Actions). Absente en local tant qu'on n'a pas servi la
+  // fonction : le formulaire retombe alors sur le client mail, sans rien casser.
+  contactEndpoint: process.env.NEXT_PUBLIC_CONTACT_ENDPOINT || null,
 
   analyticsProvider: "none",
   analyticsId: null,
