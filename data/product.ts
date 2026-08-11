@@ -113,7 +113,7 @@ export const variants: ProductVariant[] = [
       label: "WESTERIAL - Coquilles de moules",
       color: "#1a1a1c",
       material: "blackConcrete",
-      textureImage: "/textures/westerial-coquilles-moules.png",
+      textureImage: "/textures/swatch/westerial-coquilles-moules.webp",
     },
     // Intérieur de l'abat-jour : placage de bois brûlé (image réelle,
     // /public/textures). Couleur de repli = moyenne mesurée sur l'image.
@@ -121,14 +121,14 @@ export const variants: ProductVariant[] = [
       label: "Bois brûlé",
       color: "#817f77",
       material: "matte",
-      textureImage: "/textures/bois-brule.png",
+      textureImage: "/textures/swatch/bois-brule.webp",
     },
     assembly: { label: "Acier brut", color: "#b7bab8", material: "metal" },
     base: {
       label: "WESTERIAL - Coquilles de moules",
       color: "#1a1a1c",
       material: "blackConcrete",
-      textureImage: "/textures/westerial-coquilles-moules.png",
+      textureImage: "/textures/swatch/westerial-coquilles-moules.webp",
     },
     // Bleu Klein (International Klein Blue, outremer profond). Seule la couleur
     // de base change ; le kind reste « fabric » (texture de tissage inchangée).
@@ -170,14 +170,14 @@ export const variants: ProductVariant[] = [
       label: "Wasterial® - Brique",
       color: "#9c4a39",
       material: "brick",
-      textureImage: "/textures/brique.png",
+      textureImage: "/textures/swatch/brique.webp",
     },
     assembly: { label: "Aluminium", color: "#c7c9cb", material: "metal" },
     base: {
       label: "Wasterial® - Brique",
       color: "#9c4a39",
       material: "brick",
-      textureImage: "/textures/brique.png",
+      textureImage: "/textures/swatch/brique.webp",
     },
     cable: { label: "Câble textile noir", color: "#111113", material: "fabric" },
     description:
@@ -196,14 +196,14 @@ export const variants: ProductVariant[] = [
       label: "Wasterial® - Coquilles d'huître",
       color: "#5e6440",
       material: "shell",
-      textureImage: "/textures/coquilles-huitres.png",
+      textureImage: "/textures/swatch/coquilles-huitres.webp",
     },
     assembly: { label: "Inox", color: "#b7bab8", material: "metal" },
     base: {
       label: "Wasterial® - Verre de bouteille",
       color: "#2e3b2c",
       material: "glassBottle",
-      textureImage: "/textures/verre-bouteille.png",
+      textureImage: "/textures/swatch/verre-bouteille.webp",
     },
     cable: { label: "Câble textile noir", color: "#111113", material: "fabric" },
     description:
@@ -222,7 +222,7 @@ export const variants: ProductVariant[] = [
       label: "Wasterial® - Coquilles d'huîtres",
       color: "#5e6440",
       material: "shell",
-      textureImage: "/textures/coquilles-huitres.png",
+      textureImage: "/textures/swatch/coquilles-huitres.webp",
     },
     assembly: { label: "Laiton", color: "#b08a52", material: "metal" },
     base: { label: "Béton noir", color: "#1a1a1c", material: "blackConcrete" },
@@ -243,7 +243,7 @@ export const variants: ProductVariant[] = [
       label: "Wasterial® - Billes de verre",
       color: "#2b3a54",
       material: "blueGlass",
-      textureImage: "/textures/verre-bleu.png",
+      textureImage: "/textures/swatch/verre-bleu.webp",
     },
     // Acier anodisé teinté de la couleur des « Billes de verre » (#2b3a54).
     // Seule la couleur de base change ; le kind reste « metal » (metalness /
@@ -253,7 +253,7 @@ export const variants: ProductVariant[] = [
       label: "Wasterial® - Billes de verre",
       color: "#2b3a54",
       material: "blueGlass",
-      textureImage: "/textures/verre-bleu.png",
+      textureImage: "/textures/swatch/verre-bleu.webp",
     },
     // Câble teinté de la couleur des « Billes de verre » (#2b3a54). Seule la
     // couleur de base change ; le kind reste « fabric » (texture de tissage,
