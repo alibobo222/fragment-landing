@@ -1,8 +1,10 @@
 # TASKS.md — plan de travail
 
-Issu de la revue du 10 août 2026, **mis à jour après la séance du 10 août au
-soir**. Les tâches sont ordonnées par dépendance : chacune suppose les
-précédentes faites.
+**État au 12 août 2026** — dernier commit `5d74185` (ce document est réécrit
+juste après). `npm run typecheck && npm run lint && npm run test` : les trois
+passent (0 erreur, 0 warning, 55/55 tests). `npm run build` (export statique) :
+passe. Cette ligne évite à la prochaine session de repartir d'un diagnostic
+périmé — vérifie-la avant de faire confiance au reste du fichier si elle date.
 
 ---
 
@@ -11,322 +13,162 @@ précédentes faites.
 ### Pour chaque tâche
 
 Ouvre Claude Code dans le dossier du projet et colle exactement ceci, en
-remplaçant le numéro :
+remplaçant le nom :
 
-> Lis `TASKS.md` et exécute **uniquement** la tâche **A1**. Respecte son
+> Lis `TASKS.md` et exécute **uniquement** la tâche **<nom>**. Respecte son
 > périmètre : n'implémente rien qui n'y figure pas. Quand c'est fait, lance
 > `npm run typecheck && npm run lint && npm run test`, montre-moi le diff, et
 > attends ma validation avant de commiter.
 
-Une tâche = une session = un commit. Si une session dérive, `/clear` et reprends
-la tâche à zéro : c'est moins coûteux que de corriger.
+Une tâche = un commit. Si une session dérive, `/clear` et reprends la tâche à
+zéro : c'est moins coûteux que de corriger.
 
 `CLAUDE.md`, à la racine, est lu automatiquement — Claude Code y trouve
 l'architecture, les règles et les pièges du projet. Inutile de les répéter.
 
 ### Les tâches marquées 👁
 
-Elles ne peuvent pas être jugées par des tests. Lance `npm run dev`, regarde, et
-valide toi-même avant de commiter.
+Elles ne peuvent pas être jugées par des tests. Lance `npm run dev` (avec
+`NEXT_PUBLIC_PACKSHOT=1` si la tâche touche au rendu 3D, pour pouvoir comparer
+avec `npm run visual` — voir plus bas), regarde, et valide toi-même avant de
+commiter.
 
 ---
 
-# ✅ Résolu — tout est maintenant commité
+## ✅ Fait
 
-Le risque décrit ici (une trentaine de fichiers modifiés le 10 août au soir,
-rien en git) est levé : `typecheck`, `lint` et `test` passent tous les trois,
-et l'ensemble est réparti sur plusieurs commits — la refonte du cartel du
-configurateur (données, nuancier, agrandissement de la lampe) plus, notées
-séparément parce que hors du périmètre de cette tâche-là, la pastille de
-température de lumière, l'indicateur de débordement du sélecteur et le
-décrochage du titre de « Les matières ».
+**Fondations matières (la dette la plus importante du projet, résolue).** Les
+matières sont désormais un champ explicite `material: MaterialKind` sur
+`PartFinish` — plus aucune détection par expression régulière sur un libellé
+affiché. Renommer un libellé n'affecte plus le rendu 3D. Verrouillé par
+`tests/materials.test.ts` (24 tests : résolution attendue par variante × pièce,
+transmission de chaque abat-jour, couverture complète de `PROFILES`). Toutes
+les matières écrivent désormais `Wasterial®` (plus de `WESTERIAL`) et
+« coquilles d'huîtres » partout ; le nom de la variante 04 est aligné sur son
+`materialsSummary` et sur le schéma des autres variantes (« *matière* &
+*métal* »).
 
-Le dossier `_to_delete/` (anciens verrous git, fichiers `.tmp.mjs`) **est
-revenu plusieurs fois** pendant cette séance de commit malgré sa suppression —
-voir « Découvert en chemin ».
+**Base de régression visuelle.** `scripts/visual-regression.mjs` (`npm run
+visual`, `-- --update` pour rafraîchir) capture les 7 configurations via la
+route `/packshot` et les compare à `tests/visual-baseline/` (versionnée). Seuil
+à 2 % : les textures de grain sont régénérées par `Math.random()` à chaque
+chargement de page, ce qui produit un bruit non déterministe mesuré jusqu'à
+0,61 % sur trois essais sans aucun changement de code — voir le commentaire du
+script avant de resserrer ce seuil. C'est cet outil qui a validé le refactor
+matières ci-dessus (0 régression réelle détectée).
 
----
+**Formulaire de contact.** Bascule complète sur Supabase Edge Function +
+Resend (`supabase/functions/contact`) : enregistrement dans `contact_leads`
+(RLS sans policy, jamais atteinte par le navigateur), notification e-mail,
+honeypot, rate-limit (3/10 min par IP salée), validation partagée
+client/serveur. Détails et procédure de mise en service dans `README.md`,
+section 14. Le repli `mailto:` reste le chemin de secours si l'endpoint n'est
+pas configuré.
 
-# ✅ Fait le 10 août
+**SEO.** `siteConfig.siteUrl` pointe vers l'URL GitHub Pages réellement servie
+(`https://alibobo222.github.io/fragment-landing`), canonical/OG/sitemap/robots
+alignés — y compris la résolution des chemins relatifs sous le sous-dossier
+`/fragment-landing` (voir le commentaire dans `app/layout.tsx`, un piège
+classique de `metadataBase` avec `basePath`). La route `/packshot` (outil de
+génération de vignettes, jamais une page du site) est exclue de l'indexation.
 
-Pour mémoire, et pour ne pas re-planifier ce qui existe déjà.
+**Dépendances.** Next.js et `eslint-config-next` en 15.5.23, `sharp` en 0.35.3,
+`playwright` déclaré (servait sans être dans `package.json`). `npm audit` :
+12 → 8 vulnérabilités ; les 8 restantes exigent Next 16 (postcss/sharp internes
+à l'optimiseur d'image, jamais utilisé ici — `images.unoptimized: true`) ou
+vitest 4 (chaîne esbuild/vite) — volontairement pas traitées, voir « Reste
+ouvert ».
 
-**Socle.** `.gitattributes` (protège les sources CAO d'une conversion de fins de
-ligne). CI qui vérifie types, lint et tests avant de déployer.
+**Poids des médias.** Placage bois : 1,84 Mo → 78,7 Ko (WebP 1024 px,
+`scripts/prepare-assets.mjs`). Pastilles du nuancier : ~1,26 Mo → ~4,2 Ko pour
+les 7 (dérivés 64 px sous `public/textures/swatch/`, générés par la même
+section du script). La prop `unoptimized`, redondante avec
+`next.config.mjs`, a été retirée de chaque `<Image>` (les `sizes` restent :
+`next/core-web-vitals` avertit sinon sur les `<Image fill>`).
 
-**Configurateur.** Viewport 3D épinglé, de sorte que la lampe reste visible
-pendant le choix — auparavant le catalogue commençait ~590 px sous la scène.
-Sélecteur unique en rangée horizontale, le catalogue vertical redondant ayant été
-supprimé et ses informations remontées sous la scène. Focus clavier visible.
-Fiche de configuration animée. Lampe éteinte au chargement.
+**Cycle de vie 3D.** `Lamp3D` et `ExplodedLamp3D` disposent maintenant leurs
+matériaux au démontage (`customProgramCacheKey` stable requis pour que le
+cache de programmes three.js fonctionne avec un `onBeforeCompile`
+personnalisé — critère vérifié : `renderer.info.programs` ne croît plus sur 10
+allers-retours de scroll). Les textures partagées entre les deux scènes ne
+sont plus libérées par l'une au détriment de l'autre (cache de module = bon
+niveau de vie). `ExplodedAnnotations` et `ExplodedLampSection` coupent leur
+boucle `requestAnimationFrame` sur `visibilitychange`, comme `LampStage`.
 
-**Vue éclatée.** Découpée en actes (désassemblage → tracé → palier de lecture),
-avec un fichier de chronologie dédié. Nomenclature renumérotée et rangée en deux
-colonnes correspondant aux deux groupes de pièces. Placement des étiquettes
-calculé sur la projection réelle, avec répartition anti-chevauchement. Flèches
-visant un vrai point de surface, pointe orientée sur la tangente du tracé.
-Ombre de contact recalée sous le pied. Plus de page blanche à la sortie.
+**Contenu.** La fiche technique masque les six caractéristiques non
+renseignées au lieu d'afficher « — à venir » (les `TODO` restent dans
+`data/product.ts`, c'est le rappel pour l'atelier).
 
-**Produit.** Tôle perforée sur la pièce d'assemblage (trous carrés, vraies
-ouvertures par `discard` — le GLB n'ayant pas d'UV, une `alphaMap` était hors de
-portée). Filetage intérieur de la douille en **vraie géométrie** (hélice
-paramétrée sur l'axe et l'alésage ajustés aux moindres carrés). Option
-**Perforation** ronde / carrée / aucune, intégrée à l'état du configurateur.
+**CI.** Le workflow vérifie types/lint/tests sur chaque pull request en plus
+de chaque push sur `main` ; seul le job de déploiement reste conditionné au
+push.
 
-**Vignettes.** DA unifiée : caméra, focale, angle, échelle, marges, éclairage et
-état lumineux dans un module unique (`config/packshot.ts`), route de rendu,
-script de génération, et les sept images produites depuis le moteur 3D du site.
-Cadrage vérifié identique au pixel sur les sept.
-
-**UI.** Cadres des vignettes supprimés, trois filets horizontaux retirés au
-profit de l'espace et de la typographie, fondu à la place du filet sous le bloc
-épinglé, contrôles sortis de la scène pour ne plus empiéter sur la lampe, et
-correction du clipping du câble — la boîte 3D était un carré plafonné à 40 % de
-la hauteur d'écran, elle occupe désormais toute la largeur à hauteur constante.
-
-**Typographie.** Titres passés de 900 à 600, calés sur le logotype FRAGMENT.
-
----
-
-# PHASE A — Fondations matières
-
-**C'est la dette la plus importante du projet, et elle est intacte.** Une matière
-est identifiée en re-parsant un libellé français avec des expressions
-régulières. Renommer un libellé dans `data/product.ts` casse le rendu 3D
-**silencieusement** : la matière retombe sur `matte` sans qu'aucune erreur ne
-soit levée. Deux corrections de contenu attendent d'ailleurs cette tâche.
-
-## ☐ A1 — Type de matière explicite, fin des regex
-
-**Fichiers.** `data/product.ts`, `data/lampModel.ts`, `lib/lampTextures.ts`,
-`lib/materialSwatch.ts`, `components/hero/Lamp3D.tsx`,
-`components/hero/ExplodedLamp3D.tsx`.
-
-**Ce qu'il faut faire.** Ajouter un champ obligatoire `material: MaterialKind` à
-`PartFinish`, renseigné explicitement pour les 4 pièces des 7 variantes, avec des
-valeurs correspondant **exactement** à ce que la regex actuelle produit.
-Transformer `materialProfile(label)` en accès direct `PROFILES[kind]`. Déplacer
-la transmission lumineuse dans les profils et remplacer `shadeTransmission(label)`
-par une lecture de champ. Faire de même pour `materialTexture(label)`.
-
-Supprimer le code mort : `surfaceFromLabel`, `surfaceFor` et l'interface
-`Surface` dans `data/lampModel.ts` ne sont utilisés nulle part (vérifié).
-
-**Contrainte forte.** Refactor **sans changement visuel**. Le rendu des 7
-configurations doit être identique avant et après. Ne renommer aucun libellé
-ici — c'est la tâche A3.
-
-**Vérification 👁.** Comparer les 7 configurations par capture, dans le
-configurateur et dans la vue éclatée.
-
-**Commit.** `refactor(matières): remplace la détection par regex par un type explicite`
+**Antérieur (avant cette session, pour mémoire) :** `.gitattributes`, CI de
+base, refonte du cartel du configurateur (nuancier, scène agrandie à 54svh,
+non épinglée), vue éclatée en actes avec chronologie dédiée, tôle perforée en
+vraie géométrie, filetage hélicoïdal de la douille, DA des packshots unifiée
+(`config/packshot.ts`), curseur de température de couleur en kelvins.
 
 ---
 
-## ☐ A2 — Tests de résolution des matières
+## Reste ouvert
 
-**Fichiers.** Nouveau `tests/materials.test.ts`.
+### Images éditoriales et textures 👁
 
-Parcourir les 7 variantes × 4 pièces et vérifier que chaque finition résout vers
-le `MaterialKind` attendu, avec une table d'attendus écrite en dur. Vérifier
-qu'aucune ne tombe sur `matte` par accident, que la transmission de chaque
-abat-jour est celle attendue, et que chaque `MaterialKind` référencé possède une
-entrée dans `PROFILES`.
+`chapter2/general.webp` (687 Ko), `eclate.webp` (477 Ko), `croquis.webp`
+(289 Ko), `profil.webp` (296 Ko) et `materiaux-echantillons.png` (313 Ko — une
+photographie en PNG, que le WebP diviserait par trois ou quatre) : toujours à
+leur poids d'origine, vérifié à cette date. Les textures PNG de rendu 3D
+(`public/textures/*.png`, hors dérivés `swatch/`) sont plus délicates : à
+valider à l'œil sur la 3D, pas sur l'image seule. Passer par
+`scripts/prepare-assets.mjs`, qui a maintenant une section dédiée aux fichiers
+de `public/textures/` à étendre plutôt qu'une troisième à créer.
 
-**Critère.** Modifier une valeur `material` dans `product.ts` fait échouer un
-test avec un message clair.
+**Commit proposé.** `perf(assets): recompresse les images éditoriales et les textures`
 
-**Commit.** `test(matières): verrouille la résolution des profils de matière`
+### Variantes responsives d'images
 
----
+Sans optimiseur (export statique, `images.unoptimized: true`), les attributs
+`sizes` des `<Image>` n'ont aucun effet réel : ils évitent seulement un
+warning ESLint. La vraie question — générer de vraies variantes responsives
+(plusieurs résolutions par image, servies selon la taille d'écran) — reste
+entière. Non traitée délibérément : hors périmètre d'un simple nettoyage de
+prop redondante (voir « Découvert en chemin »).
 
-## ☐ A3 — Nomenclature : orthographes restantes
+### Chapitre « Les matières » 👁
 
-**Prérequis : A1.** Sans elle, corriger « WESTERIAL » casse le rendu de la
-configuration 01.
+Toujours mince : un titre, trois phrases, une image de planche
+(`materiaux-echantillons.png`, justement listée ci-dessus). Les pastilles
+légères existent maintenant (`public/textures/swatch/`), mais seulement pour
+7 des matières du catalogue, pas les ~13 `MaterialKind` — un vrai rendu de
+pastille par `MaterialKind` depuis le moteur 3D (sphère ou carré, profil
+exact, éclairage studio) donnerait une couverture complète et permettrait de
+présenter la palette réelle matière par matière. Ne rien inventer sur
+l'origine ou la composition : seuls les textes déjà présents dans
+`data/product.ts` sont utilisables.
 
-Il reste, vérifié dans les données : **trois** occurrences de `WESTERIAL` en
-capitales, là où toutes les autres variantes écrivent `Wasterial®` ; et une
-hésitation entre « huître » (4 fois) et « huîtres » (5 fois) pour la même
-matière. Revoir aussi le nom de la variante 04, très long pour une ligne de
-catalogue, et incohérent avec son propre `materialsSummary`.
+**Commit proposé.** `feat(contenu): présente la palette de matières réelle`
 
-**Déjà fait le 10 août** : « Câble textile » partout, et « Assemblage » unifié
-via `partLabels`.
+### Dépendances restantes (volontairement non traitées)
 
-**Commit.** `fix(contenu): unifie l'orthographe des matières`
-
----
-
-# PHASE B — Cohérence visuelle, suite
-
-Les packshots existent ; deux usages restent à brancher.
-
-## ☐ B1 — Pastilles de matière rendues, fin de `materialSwatch`
-
-**Prérequis : A1, et le système de packshot existant.**
-
-`lib/materialSwatch.ts` ne connaît que six matières sur la vingtaine du catalogue
-et retombe sur un aplat de couleur pour la porcelaine, le béton clair, tous les
-métaux et tous les câbles. Le mélange « vignette texturée / pastille unie » se
-voit dans la décomposition matière.
-
-Étendre la route de packshot à un mode « pastille » : une sphère ou un carré
-rendu avec le profil exact et le même éclairage studio, une image par
-`MaterialKind`. `MaterialRow` lit alors `finish.material`. Supprimer
-`lib/materialSwatch.ts`.
-
-**Commit.** `feat(matières): génère les pastilles depuis le moteur 3D`
+`npm audit` liste encore 8 vulnérabilités : la copie interne de
+postcss/sharp dans `next` (optimiseur d'image — inutilisé ici) n'a de correctif
+qu'en passant à Next 16 ; la chaîne esbuild/vite/vitest n'a de correctif qu'en
+passant à vitest 4. Les deux sont des montées majeures, hors périmètre de
+cette séance. À planifier comme tâches à part entière plutôt qu'en profiter
+« au passage » lors d'une autre tâche.
 
 ---
 
-## ☐ B2 — Le repli de `LampStage` doit être un packshot
+## Hors périmètre (manuel, pour l'humain)
 
-`components/lamp/LampStage.tsx` affiche encore `v.image` — l'ancienne image
-éditoriale — en attendant que la 3D soit prête. Comme les deux ne représentent
-pas le même rendu, le fondu se voit au chargement. Le faire pointer vers le
-packshot généré, en gardant `priority` sur la première image (c'est le LCP).
-
-**Commit.** `fix(3d): aligne l'image de repli sur le rendu du viewport`
-
----
-
-# PHASE C — Performance et robustesse 3D
-
-L'architecture « un seul contexte WebGL vivant » implique que les scènes se
-**remontent à chaque passage de scroll**. Ce qui est alloué au montage doit être
-libéré au démontage — ce n'est toujours pas le cas.
-
-## ☐ C1 — Libérer les matériaux, stabiliser le cache de shaders
-
-Dans `Lamp3D` comme dans `ExplodedLamp3D`, le `useMemo` crée cinq à six
-`MeshPhysicalMaterial` avec un `onBeforeCompile` personnalisé. **Rien ne les
-libère** (vérifié : aucun `dispose` de matériau dans `Lamp3D`). Chaque
-aller-retour de scroll laisse derrière lui des matériaux et des programmes GLSL.
-
-Définir `mat.customProgramCacheKey = () => "lamp-grain-v1"` dans
-`createGrainMaterial` — un `onBeforeCompile` personnalisé casse sinon le cache de
-programmes. Ajouter un effet de nettoyage qui `dispose()` chaque matériau créé.
-
-**Contrainte.** Ne **jamais** disposer les géométries : elles appartiennent au
-GLTF mis en cache par drei et sont partagées. Seule exception déjà en place, la
-géométrie du filetage, créée par le composant et libérée par lui.
-
-**Critère.** Dix allers-retours de scroll : `renderer.info.programs` revient à
-son niveau initial au lieu de croître.
-
-**Commit.** `perf(3d): libère les matériaux au démontage`
-
----
-
-## ☐ C2 — Cycle de vie des textures partagées
-
-`disposeLampTextures()` est toujours appelé au démontage de `Lamp3D` (vérifié)
-alors que les textures sont des singletons de module **partagés avec
-`ExplodedLamp3D`**, qui ne les libère pas. Chaque passage devant le configurateur
-détruit donc des textures que la vue éclatée devra régénérer au canvas — et
-`makeShellTexture`, `makeBlueTerrazzoTexture` et consorts ne sont pas gratuites.
-
-Le plus simple et parfaitement acceptable : retirer l'appel et ne plus les
-libérer du tout. Le cache de module est le bon niveau de vie.
-
-**Commit.** `perf(3d): arrête de libérer les textures partagées entre scènes`
-
----
-
-## ☐ C3 — Boucles d'animation en veille
-
-`ExplodedAnnotations` fait tourner une boucle `requestAnimationFrame` en
-permanence tant que la couche est montée. Et `ExplodedLampSection` ne surveille
-pas `visibilitychange`, contrairement à `LampStage` : la vue éclatée continue de
-tourner en `frameloop="always"` quand l'onglet passe en arrière-plan.
-
-**Commit.** `perf(3d): met les boucles d'animation en veille hors champ`
-
----
-
-# PHASE D — Poids des médias
-
-## ☐ D1 — Le placage bois : 1,84 Mo (vérifié, inchangé)
-
-`public/textures/placage-bois.jpg` pèse toujours 1 841 110 octets. Il ne sert
-qu'au placage intérieur de l'abat-jour de la configuration 01, à un tuilage de 8
-— sa résolution native est très au-delà du visible. Redimensionner à 1024 px et
-convertir en WebP : attendu 60 à 100 Ko, soit environ 95 % de gain. **Meilleur
-rapport gain/effort du projet.**
-
-**Commit.** `perf(assets): allège la texture de placage bois`
-
----
-
-## ☐ D2 — Images éditoriales et textures 👁
-
-`chapter2/general.webp` 687 Ko, `eclate.webp` 477 Ko, `croquis.webp` 289 Ko, et
-`materiaux-echantillons.png` 313 Ko — une photographie stockée en PNG, que le
-WebP diviserait par trois ou quatre. Les textures PNG sont plus délicates : ce
-sont des données de rendu, à valider à l'œil sur la 3D et non sur l'image seule.
-Faire passer l'opération par `scripts/prepare-assets.mjs`, qui existe déjà.
-
-**Commit.** `perf(assets): recompresse les images éditoriales et les textures`
-
----
-
-## ☐ D3 — Nettoyer la configuration d'images
-
-`next.config.mjs` porte `images.unoptimized: true` — logique en export statique —
-**et** la prop `unoptimized` est répétée sur chaque `<Image>`. Redondant. Plus
-important : aucun optimiseur ne tournant, les attributs `sizes` n'ont aucun
-effet. Soit les retirer, soit générer de vraies variantes responsives.
-
-**Commit.** `chore(images): supprime les réglages sans effet en export statique`
-
----
-
-# PHASE E — Contenu et finitions
-
-## ☐ E1 — Fiche technique : masquer les champs vides
-
-**Six** champs sur dix affichent « — à venir » (vérifié). Le paragraphe qui suit
-explique déjà que ces éléments se précisent au cas par cas : les lignes vides
-n'ajoutent rien et donnent une impression d'inachevé. Les filtrer. **Ne pas**
-toucher à `data/product.ts` : les `TODO` restent, ce sont eux qui rappellent ce
-que l'atelier doit fournir. Au passage, leur valeur est en `text-ink-muted/60`,
-ce qui descend probablement sous le ratio AA — le filtrage règle aussi ça.
-
-**Commit.** `fix(contenu): masque les caractéristiques non renseignées`
-
----
-
-## ☐ E2 — Le chapitre « Les matières » 👁
-
-**Prérequis : B1.** Il est aujourd'hui très mince : un titre, trois phrases, une
-image de planche. Avec les pastilles générées, il peut présenter la palette
-réelle, matière par matière, et préparer le configurateur au lieu de l'annoncer.
-**Ne rien inventer** sur l'origine ou la composition : seuls les textes déjà
-présents dans `data/product.ts` sont utilisables.
-
-**Commit.** `feat(contenu): présente la palette de matières réelle`
-
----
-
-## ☐ E3 — Le formulaire de contact doit vraiment envoyer
-
-`siteConfig.leadEndpoint` vaut toujours `null` (vérifié) : tout repose sur le
-repli `mailto:`. Sur mobile, beaucoup de navigateurs n'ont pas de client mail
-configuré — le message est alors perdu **sans que personne ne le sache**. Créer
-un endpoint Formspree ou Basin, le renseigner, envoyer un message de test.
-Un quart d'heure, et rien à modifier dans le code : `ContactForm` gère déjà les
-deux chemins.
-
-**Commit.** `chore(contact): active l'endpoint d'envoi du formulaire`
-
----
-
-## ☐ E4 — Sortir le projet de OneDrive (manuel)
+### Sortir le projet de OneDrive
 
 Le dépôt vit dans `OneDrive\Bureau\CLAUDE CODE\etnisi-site`. La combinaison
-OneDrive + `node_modules` + `.git` provoque des verrous de fichiers et, dans les
-mauvais cas, un dépôt corrompu. Elle ralentit aussi les builds.
+OneDrive + `node_modules` + `.git` provoque des verrous de fichiers — voir
+« Découvert en chemin » ci-dessous, le symptôme s'est reproduit pendant cette
+séance aussi — et, dans les mauvais cas, un dépôt corrompu. Ralentit aussi les
+builds.
 
 ```bash
 git status                      # doit être propre
@@ -336,26 +178,57 @@ cd C:\dev\etnisi-site && npm ci && npm run build
 
 Vérifier `git log` et `git remote -v`, puis supprimer l'ancien dossier.
 
+### Passage à Next 16
+
+Change la configuration d'`eslint-config-next`. Résoudrait les dernières
+vulnérabilités liées à l'optimiseur d'image de Next (non utilisé ici), mais
+c'est une vraie montée de version majeure, à faire délibérément et pas comme
+correctif de sécurité incidental.
+
 ---
 
-# Découvert en chemin
+## Découvert en chemin
 
-À trier plus tard, repéré pendant la séance du 10 août.
-
-- Le câble s'étale largement et dicte la largeur de cadrage des packshots, ce qui
-  rapetisse la lampe. Le masquer sur les vignettes donnerait un packshot plus
-  serré — un paramètre à ajouter à la DA.
-- La perforation ne couvre aujourd'hui que la tôle en entier. Sur le prototype
-  réel, elle s'arrête avant les bords et laisse un liseré plein.
-- `EXPLODE_SCALE` et `CAMERA` de la vue éclatée se règlent ensemble : c'est
-  documenté dans le code, mais mériterait d'être dérivé automatiquement.
-
-Repéré pendant la séance de commit du 11 août.
-
+- **Variantes responsives d'images non générées** (voir « Reste ouvert » —
+  signalé ici tel que demandé, pour ne pas se reperdre : le nettoyage de la
+  prop `unoptimized` a distingué ce qui n'avait aucun effet, en beauté, de ce
+  qui manque réellement).
+- **`scripts/prepare-assets.mjs` dépend de planches sources absentes du
+  dépôt** (`../Etnisi/Capture d'écran ....png`) pour sa partie historique
+  (découpe des visuels de variantes et du prototype). Ce n'est pas un bug :
+  ces planches sont déposées par l'atelier, hors dépôt, par conception. Mais
+  le script échouait autrefois si elles manquaient — corrigé pendant cette
+  séance (il journalise et passe à la section suivante) pour qu'il reste
+  exécutable après un simple `git clone`, la nouvelle section (textures)
+  n'ayant besoin de rien d'externe.
+- Un `MaterialKind` (`glassBlue`) existe dans `PROFILES` sans qu'aucune
+  variante ne le référence — vérifié, ce n'est pas un oubli : c'est un profil
+  antérieur à `blueGlass`, jamais retiré. Sans effet (le test de couverture de
+  l'étape matières le valide quand même), mais un vrai candidat au ménage si
+  quelqu'un confirme qu'il est bien mort.
 - Le dossier `_to_delete/` (verrous git `*.lock.removed`, objets temporaires
-  `tmp-objects/`, scripts `*.tmp.mjs`) est réapparu à plusieurs reprises malgré
-  sa suppression, avec à chaque fois un `.git/index.lock` orphelin (confirmé
-  sans processus git actif via `Get-Process`). Cause probable : un outil ou un
-  hook qui touche `.git/` sans se terminer proprement dans cet environnement
-  Windows/OneDrive. Sans effet sur le site, mais à surveiller — et un argument
-  de plus pour E4 (sortir le dépôt de OneDrive).
+  `tmp-objects/`) et un `.git/index.lock` orphelin sont réapparus une nouvelle
+  fois pendant cette séance (cause probable inchangée : un outil ou un hook
+  qui touche `.git/` sans se terminer proprement sous Windows/OneDrive — encore
+  un argument pour sortir le dépôt de OneDrive, voir plus haut).
+- Le nuancier du configurateur (`ColorSwatch`) et le rendu 3D peuvent
+  diverger : deux pièces qui partagent le même `MaterialKind` (donc le même
+  rendu 3D) n'affichent pas forcément la même vignette dans le nuancier (ex.
+  « Béton noir » n'a pas de photo dédiée, contrairement à « Wasterial® -
+  Coquilles de moules », qui partage pourtant son profil). Comportement
+  hérité et volontairement préservé pendant le refactor matières (contrainte
+  « sans changement visuel ») ; la pastille rendue depuis le moteur 3D
+  (« Reste ouvert » ci-dessus) réglerait cette incohérence en unifiant tout
+  par `MaterialKind`.
+- `next lint` est marqué déprécié par Next.js 15.5 (retrait prévu en Next 16) :
+  aucun impact aujourd'hui (0 warning), mais la migration vers l'ESLint CLI
+  (`npx @next/codemod@canary next-lint-to-eslint-cli .`) devra accompagner un
+  futur passage à Next 16.
+- Le câble s'étale largement et dicte la largeur de cadrage des packshots, ce
+  qui rapetisse la lampe. Le masquer sur les vignettes donnerait un packshot
+  plus serré — un paramètre à ajouter à la DA (`config/packshot.ts`).
+- La perforation ne couvre aujourd'hui que la tôle en entier. Sur le
+  prototype réel, elle s'arrête avant les bords et laisse un liseré plein.
+- `EXPLODE_SCALE` et `CAMERA` de la vue éclatée se règlent ensemble : c'est
+  documenté dans le code (`components/hero/ExplodedLamp3D.tsx`), mais
+  mériterait d'être dérivé automatiquement plutôt que réglé à la main.
