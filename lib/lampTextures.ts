@@ -580,7 +580,7 @@ function makeBlackConcreteTexture(): THREE.Texture {
 }
 
 /**
- * Chemin de l'IMAGE réelle fournie pour « WESTERIAL - Coquilles de moules »
+ * Chemin de l'IMAGE réelle fournie pour « Wasterial® - Coquilles de moules »
  * (l'ancien « Noir mat »). Utilisée TELLE QUELLE comme baseColor : aucune
  * retouche (couleur/contraste/saturation/luminosité), aucune recréation.
  * Seuls l'échelle (uCompositeScale) et le placage triplanar (UV object-space)
@@ -971,7 +971,7 @@ const COMPOSITE: Record<
   // Verre de bouteille : image réelle (verre recyclé vert foncé), couleur
   // uniquement, aucun relief, visible extérieur ET intérieur des pièces.
   glassBottle: { tex: getBottleGlassTexture, scale: 14, bump: 0, rough: 0, both: true },
-  // WESTERIAL - Coquilles de moules (ex « Noir mat ») : image réelle, couleur
+  // Wasterial® - Coquilles de moules (ex « Noir mat ») : image réelle, couleur
   // uniquement, aucun relief, visible extérieur ET intérieur de l'abat-jour.
   blackConcrete: { tex: getBlackConcreteTexture, scale: 16, bump: 0, rough: 0, both: true },
   // Verre bleu : couleur uniquement (aucun relief, aucune variation de

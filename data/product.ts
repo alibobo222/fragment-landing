@@ -105,12 +105,12 @@ export const variants: ProductVariant[] = [
     id: "prototype-noir-cable-bleu",
     index: "01",
     name: "Noir brut & câble textile bleu",
-    materialsSummary: "WESTERIAL - Coquilles de moules · Acier brut · Câble textile bleu",
+    materialsSummary: "Wasterial® - Coquilles de moules · Acier brut · Câble textile bleu",
     // Accent : le bleu franc du câble textile, signature de la pièce d'origine.
     accent: "#2a3fe6",
     accentOnDark: "#6f83ff",
     shade: {
-      label: "WESTERIAL - Coquilles de moules",
+      label: "Wasterial® - Coquilles de moules",
       color: "#1a1a1c",
       material: "blackConcrete",
       textureImage: "/textures/swatch/westerial-coquilles-moules.webp",
@@ -125,7 +125,7 @@ export const variants: ProductVariant[] = [
     },
     assembly: { label: "Acier brut", color: "#b7bab8", material: "metal" },
     base: {
-      label: "WESTERIAL - Coquilles de moules",
+      label: "Wasterial® - Coquilles de moules",
       color: "#1a1a1c",
       material: "blackConcrete",
       textureImage: "/textures/swatch/westerial-coquilles-moules.webp",
@@ -188,12 +188,12 @@ export const variants: ProductVariant[] = [
   {
     id: "verre-bouteille-inox",
     index: "04",
-    name: "Wasterial® - Coquilles d'huître & Wasterial® - Verre de bouteille",
-    materialsSummary: "Wasterial® - Coquilles d'huître · Inox",
+    name: "Wasterial® - Coquilles d'huîtres & inox",
+    materialsSummary: "Wasterial® - Coquilles d'huîtres · Inox",
     accent: "#47624b",
     accentOnDark: "#86a583",
     shade: {
-      label: "Wasterial® - Coquilles d'huître",
+      label: "Wasterial® - Coquilles d'huîtres",
       color: "#5e6440",
       material: "shell",
       textureImage: "/textures/swatch/coquilles-huitres.webp",
@@ -209,7 +209,7 @@ export const variants: ProductVariant[] = [
     description:
       "Le vert profond du verre recyclé, poli comme un galet. L'inox y dépose un reflet net.",
     image: "/images/variants/verre-bouteille-inox.webp",
-    alt: "Lampe Noir Minéral : abat-jour en Wasterial® - Coquilles d'huître, pied en Wasterial® - Verre de bouteille et pièce d'assemblage en inox.",
+    alt: "Lampe Noir Minéral : abat-jour en Wasterial® - Coquilles d'huîtres, pied en Wasterial® - Verre de bouteille et pièce d'assemblage en inox.",
   },
   {
     id: "coquille-laiton",
