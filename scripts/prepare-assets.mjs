@@ -29,9 +29,15 @@ const PHOTOS = join(srcDir, "Capture d’écran 2026-07-23 192123.png");
 const WOOD_VENEER = "placage-bois.jpg";
 
 /** Textures dont le nuancier du configurateur affiche une vignette réelle
- *  (22 px — voir lib/materialSwatch.ts). Dérivées en 64 px sous
- *  public/textures/swatch/ : largement suffisant (2× un écran Retina) pour
- *  une fraction du poids des textures pleine résolution, réservées au rendu 3D. */
+ *  (22 px — voir lib/materialSwatch.ts). Dérivées sous public/textures/swatch/,
+ *  pour une fraction du poids des textures pleine résolution réservées au rendu 3D.
+ *
+ *  ⚠️ ON DÉCOUPE, ON NE RÉDUIT PAS. Une première version ramenait la tuile
+ *  entière à 64 px : réduire une texture de ~300 px d'un facteur 5 moyenne le
+ *  grain jusqu'à l'aplat. Mesuré sur la brique, l'écart-type de luminance
+ *  tombait de 8,0 à 2,1 ; les coquilles de moules finissaient à 96 octets, soit
+ *  un carré uniforme. On prélève donc une FENÊTRE à la résolution native, ce
+ *  qui conserve le grain (écart-type mesuré après correction : 6,9 et 4,5). */
 const SWATCH_SOURCES = [
   "brique.png",
   "verre-bleu.png",
@@ -41,6 +47,13 @@ const SWATCH_SOURCES = [
   "beton-bleute.png",
   "bois-brule.png",
 ];
+
+/** Côté de la vignette produite, en pixels. Affichée à 22 px, elle reste nette
+ *  jusqu'à un écran à 4× de densité. */
+const SWATCH_SIZE = 128;
+
+/** Part du petit côté de la texture prélevée dans la fenêtre. */
+const SWATCH_CROP_RATIO = 0.45;
 
 /** planche variantes : grille 3×2, colonnes de 217px, rendus sur fond blanc. */
 const variantCrops = [
@@ -134,9 +147,22 @@ async function prepareTextureAssets() {
     const src = join(texturesDir, name);
     if (!(await exists(src))) continue;
     const out = join(swatchDir, name.replace(/\.png$/, ".webp"));
+
+    // Fenêtre centrée d'environ 45 % du petit côté : assez large pour montrer
+    // le motif (plusieurs briques, plusieurs éclats de verre), assez serrée
+    // pour que le rapport de réduction reste proche de 1:1 et n'efface rien.
+    const { width = 0, height = 0 } = await sharp(src).metadata();
+    const side = Math.round(Math.min(width, height) * SWATCH_CROP_RATIO);
+
     await sharp(src)
-      .resize({ width: 64, height: 64, fit: "cover" })
-      .webp({ quality: 80 })
+      .extract({
+        left: Math.round((width - side) / 2),
+        top: Math.round((height - side) / 2),
+        width: side,
+        height: side,
+      })
+      .resize({ width: SWATCH_SIZE, height: SWATCH_SIZE, kernel: "lanczos3" })
+      .webp({ quality: 88, effort: 6 })
       .toFile(out);
     console.log("pastille →", out);
   }
