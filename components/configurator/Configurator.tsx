@@ -97,8 +97,16 @@ export function Configurator() {
               Reste le nom seul, dans un corps nettement inférieur au titre de
               chapitre : il se lit alors comme la LÉGENDE de la scène, pas comme
               un second titre. */}
-          <p className="-mt-3 font-display text-[1.35rem] leading-tight text-ink">
-            {variant.name}
+          <p className="-mt-3 leading-tight text-ink">
+            {/* Proposition n°X : identifiée par matières, pas par ordre
+                d'affichage — voir PROPOSITION_NUMBER. Registre discret
+                (u-caption) au-dessus du nom, jamais au même poids que lui. */}
+            {PROPOSITION_NUMBER[variant.id] && (
+              <span className="u-caption block">
+                Proposition n°{PROPOSITION_NUMBER[variant.id]}
+              </span>
+            )}
+            <span className="font-display text-[1.35rem]">{variant.name}</span>
           </p>
           {/* Nuancier — la liste des couleurs et matières de la composition,
               rien d'autre. Pas de nom de pièce : l'objet est juste en dessous,
@@ -308,6 +316,29 @@ function VariantPicker({
     </div>
   );
 }
+
+/**
+ * Numéro de proposition — identifié par les MATIÈRES/COULEURS de chaque
+ * configuration (assemblage, abat-jour, câble), pas par son ordre dans
+ * `variants` ni par son `index` éditorial, qui ne coïncident pas avec cette
+ * numérotation. Correspondance vérifiée pièce par pièce :
+ *   1 Terracotta — brique/aluminium/câble noir      → brique-aluminium
+ *   2 Lichen     — coquille/vert/laiton/câble rouge → coquille-laiton
+ *   3 Craie      — porcelaine/acier noir/câble noir → porcelaine-acier-noir
+ *   4 Cobalt     — porcelaine/métal bleu/câble bleu → porcelaine-epoxy-mat
+ *   5 Graphite   — noir/aluminium/câble bleu        → prototype-noir-cable-bleu
+ *   6 Ardoise    — verre bleu/métal bleu            → verre-bleu-acier-anodise
+ *   7 Mousse     — vert bouteille/inox/câble noir   → verre-bouteille-inox
+ */
+const PROPOSITION_NUMBER: Record<string, number> = {
+  "brique-aluminium": 1,
+  "coquille-laiton": 2,
+  "porcelaine-acier-noir": 3,
+  "porcelaine-epoxy-mat": 4,
+  "prototype-noir-cable-bleu": 5,
+  "verre-bleu-acier-anodise": 6,
+  "verre-bouteille-inox": 7,
+};
 
 /**
  * Intitulé de pièce à retirer du libellé de finition. `data/product.ts` décrit
