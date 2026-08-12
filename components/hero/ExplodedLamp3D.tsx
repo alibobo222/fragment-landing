@@ -30,7 +30,6 @@ import {
   materialProfile,
   getWeaveTexture,
 } from "@/lib/lampTextures";
-import { addSocketThread } from "@/lib/socketThread";
 import type { PartVariants } from "@/components/hero/Lamp3D";
 
 /**
@@ -255,7 +254,6 @@ function ExplodedModel({
     groundY,
     shadowScale,
     shadowFar,
-    thread,
   } = useMemo(() => {
     const root = scene.clone(true);
     root.updateMatrixWorld(true);
@@ -379,21 +377,6 @@ function ExplodedModel({
       });
     }
 
-    // FILETAGE INTÉRIEUR de la douille — vraie géométrie, créée ici et
-    // rattachée à la pièce (voir lib/socketThread.ts). Vue éclatée uniquement :
-    // c'est elle qui doit faire comprendre le vissage de l'ampoule. Le filet
-    // partage le matériau de la douille, donc il suit la finition métallique de
-    // la configuration choisie sans code supplémentaire. Créé APRÈS la boucle
-    // d'aplatissement, pour ne pas muter la scène pendant qu'on la parcourt.
-    // FILETAGE INTÉRIEUR de la douille — vraie géométrie, créée ici et
-    // rattachée à la pièce (voir lib/socketThread.ts). Vue éclatée uniquement.
-    // L'axe et le centre du logement y sont AJUSTÉS sur la géométrie : la pièce
-    // est inclinée dans le modèle, aucune approximation ne tient.
-    const socketMesh = meshByPart.socket;
-    const socketMat = materials.socket;
-    const thread =
-      socketMesh && socketMat ? addSocketThread(socketMesh, socketMat) : null;
-
     root.position.sub(c);
 
     // Ombre de contact douce, au niveau du pied assemblé (fixe : composition
@@ -423,7 +406,6 @@ function ExplodedModel({
       groundY,
       shadowScale,
       shadowFar,
-      thread,
     };
   }, [scene]);
 
@@ -481,12 +463,6 @@ function ExplodedModel({
     }
     invalidate();
   }, [materials, partVariants, lampOn, kelvin, perforation, invalidate]);
-
-  // La géométrie du filet est la SEULE que ce composant crée — les autres
-  // viennent du GLTF mis en cache par drei et sont partagées, donc à ne jamais
-  // libérer. Celle-ci doit l'être au démontage, sinon chaque passage de scroll
-  // en laisse une derrière lui.
-  useEffect(() => () => thread?.geometry.dispose(), [thread]);
 
   // Libère les matériaux créés par ce montage (un par pièce, voir useMemo
   // ci-dessus) : même raison que la géométrie du filet ci-dessus.
