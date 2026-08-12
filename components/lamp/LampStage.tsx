@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import Image from "next/image";
 import dynamic from "next/dynamic";
 import { motion, useAnimationControls, useReducedMotion } from "framer-motion";
@@ -9,7 +9,6 @@ import {
   perforationOptions,
   type PerforationShape,
 } from "@/data/product";
-import { lampLightConfig, kelvinToRGB } from "@/data/lampModel";
 import { useSelection } from "@/components/SelectionProvider";
 import { buttonMotion } from "@/components/ui/motion";
 import type { PartVariants } from "@/components/hero/Lamp3D";
@@ -60,8 +59,7 @@ export function LampStage({
   showControls?: boolean;
   imageSizes?: string;
 }) {
-  const { variant, lampOn, setLampOn, kelvin, setKelvin, perforation, setPerforation } =
-    useSelection();
+  const { variant, lampOn, setLampOn, kelvin, perforation, setPerforation } = useSelection();
   const reduce = useReducedMotion();
 
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -188,15 +186,16 @@ export function LampStage({
           // occuper l'image, pas l'outillage. Rien ne les découpe puisque la
           // scène n'a plus d'`overflow-hidden` ; l'espace qu'ils prennent est
           // réservé sous la scène, donc la lampe ne change pas de taille.
-          // Deux rangées : le curseur Kelvin (réglage principal, pleine
-          // largeur) au-dessus des contrôles secondaires (perforation,
-          // allumage), alignés à droite comme avant.
-          className={`absolute -bottom-[4.8rem] left-[1.4rem] right-[1.4rem] z-10 flex flex-col gap-2.5 transition-opacity duration-300 ${
+          //
+          // ⚠️ COUPLAGE : cette hauteur hors-flux (`-bottom-`) doit rester
+          // égale au `mt-` compensatoire du sélecteur dans Configurator/
+          // VariantPicker — aucun des deux ne connaît l'autre. Toucher l'une
+          // sans l'autre laisse un trou ou fait chevaucher les vignettes.
+          className={`absolute -bottom-[3.5rem] left-[1.4rem] right-[1.4rem] z-10 flex flex-col gap-2.5 transition-opacity duration-300 ${
             ready3D ? "opacity-100" : "pointer-events-none opacity-0"
           }`}
         >
-          <KelvinControl kelvin={kelvin} onChange={setKelvin} />
-          <div className="flex items-center justify-end gap-2">
+          <div className="flex items-center justify-center gap-2">
             <PerforationControl value={perforation} onSelect={setPerforation} />
             <LampPowerButton on={lampOn} onToggle={() => setLampOn(!lampOn)} />
           </div>
@@ -283,64 +282,6 @@ function PerforationIcon({ shape }: { shape: PerforationShape }) {
     <svg {...common} fill="currentColor" fillOpacity={0.5}>
       <rect x="5.5" y="5.5" width="13" height="13" rx="1.5" />
     </svg>
-  );
-}
-
-/**
- * Curseur de température de couleur — remplace l'ancien choix binaire
- * chaud/froid par un réglage CONTINU en kelvins, fidèle à un module LED
- * Tunable White à deux canaux (voir `lampLightConfig`). La valeur en cours
- * s'affiche en chiffres (`aria-live` : elle est annoncée aux technologies
- * d'assistance à chaque déplacement) ; les bornes de la plage restent
- * discrètes aux extrémités, sans autre ornement.
- *
- * La piste porte un dégradé FIXE (froid → neutre → chaud, calculé une seule
- * fois via `kelvinToRGB` aux bornes de la plage) : elle montre d'un coup
- * d'œil ce que produit chaque extrémité. Seul le curseur — sa couleur pilotée
- * par `--kelvin-thumb` — reflète la valeur choisie.
- */
-function KelvinControl({
-  kelvin,
-  onChange,
-}: {
-  kelvin: number;
-  onChange: (kelvin: number) => void;
-}) {
-  const { kelvinMin, kelvinMid, kelvinMax } = lampLightConfig;
-  const display = Math.round(kelvin).toLocaleString("fr-FR");
-
-  return (
-    <div className="kelvin-control">
-      <div className="flex items-baseline justify-between gap-2 px-1">
-        <span className="u-index text-[0.6rem] text-ink-muted">
-          {kelvinMin.toLocaleString("fr-FR")} K
-        </span>
-        <span className="u-index text-[0.82rem] text-ink" aria-live="polite">
-          {display} K
-        </span>
-        <span className="u-index text-[0.6rem] text-ink-muted">
-          {kelvinMax.toLocaleString("fr-FR")} K
-        </span>
-      </div>
-      <input
-        type="range"
-        className="kelvin-slider"
-        min={kelvinMin}
-        max={kelvinMax}
-        step={10}
-        value={kelvin}
-        onChange={(e) => onChange(Number(e.target.value))}
-        aria-label="Température de couleur de la lumière, en kelvins"
-        style={
-          {
-            "--kelvin-thumb": kelvinToRGB(kelvin),
-            "--kelvin-track-cold": kelvinToRGB(kelvinMax),
-            "--kelvin-track-mid": kelvinToRGB(kelvinMid),
-            "--kelvin-track-warm": kelvinToRGB(kelvinMin),
-          } as CSSProperties
-        }
-      />
-    </div>
   );
 }
 
