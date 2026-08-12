@@ -294,6 +294,13 @@ function closeHoles(part, weldTol = 1.4) {
 }
 
 /**
+ * Aucune arête dièdre du modèle ne tombe entre 30° et 60° (distribution
+ * bimodale, mesuré sur les 6 pièces) : 40° sépare donc sans ambiguïté les
+ * coutures de patchs (lisses) des arêtes de conception (vives, à préserver).
+ */
+const CREASE_ANGLE_DEG = 40;
+
+/**
  * Soude les sommets EXACTEMENT coïncidents (jonctions de patchs OCCT) et
  * recalcule leurs normales à partir de la topologie fusionnée, plutôt que de
  * faire confiance aux normales analytiques d'occt à ces coutures.
@@ -316,10 +323,20 @@ function closeHoles(part, weldTol = 1.4) {
  * pondéré par l'aire — magnitude du produit vectoriel non normalisé), le
  * résultat est correct par construction : plus aucune moyenne de vecteurs
  * contradictoires, une normale de sommet unique et lisse à chaque couture.
+ *
+ * ⚠️ SEUIL D'ANGLE DE PLI (regression corrigée). Une première version soudait
+ * ET lissait SANS seuil : les arêtes de CONCEPTION réellement vives (tôle
+ * perforée, angles francs) se retrouvaient alors ombrées comme des surfaces
+ * continues — des facettes triangulaires visibles là où l'objet a un vrai
+ * pli. Sous CREASE_ANGLE_DEG, la normale est partagée (moyenne pondérée par
+ * aire, comme avant) ; au-dessus, le sommet est DUPLIQUÉ et chaque face garde
+ * sa propre normale — la méthode standard du « crease angle ».
  */
 function weldAndSmoothNormals(part) {
   const { pos, idx } = part;
   const n = pos.length / 3;
+
+  // 1) Soudure des positions EXACTEMENT coïncidentes (inchangé).
   const key = (i) => `${pos[i * 3]}_${pos[i * 3 + 1]}_${pos[i * 3 + 2]}`;
   const map = new Map();
   const remap = new Int32Array(n);
@@ -334,30 +351,120 @@ function weldAndSmoothNormals(part) {
   }
   const I = new Uint32Array(idx.length);
   for (let t = 0; t < idx.length; t++) I[t] = remap[idx[t]];
+  const triCount = I.length / 3;
+  const weldedVerts = P.length / 3;
 
-  const nv = P.length / 3;
-  const N = new Float32Array(nv * 3);
-  for (let t = 0; t < I.length; t += 3) {
-    const a = I[t], b = I[t + 1], c = I[t + 2];
+  // 2) Normale de face par triangle — non normalisée (pondération par aire)
+  // ET normalisée (test d'angle dièdre entre faces adjacentes).
+  const faceN = new Float64Array(triCount * 3);
+  const faceNu = new Float64Array(triCount * 3);
+  for (let t = 0; t < triCount; t++) {
+    const a = I[t * 3], b = I[t * 3 + 1], c = I[t * 3 + 2];
     const ax = P[a * 3], ay = P[a * 3 + 1], az = P[a * 3 + 2];
     const bx = P[b * 3], by = P[b * 3 + 1], bz = P[b * 3 + 2];
     const cx = P[c * 3], cy = P[c * 3 + 1], cz = P[c * 3 + 2];
     const e1x = bx - ax, e1y = by - ay, e1z = bz - az;
     const e2x = cx - ax, e2y = cy - ay, e2z = cz - az;
-    // Non normalisé : la magnitude encode l'aire du triangle → pondération
-    // naturelle par aire dans la somme ci-dessous, pas de calcul séparé.
-    const fnx = e1y * e2z - e1z * e2y, fny = e1z * e2x - e1x * e2z, fnz = e1x * e2y - e1y * e2x;
-    N[a * 3] += fnx; N[a * 3 + 1] += fny; N[a * 3 + 2] += fnz;
-    N[b * 3] += fnx; N[b * 3 + 1] += fny; N[b * 3 + 2] += fnz;
-    N[c * 3] += fnx; N[c * 3 + 1] += fny; N[c * 3 + 2] += fnz;
+    const fx = e1y * e2z - e1z * e2y, fy = e1z * e2x - e1x * e2z, fz = e1x * e2y - e1y * e2x;
+    faceN[t * 3] = fx; faceN[t * 3 + 1] = fy; faceN[t * 3 + 2] = fz;
+    const l = Math.hypot(fx, fy, fz) || 1;
+    faceNu[t * 3] = fx / l; faceNu[t * 3 + 1] = fy / l; faceNu[t * 3 + 2] = fz / l;
   }
-  for (let i = 0; i < nv; i++) {
-    const l = Math.hypot(N[i * 3], N[i * 3 + 1], N[i * 3 + 2]) || 1;
-    N[i * 3] /= l; N[i * 3 + 1] /= l; N[i * 3 + 2] /= l;
+
+  // 3) Arêtes → triangles qui la portent (pour repérer les paires adjacentes).
+  const edgeTris = new Map();
+  const ek = (u, v) => (u < v ? `${u}_${v}` : `${v}_${u}`);
+  for (let t = 0; t < triCount; t++) {
+    const a = I[t * 3], b = I[t * 3 + 1], c = I[t * 3 + 2];
+    for (const [u, v] of [[a, b], [b, c], [c, a]]) {
+      const k = ek(u, v);
+      if (!edgeTris.has(k)) edgeTris.set(k, []);
+      edgeTris.get(k).push(t);
+    }
   }
-  const before = n, after = nv;
-  console.log(`  weldAndSmoothNormals: ${before} → ${after} sommets (${before - after} soudés)`);
-  return { pos: new Float32Array(P), nrm: N, idx: I };
+
+  // 4) Union-find sur les COINS de triangle (t*3+slot, un par occurrence de
+  // sommet). Deux coins d'un même sommet soudé sont unis — donc partageront
+  // une normale — seulement si leurs triangles sont adjacents par une arête
+  // PASSANT PAR CE SOMMET dont l'angle dièdre reste sous le seuil.
+  const cornerCount = triCount * 3;
+  const parent = new Int32Array(cornerCount);
+  for (let i = 0; i < cornerCount; i++) parent[i] = i;
+  const find = (x) => {
+    while (parent[x] !== x) x = parent[x] = parent[parent[x]];
+    return x;
+  };
+  const union = (x, y) => {
+    const rx = find(x), ry = find(y);
+    if (rx !== ry) parent[rx] = ry;
+  };
+  const cornerAt = (t, vert) => {
+    for (let s = 0; s < 3; s++) if (I[t * 3 + s] === vert) return t * 3 + s;
+    return -1;
+  };
+  const cosThreshold = Math.cos((CREASE_ANGLE_DEG * Math.PI) / 180);
+  let sharpEdges = 0;
+  for (const [k, tris] of edgeTris) {
+    if (tris.length < 2) continue; // arête de bord : rien à souder ni à trancher
+    const [u, v] = k.split("_").map(Number);
+    for (let i = 0; i < tris.length; i++) {
+      for (let j = i + 1; j < tris.length; j++) {
+        const t1 = tris[i], t2 = tris[j];
+        const dot =
+          faceNu[t1 * 3] * faceNu[t2 * 3] +
+          faceNu[t1 * 3 + 1] * faceNu[t2 * 3 + 1] +
+          faceNu[t1 * 3 + 2] * faceNu[t2 * 3 + 2];
+        if (dot >= cosThreshold) {
+          union(cornerAt(t1, u), cornerAt(t2, u));
+          union(cornerAt(t1, v), cornerAt(t2, v));
+        } else {
+          sharpEdges++;
+        }
+      }
+    }
+  }
+
+  // 5) Un sommet de sortie par groupe (racine union-find), normale = moyenne
+  // pondérée par aire des faces du groupe uniquement.
+  const groupOf = new Map();
+  const outP = [];
+  const outN = [];
+  const outIdx = new Uint32Array(cornerCount);
+  for (let t = 0; t < triCount; t++) {
+    for (let s = 0; s < 3; s++) {
+      const corner = t * 3 + s;
+      const vert = I[corner];
+      const root = find(corner);
+      let outVi = groupOf.get(root);
+      if (outVi === undefined) {
+        outVi = outP.length / 3;
+        outP.push(P[vert * 3], P[vert * 3 + 1], P[vert * 3 + 2]);
+        outN.push(0, 0, 0);
+        groupOf.set(root, outVi);
+      }
+      outIdx[corner] = outVi;
+    }
+  }
+  for (let t = 0; t < triCount; t++) {
+    for (let s = 0; s < 3; s++) {
+      const outVi = outIdx[t * 3 + s];
+      outN[outVi * 3] += faceN[t * 3];
+      outN[outVi * 3 + 1] += faceN[t * 3 + 1];
+      outN[outVi * 3 + 2] += faceN[t * 3 + 2];
+    }
+  }
+  for (let i = 0; i < outN.length; i += 3) {
+    const l = Math.hypot(outN[i], outN[i + 1], outN[i + 2]) || 1;
+    outN[i] /= l; outN[i + 1] /= l; outN[i + 2] /= l;
+  }
+
+  const finalVerts = outP.length / 3;
+  console.log(
+    `  weldAndSmoothNormals: ${n} → ${weldedVerts} sommets soudés (${n - weldedVerts} fusionnés), ` +
+      `${sharpEdges} arête(s) vive(s) préservée(s) (seuil ${CREASE_ANGLE_DEG}°) → ` +
+      `${finalVerts} sommets finaux (${finalVerts - weldedVerts} dupliqué(s) pour les plis)`
+  );
+  return { pos: new Float32Array(outP), nrm: new Float32Array(outN), idx: outIdx };
 }
 
 const named = {};
