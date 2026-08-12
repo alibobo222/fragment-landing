@@ -903,11 +903,9 @@ function getBlueTerrazzoTexture(): THREE.Texture {
  * On voit réellement à travers, y compris l'intérieur de la pièce (le matériau
  * est en `DoubleSide`), et aucun sommet n'est ajouté à la géométrie.
  *
- * La projection n'est pas triplanaire mais mono-planaire par AXE DOMINANT de la
- * normale : sur une tôle pliée, chaque facette est ainsi percée perpendiculai-
- * rement à elle-même, et les deux faces d'une même facette partagent les mêmes
- * coordonnées objet — le trou traverse donc réellement la tôle au lieu de
- * produire deux motifs décalés.
+ * La projection n'est pas triplanaire mais mono-planaire par AXE DOMINANT,
+ * choisi sur la normale GÉOMÉTRIQUE (dFdx/dFdy de vGrainPos, constante par
+ * triangle) — pas la normale interpolée, qui varie près d'un pli et désynchronise face avant et face arrière.
  *
  * FORME — poinçon CARRÉ, en rangées et colonnes alignées.
  *
@@ -994,6 +992,10 @@ export function createGrainMaterial(
     side: THREE.DoubleSide,
     transparent: false,
     depthWrite: true,
+    // Anti-aliase le bord des perforations via la couverture MSAA (voir
+    // perforationSDF) au lieu d'un blending alpha, qui rouvrirait le tri
+    // alpha que le `discard` de la tôle perforée évite justement.
+    alphaToCoverage: true,
     // Réflexions d'environnement douces (matériaux mats, intérieur d'abat-jour
     // sans reflet spéculaire dur).
     envMapIntensity: 0.6,
@@ -1069,11 +1071,18 @@ export function createGrainMaterial(
       .replace(
         "#include <clipping_planes_fragment>",
         `#include <clipping_planes_fragment>
-        // TÔLE PERFORÉE : le fragment situé dans un trou est purement et
-        // simplement abandonné. Vraie transparence (on voit à travers), aucun
-        // tri d'alpha à gérer, aucun sommet ajouté. Placé en tête de main() pour
-        // ne pas payer l'éclairage de fragments qui seront jetés.
-        if (uPerfMode > 0.5 && perforationSDF() < 0.0) discard;`
+        // TÔLE PERFORÉE : rejet précoce des fragments franchement DANS un trou
+        // — évite l'éclairage/texture pour l'immense majorité des pixels
+        // troués, avant même que diffuseColor existe. La fine bande autour du
+        // bord (± vPerfAA, une dérivée d'écran) est laissée en vie : c'est elle
+        // qui reçoit l'anti-aliasing plus loin, une fois diffuseColor et le
+        // grain calculés (voir la fin du bloc MAP_FRAGMENT ci-dessous).
+        float vPerfD = 0.0; float vPerfAA = 0.0;
+        if (uPerfMode > 0.5) {
+          vPerfD = perforationSDF();
+          vPerfAA = fwidth(vPerfD) * 0.75 + 1e-5;
+          if (vPerfD < -vPerfAA) discard;
+        }`
       )
       .replace(
         "#include <common>",
@@ -1094,7 +1103,10 @@ export function createGrainMaterial(
         // Le carré est une « rounded box » : uPerfRadius est le demi-côté,
         // uPerfCorner le congé d'angle — un poinçon réel n'a pas d'angle vif.
         float perforationSDF() {
-          vec3 pan = abs(normalize(vGrainNrm));
+          // Axe dominant sur la normale GÉOMÉTRIQUE (dérivées d'écran), pas la
+          // normale interpolée — voir le commentaire du bloc PERFORATION.
+          vec3 gn = normalize(cross(dFdx(vGrainPos), dFdy(vGrainPos)));
+          vec3 pan = abs(gn);
           vec2 pp;
           if (pan.x >= pan.y && pan.x >= pan.z) pp = vGrainPos.yz;
           else if (pan.y >= pan.z) pp = vGrainPos.xz;
@@ -1175,6 +1187,14 @@ export function createGrainMaterial(
           vec3 tc = compositeSample();
           diffuseColor.rgb = mix(diffuseColor.rgb, tc, uComposite);
           gCompH = dot(tc, vec3(0.299, 0.587, 0.114));
+        }
+        // Bord de perforation adouci (voir le rejet précoce ci-dessus) : la
+        // couverture passe de 0 (trou) à 1 (matière) sur ~1 pixel écran.
+        // alphaToCoverage (mat.alphaToCoverage) transforme cette fraction en
+        // échantillons MSAA réels — pas de blending, donc pas de tri alpha.
+        if (uPerfMode > 0.5) {
+          diffuseColor.a *= smoothstep(-vPerfAA, vPerfAA, vPerfD);
+          if (diffuseColor.a <= 0.0) discard;
         }`
       )
       .replace(
