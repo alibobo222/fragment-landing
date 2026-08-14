@@ -205,7 +205,7 @@ export const variants: ProductVariant[] = [
       material: "glassBottle",
       textureImage: "/textures/swatch/verre-bouteille.webp",
     },
-    cable: { label: "Câble textile noir", color: "#111113", material: "fabric" },
+    cable: { label: "Câble textile vert sauge", color: "#5C6B4A", material: "fabric" },
     description:
       "Le vert profond du verre recyclé, poli comme un galet. L'inox y dépose un reflet net.",
     image: "/images/variants/verre-bouteille-inox.webp",
