@@ -903,9 +903,11 @@ function getBlueTerrazzoTexture(): THREE.Texture {
  * On voit réellement à travers, y compris l'intérieur de la pièce (le matériau
  * est en `DoubleSide`), et aucun sommet n'est ajouté à la géométrie.
  *
- * La projection n'est pas triplanaire mais mono-planaire par AXE DOMINANT,
- * choisi sur la normale GÉOMÉTRIQUE (dFdx/dFdy de vGrainPos, constante par
- * triangle) — pas la normale interpolée, qui varie près d'un pli et désynchronise face avant et face arrière.
+ * La projection n'est pas triplanaire mais mono-planaire par AXE DOMINANT de la
+ * normale : sur une tôle pliée, chaque facette est ainsi percée perpendiculai-
+ * rement à elle-même, et les deux faces d'une même facette partagent les mêmes
+ * coordonnées objet — le trou traverse donc réellement la tôle au lieu de
+ * produire deux motifs décalés.
  *
  * FORME — poinçon CARRÉ, en rangées et colonnes alignées.
  *
@@ -935,10 +937,11 @@ const PERFORATION = {
    *  pas de 1/250 donne 38 trous sur la largeur et 22 rangées sur la hauteur
    *  (0,0903), ce qui correspond. */
   scale: 250,
-  /** Demi-côté du carré, en fraction de la maille (0,30 → côté = 60 % du pas).
-   *  Proportion trou / pont de matière relevée elle aussi sur la photo : les
-   *  ponts y sont nettement plus fins que le trou. */
-  radius: 0.3,
+  /** Demi-côté du carré, en fraction de la maille (0,38 → côté = 76 % du pas,
+   *  pont ≈ 12 % du pas de chaque côté). Encore redescendu depuis 0,40, même
+   *  raison : pont un peu plus solide. Passes : 0,30 → 0,33 → 0,36 → 0,39 →
+   *  0,42 → 0,40 → 0,38. */
+  radius: 0.38,
   /** Congé d'angle, en fraction du demi-côté. Un poinçon réel ne laisse jamais
    *  d'angle parfaitement vif : ce très léger arrondi évite l'aspect « pixel ».  */
   corner: 0.22,
@@ -948,10 +951,94 @@ const PERFORATION = {
    * Calculé pour ouvrir EXACTEMENT la même surface que le carré, afin que passer
    * d'une forme à l'autre ne change que le dessin du trou — jamais la densité ni
    * la sensation de vide. Un carré de demi-côté s ouvre 4s², un cercle de rayon r
-   * ouvre πr² : avec s = 0,30, r = √(4·0,09/π) ≈ 0,3385.
+   * ouvre πr² : avec s = 0,38, r = √(4·0,1444/π) ≈ 0,4288.
    */
-  roundRadius: 0.3385,
+  roundRadius: 0.4288,
 } as const;
+
+/**
+ * MASQUE DE PERFORATION — texture bitmap répétée, mipmappée, PAS de SDF
+ * évaluée au pixel. Une tuile blanche (matière, couverture 1) avec un trou
+ * noir (couverture 0) centré, en `RepeatWrapping` : un motif par tuile = un
+ * trou par maille, identique à la grille `fract(g) - 0.5` de l'ancienne SDF.
+ * Le rond encode deux rangées (maille hexagonale décalée) car ce motif n'est
+ * pas périodique sur une seule rangée.
+ *
+ * Le mipmapping préfiltre correctement la grille vue de loin/en biais — c'est
+ * ce préfiltrage GPU, absent d'une SDF évaluée une fois par fragment, qui
+ * cause le crénelage/la vibration au tournant de la caméra. Voir son usage
+ * dans le shader (découpe franche + repli en aplat, PAS d'alphaToCoverage :
+ * cette dernière arrondit la couverture sur 4 échantillons MSAA, ce qui
+ * réintroduit exactement le tramage instable qu'on cherche à éliminer).
+ */
+const PERF_TEX_SIZE = 256;
+
+/** Dessine `draw` aux 9 positions d'un voisinage 3×3 (± une tuile en x et
+ *  y) : un motif qui déborde du bord d'une tuile doit apparaître, coupé,
+ *  sur le bord opposé pour que `RepeatWrapping` ne laisse aucune couture. */
+function drawTiledNeighborhood(
+  W: number,
+  H: number,
+  draw: (cx: number, cy: number) => void
+) {
+  for (const dx of [-W, 0, W]) {
+    for (const dy of [-H, 0, H]) draw(dx, dy);
+  }
+}
+
+function makePerforationTexture(shape: "square" | "round"): THREE.Texture {
+  const S = PERF_TEX_SIZE;
+  const rows = shape === "round" ? 2 : 1; // maille hexagonale : 2 rangées par tuile
+  const canvas = document.createElement("canvas");
+  canvas.width = S;
+  canvas.height = S * rows;
+  const ctx = canvas.getContext("2d")!;
+  ctx.fillStyle = "#fff"; // matière = blanc = couverture 1
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = "#000"; // trou = noir = couverture 0
+
+  if (shape === "square") {
+    const half = PERFORATION.radius * S;
+    const k = half * PERFORATION.corner;
+    drawTiledNeighborhood(S, S, (dx, dy) => {
+      const cx = S / 2 + dx, cy = S / 2 + dy;
+      ctx.beginPath();
+      ctx.moveTo(cx - half + k, cy - half);
+      ctx.arcTo(cx + half, cy - half, cx + half, cy + half, k);
+      ctx.arcTo(cx + half, cy + half, cx - half, cy + half, k);
+      ctx.arcTo(cx - half, cy + half, cx - half, cy - half, k);
+      ctx.arcTo(cx - half, cy - half, cx + half, cy - half, k);
+      ctx.closePath();
+      ctx.fill();
+    });
+  } else {
+    const r = PERFORATION.roundRadius * S;
+    drawTiledNeighborhood(S, S * rows, (dx, dy) => {
+      ctx.beginPath();
+      ctx.arc(S / 2 + dx, S / 2 + dy, r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(S / 2 + dx, S * 1.5 + dy, r, 0, Math.PI * 2); // 2ᵉ rangée, décalée d'une demi-maille
+      ctx.fill();
+    });
+  }
+
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.generateMipmaps = true;
+  tex.minFilter = THREE.LinearMipmapLinearFilter;
+  tex.magFilter = THREE.LinearFilter;
+  // Motif fin vu en biais : profite de tout le filtrage anisotrope permis
+  // par le GPU plutôt que de se limiter à la valeur par défaut du fichier.
+  tex.anisotropy = 16;
+  return tex;
+}
+
+const perfTexCache: Partial<Record<"square" | "round", THREE.Texture>> = {};
+function getPerforationTexture(shape: "square" | "round"): THREE.Texture {
+  if (!perfTexCache[shape]) perfTexCache[shape] = makePerforationTexture(shape);
+  return perfTexCache[shape]!;
+}
 
 const COMPOSITE: Record<
   string,
@@ -992,10 +1079,6 @@ export function createGrainMaterial(
     side: THREE.DoubleSide,
     transparent: false,
     depthWrite: true,
-    // Anti-aliase le bord des perforations via la couverture MSAA (voir
-    // perforationSDF) au lieu d'un blending alpha, qui rouvrirait le tri
-    // alpha que le `discard` de la tôle perforée évite justement.
-    alphaToCoverage: true,
     // Réflexions d'environnement douces (matériaux mats, intérieur d'abat-jour
     // sans reflet spéculaire dur).
     envMapIntensity: 0.6,
@@ -1015,14 +1098,9 @@ export function createGrainMaterial(
   // Texture intérieure optionnelle (placage bois). composite 0 = désactivé.
   mat.userData.interior = { composite: 0, scale: WOOD_VENEER_SCALE, tex: null as THREE.Texture | null };
   // Perforation (tôle) — désactivée par défaut : seule la pièce d'assemblage
-  // l'active, via applyPerforation.
-  mat.userData.perf = {
-    mode: 0,
-    scale: PERFORATION.scale,
-    radius: PERFORATION.radius,
-    corner: PERFORATION.corner,
-    round: PERFORATION.roundRadius,
-  };
+  // l'active, via applyPerforation. La forme du trou (radius/corner/round)
+  // est figée dans la texture du masque, pas dans un uniforme.
+  mat.userData.perf = { mode: 0, scale: PERFORATION.scale };
 
   mat.onBeforeCompile = (shader) => {
     shader.uniforms.uGrainTex = { value: texture ?? getNoiseTexture() };
@@ -1050,9 +1128,8 @@ export function createGrainMaterial(
     // donc aucune recompilation au changement de configuration.
     shader.uniforms.uPerfMode = { value: mat.userData.perf.mode };
     shader.uniforms.uPerfScale = { value: mat.userData.perf.scale };
-    shader.uniforms.uPerfRadius = { value: mat.userData.perf.radius };
-    shader.uniforms.uPerfCorner = { value: mat.userData.perf.corner };
-    shader.uniforms.uPerfRound = { value: mat.userData.perf.round };
+    shader.uniforms.uPerfTexSquare = { value: getPerforationTexture("square") };
+    shader.uniforms.uPerfTexRound = { value: getPerforationTexture("round") };
     // Filetage hélicoïdal, appliqué à la face INTÉRIEURE seulement.
 
     shader.vertexShader = shader.vertexShader
@@ -1071,17 +1148,21 @@ export function createGrainMaterial(
       .replace(
         "#include <clipping_planes_fragment>",
         `#include <clipping_planes_fragment>
-        // TÔLE PERFORÉE : rejet précoce des fragments franchement DANS un trou
-        // — évite l'éclairage/texture pour l'immense majorité des pixels
-        // troués, avant même que diffuseColor existe. La fine bande autour du
-        // bord (± vPerfAA, une dérivée d'écran) est laissée en vie : c'est elle
-        // qui reçoit l'anti-aliasing plus loin, une fois diffuseColor et le
-        // grain calculés (voir la fin du bloc MAP_FRAGMENT ci-dessous).
-        float vPerfD = 0.0; float vPerfAA = 0.0;
+        // TÔLE PERFORÉE : découpe FRANCHE (voir perforationCoverage) — SAUF dans
+        // une fine bande d'incertitude autour de 0,5 (± PERF_AMBIGUOUS_BAND),
+        // où le pixel est conservé pour être adouci plus loin (MAP_FRAGMENT) au
+        // lieu d'être tranché. Cette bande est ce qui manquait à la découpe pure :
+        // au bord vu en biais (rasant), le mip choisi par le GPU moyenne déjà
+        // plusieurs trous et sa valeur y devient instable pixel à pixel — un
+        // seuil dur à 0,5 y fait alors apparaître/disparaître des pixels au
+        // hasard d'une frame à l'autre (le fourmillement en rotation). Loin de
+        // 0,5 (face vue de face, mip encore fin ou déjà proche de 0/1), la
+        // valeur est fiable : la découpe y reste franche, sans adoucissement —
+        // c'est ce qui garde le grand pan net et inchangé.
+        float vPerfCoverage = 0.0;
         if (uPerfMode > 0.5) {
-          vPerfD = perforationSDF();
-          vPerfAA = fwidth(vPerfD) * 0.75 + 1e-5;
-          if (vPerfD < -vPerfAA) discard;
+          vPerfCoverage = perforationCoverage();
+          if (vPerfCoverage < 0.5 - PERF_AMBIGUOUS_BAND) discard;
         }`
       )
       .replace(
@@ -1094,39 +1175,32 @@ export function createGrainMaterial(
         uniform float uCompositeScale; uniform float uCompositeBump; uniform float uCompositeRough;
         uniform float uCompositeBoth;
         uniform sampler2D uInteriorTex; uniform float uInteriorComposite; uniform float uInteriorScale;
-        uniform float uPerfMode; uniform float uPerfScale; uniform float uPerfRadius;
-        uniform float uPerfCorner; uniform float uPerfRound;
-        // Distance SIGNÉE au trou carré le plus proche (négative = dans le trou).
-        // Grille DROITE, rangées et colonnes alignées : c'est la maille du
-        // poinçon carré en tôlerie, celle de la photo de référence, et celle qui
-        // laisse des ponts de matière rectilignes.
-        // Le carré est une « rounded box » : uPerfRadius est le demi-côté,
-        // uPerfCorner le congé d'angle — un poinçon réel n'a pas d'angle vif.
-        float perforationSDF() {
-          // Axe dominant sur la normale GÉOMÉTRIQUE (dérivées d'écran), pas la
-          // normale interpolée — voir le commentaire du bloc PERFORATION.
-          vec3 gn = normalize(cross(dFdx(vGrainPos), dFdy(vGrainPos)));
-          vec3 pan = abs(gn);
+        uniform float uPerfMode; uniform float uPerfScale;
+        uniform sampler2D uPerfTexSquare; uniform sampler2D uPerfTexRound;
+        // Demi-largeur de la bande d'incertitude autour de coverage = 0,5 (voir
+        // CLIPPING_PLANES_FRAGMENT et MAP_FRAGMENT) — valeur empirique, à ajuster
+        // si le bord rasant fourmille encore ou si le grand pan perd son piqué.
+        const float PERF_AMBIGUOUS_BAND = 0.15;
+        // Couverture matière ∈ [0,1] (0 = trou, 1 = plein), lue dans le masque
+        // en TEXTURE (voir PERF_TEX_SIZE côté JS) plutôt que calculée par une
+        // distance analytique : texture2D() calcule ses propres dérivées
+        // d'écran sur les UV et choisit le bon niveau de mip, y compris de
+        // façon anisotrope — c'est ce préfiltrage GPU qui manquait à la SDF.
+        float perforationCoverage() {
+          vec3 pan = abs(normalize(vGrainNrm));
           vec2 pp;
           if (pan.x >= pan.y && pan.x >= pan.z) pp = vGrainPos.yz;
           else if (pan.y >= pan.z) pp = vGrainPos.xz;
           else pp = vGrainPos.xy;
-          vec2 g = pp * uPerfScale;
+          vec2 uv = pp * uPerfScale;
           if (uPerfMode > 1.5) {
-            // CARRÉ — grille droite, « rounded box ». Le poinçon carré se pose
-            // toujours en rangées et colonnes alignées : c'est ce qui laisse des
-            // ponts de matière rectilignes.
-            vec2 a = abs(fract(g) - 0.5);
-            float k = uPerfRadius * uPerfCorner;
-            vec2 d = a - vec2(uPerfRadius - k);
-            return min(max(d.x, d.y), 0.0) + length(max(d, vec2(0.0))) - k;
+            return texture2D(uPerfTexSquare, uv).r;
           }
-          // ROND — maille hexagonale, une rangée sur deux décalée d'un demi-pas.
-          // C'est la maille standard du poinçon circulaire, celle qui préserve la
-          // résistance mécanique. Le PAS est identique à celui du carré : seule la
-          // forme du trou change, pas la densité.
-          g.x += mod(floor(g.y), 2.0) * 0.5;
-          return length(fract(g) - 0.5) - uPerfRound;
+          // La texture ronde encode 2 rangées (maille hexagonale) par tuile
+          // (voir makePerforationTexture) : la coordonnée Y est donc réduite
+          // de moitié pour qu'une tuile couvre deux rangées de trous.
+          vec2 uvRound = vec2(uv.x, uv.y * 0.5);
+          return texture2D(uPerfTexRound, uvRound).r;
         }
         vec3 triBlend() {
           // Mélange triplanar ADOUCI : la transition entre les 3 plans est
@@ -1188,13 +1262,15 @@ export function createGrainMaterial(
           diffuseColor.rgb = mix(diffuseColor.rgb, tc, uComposite);
           gCompH = dot(tc, vec3(0.299, 0.587, 0.114));
         }
-        // Bord de perforation adouci (voir le rejet précoce ci-dessus) : la
-        // couverture passe de 0 (trou) à 1 (matière) sur ~1 pixel écran.
-        // alphaToCoverage (mat.alphaToCoverage) transforme cette fraction en
-        // échantillons MSAA réels — pas de blending, donc pas de tri alpha.
+        // Adoucissement dans la bande d'incertitude (voir CLIPPING_PLANES_FRAGMENT) :
+        // les pixels franchement matière ou franchement trou (déjà découpés)
+        // ne passent pas ici avec un t différent de 1 — seule la fine bande
+        // autour de 0,5 obtient un mélange continu, qui absorbe le bruit du
+        // mip plutôt que de le trancher au hasard.
         if (uPerfMode > 0.5) {
-          diffuseColor.a *= smoothstep(-vPerfAA, vPerfAA, vPerfD);
-          if (diffuseColor.a <= 0.0) discard;
+          float t = smoothstep(0.5 - PERF_AMBIGUOUS_BAND, 0.5 + PERF_AMBIGUOUS_BAND, vPerfCoverage);
+          const float PERF_HOLE_TINT = 0.3;
+          diffuseColor.rgb *= mix(PERF_HOLE_TINT, 1.0, t);
         }`
       )
       .replace(
@@ -1204,7 +1280,11 @@ export function createGrainMaterial(
         if (!gl_FrontFacing) {
           float rSrc = (uComposite > 0.001) ? gCompH : gGrain;
           float rAmp = (uComposite > 0.001) ? uCompositeRough : uGrainRough;
-          roughnessFactor = clamp(roughnessFactor + (rSrc - 0.5) * rAmp, 0.03, 1.0);
+          // Plancher relevé UNIQUEMENT sur la tôle perforée (uPerfMode > 0.5) :
+          // à 0,03 elle est quasi miroir, ce qui fait pétiller les reflets sur
+          // ses arêtes fines. Les autres matières gardent 0,03.
+          float rFloor = (uPerfMode > 0.5) ? 0.18 : 0.03;
+          roughnessFactor = clamp(roughnessFactor + (rSrc - 0.5) * rAmp, rFloor, 1.0);
         }
         // Intérieur en placage bois : finition légèrement satinée (verni léger).
         if (gl_FrontFacing && uInteriorComposite > 0.5) {
@@ -1335,22 +1415,13 @@ export function applyPerforation(
   shape: PerforationShape
 ) {
   const mode = PERF_MODE[shape] ?? 0;
-  mat.userData.perf = {
-    mode,
-    scale: PERFORATION.scale,
-    radius: PERFORATION.radius,
-    corner: PERFORATION.corner,
-    round: PERFORATION.roundRadius,
-  };
+  mat.userData.perf = { mode, scale: PERFORATION.scale };
   const shader = mat.userData.shader as
     | { uniforms: Record<string, { value: unknown }> }
     | undefined;
   if (shader) {
     shader.uniforms.uPerfMode.value = mode;
     shader.uniforms.uPerfScale.value = PERFORATION.scale;
-    shader.uniforms.uPerfRadius.value = PERFORATION.radius;
-    shader.uniforms.uPerfCorner.value = PERFORATION.corner;
-    shader.uniforms.uPerfRound.value = PERFORATION.roundRadius;
   }
 }
 
@@ -1374,4 +1445,8 @@ export function disposeLampTextures() {
   woodTex = null;
   bottleTex?.dispose();
   bottleTex = null;
+  perfTexCache.square?.dispose();
+  perfTexCache.round?.dispose();
+  delete perfTexCache.square;
+  delete perfTexCache.round;
 }
