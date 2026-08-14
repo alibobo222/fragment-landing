@@ -94,10 +94,14 @@ function LampModel({
       } else {
         // Matière texturée (grain triplanar procédural) selon la configuration.
         // Le câble reçoit une texture textile tressée dans toutes les configs.
+        // blockLampLight : seules l'abat-jour, l'ampoule et la douille doivent
+        // s'éclairer avec l'ampoule (voir createGrainMaterial) — la pièce
+        // d'assemblage, le pied et le câble en restent hors.
+        const blockLampLight = part === "connector" || part === "base" || part === "cable";
         const gm =
           part === "cable"
-            ? createGrainMaterial(getWeaveTexture())
-            : createGrainMaterial();
+            ? createGrainMaterial(getWeaveTexture(), blockLampLight)
+            : createGrainMaterial(undefined, blockLampLight);
         if (part === "shade") {
           // Émission « de transmission » : couleur de la lumière, montée au frame.
           gm.emissive = new THREE.Color(cfg.color);
