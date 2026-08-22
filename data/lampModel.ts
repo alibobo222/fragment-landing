@@ -22,7 +22,9 @@ export const lampMeshMapping = {
 
 export type LampPart = keyof typeof lampMeshMapping;
 
-/** Quel champ de la variante fournit la matière de chaque partie. */
+/** Quel champ de la variante fournit la matière de chaque partie par défaut.
+ *  Cas particulier de la douille : voir `finishFor`, `variant.socket` prend
+ *  le dessus sur ce repli quand il est renseigné. */
 const FINISH_SOURCE: Record<
   Exclude<LampPart, "bulb">,
   "shade" | "assembly" | "base" | "cable"
@@ -30,7 +32,7 @@ const FINISH_SOURCE: Record<
   shade: "shade",
   connector: "assembly",
   base: "base",
-  socket: "assembly", // la douille partage la finition métal de l'assemblage
+  socket: "assembly", // repli si `variant.socket` est absent
   cable: "cable",
 };
 
@@ -59,11 +61,20 @@ export function canEmit(part: LampPart): boolean {
   return EMISSIVE_PARTS.includes(part);
 }
 
-/** Matière (libellé + couleur) d'une partie donnée pour une variante. */
+/**
+ * Matière (libellé + couleur) d'une partie donnée pour une variante.
+ *
+ * Cas particulier de la douille : elle partage par défaut la finition de la
+ * pièce d'assemblage (même pièce métallique), mais `variant.socket`, quand
+ * il est renseigné, prend le dessus — même principe que `shadeInner` pour
+ * l'intérieur de l'abat-jour. Absent sur une configuration → comportement
+ * inchangé, la douille suit l'assemblage exactement comme avant.
+ */
 export function finishFor(
   part: Exclude<LampPart, "bulb">,
   variant: ProductVariant
 ) {
+  if (part === "socket" && variant.socket) return variant.socket;
   return variant[FINISH_SOURCE[part]];
 }
 

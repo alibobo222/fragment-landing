@@ -426,7 +426,7 @@ function ExplodedModel({
     apply("shade", partVariants.shade);
     apply("connector", partVariants.connector);
     apply("base", partVariants.base);
-    apply("socket", partVariants.connector); // douille = finition de l'assemblage
+    apply("socket", partVariants.connector); // douille = assemblage, sauf `variant.socket`
     apply("cable", partVariants.cable);
 
     // MÊME traitement que le configurateur, via le MÊME helper : la pièce

@@ -91,6 +91,12 @@ export interface ProductVariant {
    */
   shadeInner?: PartFinish;
   assembly: PartFinish;
+  /**
+   * Finition de la DOUILLE quand elle diffère de la pièce d'assemblage.
+   * Absente sur les configurations où les deux pièces partagent la même
+   * matière — c'est ce champ, et non un identifiant en dur, qui décide.
+   */
+  socket?: PartFinish;
   base: PartFinish;
   cable: PartFinish;
   /** Description sensorielle courte. */
@@ -190,6 +196,11 @@ export const variants: ProductVariant[] = [
       textureImage: "/textures/swatch/brique.webp",
     },
     assembly: { label: "Aluminium", color: "#c7c9cb", material: "metal" },
+    // Douille : valeur ACTUELLE de l'assemblage, figée ici. Prépare le passage
+    // de la pièce d'assemblage en acier corten sans faire rouiller la douille
+    // avec elle (voir finishFor, data/lampModel.ts) — aucun changement de
+    // rendu tant que `assembly` lui-même n'est pas modifié.
+    socket: { label: "Aluminium", color: "#c7c9cb", material: "metal" },
     base: {
       label: "Wasterial® - Brique",
       color: "#9c4a39",
