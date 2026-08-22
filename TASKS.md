@@ -251,3 +251,15 @@ correctif de sécurité incidental.
   (hero + configurateur + vue éclatée partagent le même Canvas). À rediscuter
   à froid — options possibles : accepter le changement de tone mapping en
   entier, ou retinter plus fort les lumières de studio en gardant ACES.
+- **Traçabilité de la suppression de la configuration 07 (« Cobalt »,
+  `porcelaine-epoxy-mat`)** : demandée explicitement en conversation
+  (« supprime la configuration 07 - Cobalt »), pas déduite. Consignée ici
+  après coup, sur demande explicite, pour ne pas dépendre de l'historique de
+  conversation comme seule preuve.
+- Un troisième `MaterialKind` désormais inutilisé, dans le même genre que
+  `glassBlue`/`blueTerrazzo` ci-dessus : `epoxy` (profil complet dans
+  `PROFILES`) n'est plus référencé par aucune variante de `data/product.ts`
+  depuis la suppression de la configuration 07 ci-dessus, qui était sa seule
+  utilisatrice. Pas touché : conservé comme matière de catalogue disponible
+  pour une future configuration plutôt que supprimé — à trancher à froid, en
+  même temps que `glassBlue`/`blueTerrazzo`.
