@@ -29,6 +29,7 @@ import {
   applyPerforation,
   materialProfile,
   getWeaveTexture,
+  type InteriorVeneer,
 } from "@/lib/lampTextures";
 
 export interface PartVariants {
@@ -247,16 +248,17 @@ function LampModel({
     const connectorMat = materials.connector as THREE.MeshPhysicalMaterial | undefined;
     if (connectorMat) applyPerforation(connectorMat, perforation);
 
-    // Placage bois à l'INTÉRIEUR de l'abat-jour. L'extérieur reste inchangé.
-    // Le placage bois intérieur est une DONNÉE, pas un cas particulier du
-    // rendu : la variante le déclare via `shadeInner`. Ajouter demain une
-    // configuration à intérieur bois ne demandera aucune retouche ici.
-    // La luminosité, elle, reste indexée sur l'identifiant : c'est un réglage
-    // d'éclairage propre au prototype, sans rapport avec la matière.
+    // Placage à l'INTÉRIEUR de l'abat-jour. L'extérieur reste inchangé.
+    // Config 01 : bois brûlé. Config 02 : Renature. Les autres gardent la
+    // même matière dedans et dehors (pas de placage).
     const isConfig01 = variants[partVariants.shade].id === defaultVariantId;
+    const shadeVariantId = variants[partVariants.shade].id;
+    const interiorVeneer: InteriorVeneer =
+      isConfig01 ? "wood"
+      : shadeVariantId === "porcelaine-acier-noir" ? "renature"
+      : null;
     const shadeMat = materials.shade as THREE.MeshPhysicalMaterial | undefined;
-    if (shadeMat)
-      applyInteriorVeneer(shadeMat, Boolean(variants[partVariants.shade].shadeInner));
+    if (shadeMat) applyInteriorVeneer(shadeMat, interiorVeneer);
 
     // Luminosité de la lampe : légèrement réduite pour la config 01. On
     // ré-applique immédiatement (le fade-in peut être terminé au changement).

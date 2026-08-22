@@ -36,7 +36,8 @@ export type MaterialKind =
   | "metal"
   | "fabric"
   | "blackConcrete"
-  | "matte";
+  | "matte"
+  | "travertine";
 
 export interface PartFinish {
   /** Matière/finition affichée à l'utilisateur. */
@@ -118,7 +119,7 @@ export const variants: ProductVariant[] = [
     // Intérieur de l'abat-jour : placage de bois brûlé (image réelle,
     // /public/textures). Couleur de repli = moyenne mesurée sur l'image.
     shadeInner: {
-      label: "Bois brûlé",
+      label: "Plaquage bois brûlé",
       color: "#817f77",
       material: "matte",
       textureImage: "/textures/swatch/bois-brule.webp",
@@ -132,7 +133,7 @@ export const variants: ProductVariant[] = [
     },
     // Bleu Klein (International Klein Blue, outremer profond). Seule la couleur
     // de base change ; le kind reste « fabric » (texture de tissage inchangée).
-    cable: { label: "Câble textile bleu", color: "#002FA7", material: "fabric" },
+    cable: { label: "Textile bleu roi", color: "#002FA7", material: "fabric" },
     description:
       "Le prototype d'origine : un noir brut et mat, l'âme claire du bois révélée à l'ouverture, ponctuée du bleu franc du câble textile.",
     image: "/images/prototype/trois-quarts.webp",
@@ -145,15 +146,31 @@ export const variants: ProductVariant[] = [
     materialsSummary: "Porcelaine · Acier anodisé noir",
     accent: "#26262b",
     accentOnDark: "#e2ddd2",
-    shade: { label: "Porcelaine", color: "#e7e2d8", material: "porcelain" },
+    shade: { label: "Wasterial® - Porcelaine", color: "#e7e2d8", material: "porcelain" },
+    // Intérieur de l'abat-jour : porcelaine nue par défaut (même matière que
+    // l'extérieur), avec la photo réelle Renature appliquée par-dessus en
+    // baseColor uniquement (voir applyInteriorVeneer, lib/lampTextures.ts).
+    shadeInner: {
+      label: "Biomatériau Renature®",
+      color: "#1c2028",
+      material: "matte",
+      textureImage: "/textures/swatch/renature.webp",
+    },
     // Teinte gris anthracite (au lieu du quasi-noir #1c1c1e). Seule la couleur
     // de base change ; le kind reste « metal » (metalness / roughness / reflets
     // / texture inchangés) → acier anodisé anthracite, aspect métallique conservé.
     assembly: { label: "Acier anodisé noir", color: "#3a3e44", material: "metal" },
-    base: { label: "Béton clair", color: "#9d9a91", material: "concrete" },
+    // Pied : travertin beige, depuis la photo réelle
+    // /public/textures/travertin.png.
+    base: {
+      label: "Wasterial® - Travertin beige",
+      color: "#b3a893",
+      material: "travertine",
+      textureImage: "/textures/swatch/travertin.webp",
+    },
     // Noir profond : le tissage textile éclaircit légèrement la teinte de base
     // sous l'éclairage ; une base plus sombre garantit un câble clairement noir.
-    cable: { label: "Câble textile noir", color: "#060608", material: "fabric" },
+    cable: { label: "Textile noir", color: "#060608", material: "fabric" },
     description:
       "Le grain minéral de la porcelaine contre la sècheresse du métal noir. Une lumière retenue, presque monacale.",
     image: "/images/variants/porcelaine-acier-noir.webp",

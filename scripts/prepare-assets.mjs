@@ -46,6 +46,9 @@ const SWATCH_SOURCES = [
   "westerial-coquilles-moules.png",
   "beton-bleute.png",
   "bois-brule.png",
+  // Config 02 (Craie) : intérieur d'abat-jour Renature + pied travertin.
+  "renature.webp",
+  "travertin.png",
 ];
 
 /** Côté de la vignette produite, en pixels. Affichée à 22 px, elle reste nette

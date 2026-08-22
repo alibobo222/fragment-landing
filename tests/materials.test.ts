@@ -21,7 +21,7 @@ const EXPECTED: Record<string, Record<(typeof PARTS)[number], MaterialKind>> = {
   "porcelaine-acier-noir": {
     shade: "porcelain",
     assembly: "metal",
-    base: "concrete",
+    base: "travertine",
     cable: "fabric",
   },
   "brique-aluminium": {
@@ -67,7 +67,7 @@ const EXPECTED_SHADE_TRANSMISSION: Record<string, number> = {
   "porcelaine-epoxy-mat": 0.45,
 };
 
-/** Les 13 MaterialKind du catalogue — recopiés de data/product.ts. Un kind
+/** Les 14 MaterialKind du catalogue — recopiés de data/product.ts. Un kind
  *  ajouté là-bas sans profil dans PROFILES doit être ajouté ici aussi. */
 const ALL_KINDS: MaterialKind[] = [
   "porcelain",
@@ -83,6 +83,7 @@ const ALL_KINDS: MaterialKind[] = [
   "fabric",
   "blackConcrete",
   "matte",
+  "travertine",
 ];
 
 describe("résolution des matières", () => {
@@ -137,7 +138,7 @@ describe("résolution des matières", () => {
     }
   });
 
-  it("les 13 MaterialKind du catalogue ont chacun un profil complet dans PROFILES", () => {
+  it("les 14 MaterialKind du catalogue ont chacun un profil complet dans PROFILES", () => {
     for (const kind of ALL_KINDS) {
       const profile = materialProfile(kind);
       expect(profile.roughness, `PROFILES["${kind}"] absent ou incomplet`).toEqual(

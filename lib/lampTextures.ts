@@ -64,6 +64,10 @@ const PROFILES: Record<MaterialKind, Omit<MaterialProfile, "kind">> = {
   metal: { roughness: 0.34, metalness: 0.92, clearcoat: 0.1, clearcoatRoughness: 0.3, grainScale: 40, grainRough: 0.14, speckle: 0.0, grainBump: 0, transmission: 0.08 },
   // Béton noir : couleur via la texture (composite), très mat, AUCUN relief.
   blackConcrete: { roughness: 0.92, metalness: 0, clearcoat: 0.03, clearcoatRoughness: 0.85, grainScale: 20, grainRough: 0, speckle: 0, grainBump: 0, transmission: 0.08 },
+  // Travertin beige (pied, config 02) : couleur/pores via la texture (composite),
+  // légèrement mat comme une pierre naturelle poncée — pas de relief procédural
+  // en plus de l'image, qui porte déjà les pores.
+  travertine: { roughness: 0.78, metalness: 0, clearcoat: 0.04, clearcoatRoughness: 0.75, grainScale: 16, grainRough: 0.1, speckle: 0.03, grainBump: 0, transmission: 0.08 },
   // Gaine textile du câble : tissage plat fin (chaîne/trame), mat, relief
   // discret — évoque un câble gainé de tissu haut de gamme sans excès.
   fabric: { roughness: 0.82, metalness: 0, clearcoat: 0.04, clearcoatRoughness: 0.8, grainScale: 60, grainRough: 0.4, speckle: 0.12, grainBump: 0.32, transmission: 0.08 },
@@ -76,18 +80,50 @@ export function materialProfile(kind: MaterialKind): MaterialProfile {
 }
 
 /**
- * Réglages communs des textures issues d'IMAGES (baseColor). Tiling en MIROIR :
- * les bords des tuiles se raccordent toujours (l'image se reflète), donc aucune
- * couture de répétition ni raccord clair/foncé — même quand l'image n'est pas
- * « seamless ». C'est un réglage de tiling : l'image n'est pas modifiée.
+ * Anisotropie appliquée aux textures d'IMAGE (pas au bruit/tissage procédural,
+ * hors périmètre). 8 en repli avant qu'un renderer ait été vu — remplacé par
+ * le vrai maximum matériel dès le premier `onBeforeCompile` (voir
+ * `applyMaxAnisotropy`, qui reçoit le renderer et met aussi à jour les
+ * textures déjà en cache). C'est à l'intérieur de l'abat-jour, vu en biais,
+ * que ça compte : l'empreinte du texel s'y étire et un plafond bas y fait
+ * chuter le ratio effectif bien en dessous de sa valeur frontale.
+ */
+let maxAnisotropy = 8;
+
+/** Textures d'image déjà en cache — pour rattraper celles créées avant le
+ *  premier appel à `applyMaxAnisotropy` (l'ordre de montage n'est pas garanti
+ *  matériau par matériau). Le bruit/tissage procédural n'y figure pas. */
+function cachedImageTextures(): THREE.Texture[] {
+  return [
+    terraTex, shellTex, bottleTex, blackTex, blueTex,
+    blueTerrazzoTex, woodTex, travertineTex, renatureTex,
+  ].filter((t): t is THREE.Texture => t !== null);
+}
+
+/** Capture le vrai maximum d'anisotropie de l'appareil (au lieu d'une valeur
+ *  arbitraire en dur) et le réapplique aux textures déjà créées. */
+function applyMaxAnisotropy(renderer: THREE.WebGLRenderer) {
+  const real = renderer.capabilities.getMaxAnisotropy();
+  if (real === maxAnisotropy) return;
+  maxAnisotropy = real;
+  for (const tex of cachedImageTextures()) tex.anisotropy = maxAnisotropy;
+}
+
+/**
+ * Réglages communs des textures issues d'IMAGES (baseColor). Tiling en
+ * RÉPÉTITION simple (pas de miroir — voir ÉTAPE 2a de l'échange sur le
+ * tuilage) : le miroir crée des rosaces symétriques visibles au centre de
+ * l'abat-jour, un artefact plus gênant que la couture qu'il évite. Si une
+ * couture apparaît avec la répétition simple, la source n'est pas tileable —
+ * à corriger sur l'image, pas en revenant au miroir.
  */
 function configureImageTexture(tex: THREE.Texture) {
-  tex.wrapS = tex.wrapT = THREE.MirroredRepeatWrapping;
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
   tex.colorSpace = THREE.SRGBColorSpace; // couleurs fidèles à l'image
   tex.generateMipmaps = true;
   tex.minFilter = THREE.LinearMipmapLinearFilter;
   tex.magFilter = THREE.LinearFilter;
-  tex.anisotropy = 8;
+  tex.anisotropy = maxAnisotropy;
 }
 
 /* --- Texture de bruit (value noise + moucheté), générée une fois --- */
@@ -887,6 +923,187 @@ function getBlueTerrazzoTexture(): THREE.Texture {
   return tex;
 }
 
+/* --- Texture travertin (pied, config 02), IMAGE réelle --- */
+let travertineTex: THREE.Texture | null = null;
+
+function makeTravertineTexture(): THREE.Texture {
+  const S = 512;
+  const canvas = document.createElement("canvas");
+  canvas.width = canvas.height = S;
+  const ctx = canvas.getContext("2d")!;
+  const img = ctx.createImageData(S, S);
+
+  const makeGrid = (n: number) => {
+    const g = new Float32Array(n * n);
+    for (let i = 0; i < g.length; i++) g[i] = Math.random();
+    return g;
+  };
+  const sample = (g: Float32Array, n: number, u: number, v: number) => {
+    const fx = u * n, fy = v * n;
+    const x0 = ((Math.floor(fx) % n) + n) % n;
+    const y0 = ((Math.floor(fy) % n) + n) % n;
+    const x1 = (x0 + 1) % n, y1 = (y0 + 1) % n;
+    const tx = fx - Math.floor(fx), ty = fy - Math.floor(fy);
+    const a = g[y0 * n + x0], b = g[y0 * n + x1];
+    const c = g[y1 * n + x0], d = g[y1 * n + x1];
+    return a * (1 - tx) * (1 - ty) + b * tx * (1 - ty) + c * (1 - tx) * ty + d * tx * ty;
+  };
+  // Grilles BASSE fréquence (peu de cases → grandes plages de couleur) pour
+  // que le motif reste lisible une fois minifié à la taille réelle du pied
+  // sur l'écran — un motif fin (comme le premier essai, grilles 6/16/48/128,
+  // contraste ±14) s'écrasait en aplat gris au mipmapping avant même d'être
+  // vu, un pied de lampe occupant très peu de pixels à l'écran.
+  const g3 = makeGrid(3), g7 = makeGrid(7), g20 = makeGrid(20);
+
+  // Base beige travertin — contraste largement renforcé (l'écart clair/foncé
+  // d'origine, 0x9a↔0xc4, ne survivait pas au mipmapping).
+  const dark = [0x6f, 0x63, 0x4d];
+  const light = [0xdc, 0xd2, 0xbb];
+  const taupe = [0xa8, 0x99, 0x7c];
+  const mix = (a: number[], b: number[], t: number) => [
+    a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t,
+  ];
+  for (let y = 0; y < S; y++) {
+    for (let x = 0; x < S; x++) {
+      const u = x / S, v = y / S;
+      const m1 = sample(g3, 3, u, v) * 0.65 + sample(g7, 7, u, v) * 0.35;
+      const m2 = sample(g7, 7, u + 0.41, v + 0.23);
+      const grain = sample(g20, 20, u, v);
+      let col = mix(dark, light, Math.min(1, Math.max(0, m1)));
+      col = mix(col, taupe, m2 * 0.5);
+      const g = (grain - 0.5) * 22;
+      const p = (y * S + x) * 4;
+      img.data[p] = Math.max(0, Math.min(255, col[0] + g));
+      img.data[p + 1] = Math.max(0, Math.min(255, col[1] + g));
+      img.data[p + 2] = Math.max(0, Math.min(255, col[2] + g));
+      img.data[p + 3] = 255;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+
+  // Pores du travertin : inclusions sombres et claires, plus grandes et plus
+  // opaques qu'au premier essai (0,6–1,8 px, alpha ~0,4) — trop fines pour
+  // survivre au mipmapping à cette échelle d'objet, elles disparaissaient
+  // avant le grain de fond. Toujours tileables (répétition aux bords).
+  const poreColors = [
+    "#4a4234", "#5c5344", "#6b6152", "#eee6d2", "#e0d5ba", "#8a7f6a",
+  ];
+  const drawPore = (x: number, y: number, r: number, color: string, alpha: number) => {
+    ctx.fillStyle = color;
+    ctx.globalAlpha = alpha;
+    for (const dx of [-S, 0, S]) {
+      for (const dy of [-S, 0, S]) {
+        if (dx !== 0 && Math.abs(x + dx - S / 2) > S / 2 + r) continue;
+        if (dy !== 0 && Math.abs(y + dy - S / 2) > S / 2 + r) continue;
+        ctx.beginPath();
+        ctx.ellipse(x + dx, y + dy, r, r * (0.5 + Math.random() * 0.4), Math.random() * Math.PI, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  };
+  for (let i = 0; i < 420; i++) {
+    drawPore(
+      Math.random() * S,
+      Math.random() * S,
+      3 + Math.random() * 6,
+      poreColors[(Math.random() * poreColors.length) | 0],
+      0.55 + Math.random() * 0.35
+    );
+  }
+  ctx.globalAlpha = 1;
+
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.generateMipmaps = true;
+  tex.minFilter = THREE.LinearMipmapLinearFilter;
+  tex.magFilter = THREE.LinearFilter;
+  tex.anisotropy = 4;
+  return tex;
+}
+
+/**
+ * Chemin de l'IMAGE réelle fournie pour « Travertin ». À déposer dans
+ * /public/textures/travertin.png. Utilisée TELLE QUELLE comme baseColor :
+ * aucune retouche (couleur, contraste, saturation, luminosité), aucune
+ * recréation. Seuls l'échelle (uCompositeScale) et le placage triplanar
+ * (UV object-space) sont adaptés ; AUCUN relief n'est dérivé de l'image (les
+ * pores se lisent déjà en couleur, la rugosité du profil fait le reste).
+ */
+const TRAVERTINE_URL = "/textures/travertin.png";
+
+function getTravertineTexture(): THREE.Texture {
+  if (travertineTex) return travertineTex;
+  const tex = new THREE.TextureLoader().load(
+    TRAVERTINE_URL,
+    undefined,
+    undefined,
+    () => {
+      // Repli TEMPORAIRE si l'image n'est pas encore déposée : motif procédural
+      // approchant, automatiquement remplacé par l'image réelle dès qu'elle est
+      // présente à TRAVERTINE_URL. (Ce repli n'est jamais utilisé une fois le
+      // fichier fourni.)
+      const fb = makeTravertineTexture() as THREE.CanvasTexture;
+      tex.image = fb.image as unknown as HTMLImageElement;
+      tex.needsUpdate = true;
+      fb.dispose();
+    }
+  );
+  configureImageTexture(tex);
+  travertineTex = tex;
+  return tex;
+}
+
+/* --- Texture Renature (intérieur de l'abat-jour, config 02), IMAGE réelle --- */
+let renatureTex: THREE.Texture | null = null;
+/** Dédoublonne les chargements concurrents (plusieurs appels avant résolution)
+ *  et mémorise le résultat — y compris l'échec, jamais réessayé en boucle. */
+let renaturePromise: Promise<THREE.Texture | null> | null = null;
+
+/**
+ * Chemin de l'image réelle « Renature », utilisée telle quelle comme baseColor
+ * de la face intérieure de l'abat-jour (config 02). Aucun repli : un fichier
+ * manquant ne doit jamais être remplacé silencieusement par une approximation
+ * (voir loadRenatureTexture) — l'intérieur retombe alors sur la porcelaine
+ * nue, avec une erreur explicite en console.
+ */
+const RENATURE_URL = "/textures/renature.webp";
+
+/** Échelle du motif froissé sur l'abat-jour (tiling triplanar) : 1 unité
+ *  objet ≈ 101 cm, donc scale 9 ⇒ motif large d'environ 11 cm. Valeur exacte
+ *  à affiner par mesure réelle : scale = 101 / largeur en cm de la zone photographiée. */
+const RENATURE_SCALE = 9;
+
+/**
+ * Charge l'image Renature au plus une fois. En cas d'échec (fichier absent),
+ * n'installe AUCUN repli visuel — juste une erreur en console — pour qu'un
+ * fichier manquant reste visible au lieu de passer pour un simple changement
+ * de rendu (voir applyInteriorVeneer, qui garde alors l'intérieur en
+ * porcelaine nue).
+ */
+function loadRenatureTexture(): Promise<THREE.Texture | null> {
+  if (renaturePromise) return renaturePromise;
+  renaturePromise = new Promise((resolve) => {
+    const tex = new THREE.TextureLoader().load(
+      RENATURE_URL,
+      () => {
+        renatureTex = tex;
+        resolve(tex);
+      },
+      undefined,
+      (err) => {
+        console.error(
+          `Renature : "${RENATURE_URL}" introuvable — l'intérieur de l'abat-jour (config 02) reste en porcelaine nue.`,
+          err
+        );
+        resolve(null);
+      }
+    );
+    configureImageTexture(tex);
+  });
+  return renaturePromise;
+}
+
 /**
  * Matières composites procédurales (texture couleur + échelle/relief).
  * `both: true` → la texture couvre AUSSI les faces intérieures (abat-jour vu
@@ -1065,6 +1282,13 @@ const COMPOSITE: Record<
   // Béton bleuté : composite de verre bleu concassé — couleur uniquement,
   // aucun relief. Échelle un peu réduite → fragments plus fins (tiling accru).
   blueTerrazzo: { tex: getBlueTerrazzoTexture, scale: 16, bump: 0, rough: 0 },
+  // Travertin : le vrai problème du flou n'était pas le tiling (scale) mais
+  // le CONTRASTE du repli procédural, écrasé par le mipmapping avant même
+  // d'être vu (voir makeTravertineTexture) — corrigé là-bas. Une échelle plus
+  // haute (36, essayée entre-temps) aggravait au contraire les choses : plus
+  // de répétitions = motif plus fin = encore plus vite mipmappé en aplat.
+  // Revenu à un ordre de grandeur comparable au béton bleuté voisin.
+  travertine: { tex: getTravertineTexture, scale: 16, bump: 0, rough: 0 },
 };
 
 /**
@@ -1108,15 +1332,24 @@ export function createGrainMaterial(
     scale: 26, rough: 0.2, speckle: 0.08, bump: 0.12, composite: 0,
     compTex: null as THREE.Texture | null, compScale: 14, compBump: 0.018, compRough: 0.06, compBoth: 0,
   };
-  // Texture intérieure optionnelle (placage bois). composite 0 = désactivé.
-  mat.userData.interior = { composite: 0, scale: WOOD_VENEER_SCALE, tex: null as THREE.Texture | null };
+  // Texture intérieure optionnelle (placage bois ou Renature). composite 0 =
+  // désactivé.
+  mat.userData.interior = {
+    composite: 0,
+    scale: WOOD_VENEER_SCALE,
+    tex: null as THREE.Texture | null,
+  };
   // Perforation (tôle) — désactivée par défaut : seule la pièce d'assemblage
   // l'active, via applyPerforation. La forme du trou (radius/corner/round)
   // est figée dans la texture du masque, pas dans un uniforme.
   mat.userData.perf = { mode: 0, scale: PERFORATION.scale };
   mat.userData.blockLampLight = blockLampLight;
 
-  mat.onBeforeCompile = (shader) => {
+  mat.onBeforeCompile = (shader, renderer) => {
+    // Le vrai maximum matériel plutôt qu'une valeur en dur (voir
+    // applyMaxAnisotropy) — c'est le seul endroit du fichier qui reçoit un
+    // renderer.
+    applyMaxAnisotropy(renderer);
     shader.uniforms.uGrainTex = { value: texture ?? getNoiseTexture() };
     shader.uniforms.uGrainScale = { value: mat.userData.grain.scale };
     shader.uniforms.uGrainRough = { value: mat.userData.grain.rough };
@@ -1132,8 +1365,10 @@ export function createGrainMaterial(
     shader.uniforms.uCompositeRough = { value: mat.userData.grain.compRough };
     // 1 → la texture composite couvre AUSSI les faces intérieures (Verre bleu).
     shader.uniforms.uCompositeBoth = { value: mat.userData.grain.compBoth };
-    // Texture réservée à l'INTÉRIEUR (placage bois de l'abat-jour, config 01).
-    // uInteriorComposite = 1 → l'intérieur utilise uInteriorTex (baseColor).
+    // Texture réservée à l'INTÉRIEUR de l'abat-jour (placage bois config 01,
+    // Renature config 02) : baseColor pure, aucun relief ni rugosité propres —
+    // même traitement que le bois. uInteriorComposite = 1 → l'intérieur
+    // utilise uInteriorTex.
     shader.uniforms.uInteriorTex = { value: mat.userData.interior.tex ?? getNoiseTexture() };
     shader.uniforms.uInteriorComposite = { value: mat.userData.interior.composite };
     shader.uniforms.uInteriorScale = { value: mat.userData.interior.scale };
@@ -1411,15 +1646,17 @@ export function createGrainMaterial(
         float gGrain = grainSample();
         float gCompH = 0.0;
         bool vmExterior = !gl_FrontFacing; // extérieur = back-facing (normales CAO inversées)
-        // Placage bois : image réelle appliquée UNIQUEMENT à l'intérieur
-        // (faces avant) quand uInteriorComposite = 1 (abat-jour config 01).
+        // Placage intérieur (bois config 01, Renature config 02) : image réelle
+        // appliquée UNIQUEMENT à l'intérieur (faces avant) quand
+        // uInteriorComposite = 1 — même mécanisme pour les deux, baseColor pure,
+        // aucun relief ni rugosité propres.
         bool vmWoodInterior = (!vmExterior) && (uInteriorComposite > 0.5);
         // Le moucheté d'albédo (grain) reste extérieur uniquement.
         if (vmExterior) {
           diffuseColor.rgb *= 1.0 + (gGrain - 0.5) * uSpeckle;
         }
         if (vmWoodInterior) {
-          // baseColor = image de placage bois telle quelle (aucune retouche).
+          // baseColor = image intérieure telle quelle (aucune retouche).
           diffuseColor.rgb = interiorSample();
         } else if (uComposite > 0.001 && (vmExterior || uCompositeBoth > 0.5)) {
           // La texture composite couvre l'extérieur, et AUSSI l'intérieur quand
@@ -1452,7 +1689,8 @@ export function createGrainMaterial(
           float rFloor = (uPerfMode > 0.5) ? 0.18 : 0.03;
           roughnessFactor = clamp(roughnessFactor + (rSrc - 0.5) * rAmp, rFloor, 1.0);
         }
-        // Intérieur en placage bois : finition légèrement satinée (verni léger).
+        // Intérieur en placage (bois ou Renature) : finition légèrement
+        // satinée (verni léger), identique pour les deux — aucune variation.
         if (gl_FrontFacing && uInteriorComposite > 0.5) {
           roughnessFactor = 0.5;
         }
@@ -1529,28 +1767,52 @@ export function applyProfile(
   mat.needsUpdate = false; // pas de recompilation
 }
 
-/**
- * Active (ou désactive) le placage bois sur la FACE INTÉRIEURE de l'abat-jour.
- * À n'appeler que pour le mesh de l'abat-jour concerné (config 01). L'extérieur
- * n'est jamais modifié. Aucune recompilation, aucun relief.
- */
-export function applyInteriorVeneer(
+/** Placage disponible sur la face intérieure de l'abat-jour, ou aucun. */
+export type InteriorVeneer = "wood" | "renature" | null;
+
+/** Écrit l'état d'intérieur à la fois dans userData (relu à la prochaine
+ *  compilation) et dans les uniformes live si le shader est déjà compilé. */
+function setInteriorState(
   mat: THREE.MeshPhysicalMaterial,
-  enabled: boolean
+  state: { composite: number; scale: number; tex: THREE.Texture | null }
 ) {
-  mat.userData.interior = {
-    composite: enabled ? 1 : 0,
-    scale: WOOD_VENEER_SCALE,
-    tex: enabled ? getWoodVeneerTexture() : null,
-  };
+  mat.userData.interior = state;
   const shader = mat.userData.shader as
     | { uniforms: Record<string, { value: unknown }> }
     | undefined;
   if (shader) {
-    shader.uniforms.uInteriorComposite.value = enabled ? 1 : 0;
-    shader.uniforms.uInteriorScale.value = WOOD_VENEER_SCALE;
-    if (enabled) shader.uniforms.uInteriorTex.value = getWoodVeneerTexture();
+    shader.uniforms.uInteriorComposite.value = state.composite;
+    shader.uniforms.uInteriorScale.value = state.scale;
+    if (state.tex) shader.uniforms.uInteriorTex.value = state.tex;
   }
+}
+
+/**
+ * Active (ou désactive) un placage sur la FACE INTÉRIEURE de l'abat-jour :
+ * bois (config 01) ou Renature (config 02). À n'appeler que pour le mesh de
+ * l'abat-jour concerné. L'extérieur n'est jamais modifié. Aucune
+ * recompilation — seuls les uniformes changent. BaseColor pure dans les deux
+ * cas : aucun relief, aucune variation de rugosité côté intérieur.
+ */
+export function applyInteriorVeneer(
+  mat: THREE.MeshPhysicalMaterial,
+  veneer: InteriorVeneer
+) {
+  if (veneer === "renature") {
+    // Porcelaine nue par défaut, tant que l'image n'est pas CONFIRMÉE chargée
+    // (jamais avant) — un fichier manquant ne doit jamais s'afficher comme un
+    // rendu cassé, ni être masqué par un repli qui ressemble à la matière
+    // (voir loadRenatureTexture). En cas d'échec, l'état reste ici, avec
+    // l'erreur déjà écrite en console par loadRenatureTexture.
+    setInteriorState(mat, { composite: 0, scale: RENATURE_SCALE, tex: null });
+    loadRenatureTexture().then((tex) => {
+      if (tex) setInteriorState(mat, { composite: 1, scale: RENATURE_SCALE, tex });
+    });
+    return;
+  }
+  const enabled = veneer === "wood";
+  const tex = enabled ? getWoodVeneerTexture() : null;
+  setInteriorState(mat, { composite: enabled ? 1 : 0, scale: WOOD_VENEER_SCALE, tex });
 }
 
 /**
@@ -1611,6 +1873,11 @@ export function disposeLampTextures() {
   woodTex = null;
   bottleTex?.dispose();
   bottleTex = null;
+  travertineTex?.dispose();
+  travertineTex = null;
+  renatureTex?.dispose();
+  renatureTex = null;
+  renaturePromise = null;
   perfTexCache.square?.dispose();
   perfTexCache.round?.dispose();
   delete perfTexCache.square;
