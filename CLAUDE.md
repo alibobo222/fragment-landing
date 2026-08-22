@@ -51,7 +51,7 @@ components/
   hero/ExplodedLamp3D scène 3D éclatée pilotée par le scroll
   lamp/LampStage      enveloppe réutilisable : repli photo → 3D, contrôles
   chapters/           chapitres éditoriaux (projet, matières, vue éclatée)
-  configurator/       catalogue des 7 configurations
+  configurator/       catalogue des 6 configurations
   ui/                 SectionHeading, Reveal, motion
 data/product.ts       LES VARIANTES — données produit, source de vérité du rendu 3D
 data/specs.ts         fiche technique (productSpecs) — sans effet sur le rendu 3D

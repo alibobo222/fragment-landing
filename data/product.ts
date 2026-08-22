@@ -312,22 +312,6 @@ export const variants: ProductVariant[] = [
     image: "/images/variants/verre-bleu-acier-anodise.webp",
     alt: "Lampe Noir Minéral en Wasterial® - Billes de verre avec pièce d'assemblage en acier anodisé.",
   },
-  {
-    id: "porcelaine-epoxy-mat",
-    index: "07",
-    name: "Porcelaine & époxy mat",
-    materialsSummary: "Porcelaine · Peinture époxy mate",
-    accent: "#2a3fe6",
-    accentOnDark: "#6f83ff",
-    shade: { label: "Porcelaine", color: "#e7e2d8", material: "porcelain" },
-    assembly: { label: "Époxy mat cobalt", color: "#2b4cd4", material: "epoxy" },
-    base: { label: "Béton clair", color: "#9d9a91", material: "concrete" },
-    cable: { label: "Câble textile bleu", color: "#2f4fd0", material: "fabric" },
-    description:
-      "La blancheur de la porcelaine ponctuée d'un cobalt franc. Le geste graphique d'un trait de couleur.",
-    image: "/images/variants/porcelaine-epoxy-mat.webp",
-    alt: "Lampe Noir Minéral en porcelaine claire avec pièce d'assemblage peinte en époxy mat cobalt.",
-  },
 ];
 
 /**

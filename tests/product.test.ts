@@ -3,18 +3,18 @@ import { variants, getVariant, defaultVariantId } from "@/data/product";
 import { orderCtaLabel } from "@/config/site";
 
 describe("données produit", () => {
-  it("expose exactement sept combinaisons", () => {
-    expect(variants).toHaveLength(7);
+  it("expose exactement six combinaisons", () => {
+    expect(variants).toHaveLength(6);
   });
 
   it("garantit des identifiants uniques", () => {
     const ids = new Set(variants.map((v) => v.id));
-    expect(ids.size).toBe(7);
+    expect(ids.size).toBe(6);
   });
 
-  it("numérote les configurations de 01 à 07 dans l'ordre", () => {
+  it("numérote les configurations de 01 à 06 dans l'ordre", () => {
     expect(variants.map((v) => v.index)).toEqual([
-      "01", "02", "03", "04", "05", "06", "07",
+      "01", "02", "03", "04", "05", "06",
     ]);
   });
 

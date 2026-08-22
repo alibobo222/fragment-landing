@@ -63,14 +63,16 @@ const SWATCH_SIZE = 128;
 /** Part du petit côté de la texture prélevée dans la fenêtre. */
 const SWATCH_CROP_RATIO = 0.45;
 
-/** planche variantes : grille 3×2, colonnes de 217px, rendus sur fond blanc. */
+/** planche variantes : grille source 3×2, colonnes de 217px, rendus sur fond
+ *  blanc. La cellule (440, 360) — ex. « porcelaine-epoxy-mat », configuration
+ *  07 retirée du catalogue — n'est plus découpée : la planche source garde
+ *  ses 6 cases, seules 5 sont encore extraites. */
 const variantCrops = [
   { name: "porcelaine-acier-noir", left: 6, top: 30, width: 206, height: 182 },
   { name: "brique-aluminium", left: 223, top: 30, width: 206, height: 182 },
   { name: "verre-bouteille-inox", left: 440, top: 30, width: 206, height: 182 },
   { name: "coquille-laiton", left: 6, top: 360, width: 206, height: 182 },
   { name: "verre-bleu-acier-anodise", left: 223, top: 360, width: 206, height: 182 },
-  { name: "porcelaine-epoxy-mat", left: 440, top: 360, width: 206, height: 182 },
 ];
 
 /** photos prototype + vue éclatée. */

@@ -48,12 +48,6 @@ const EXPECTED: Record<string, Record<(typeof PARTS)[number], MaterialKind>> = {
     base: "blueGlass",
     cable: "fabric",
   },
-  "porcelaine-epoxy-mat": {
-    shade: "porcelain",
-    assembly: "epoxy",
-    base: "concrete",
-    cable: "fabric",
-  },
 };
 
 /** Transmission attendue de l'abat-jour de chaque variante (voir PROFILES). */
@@ -64,7 +58,6 @@ const EXPECTED_SHADE_TRANSMISSION: Record<string, number> = {
   "verre-bouteille-inox": 0.25,
   "coquille-laiton": 0.25,
   "verre-bleu-acier-anodise": 0.08,
-  "porcelaine-epoxy-mat": 0.45,
 };
 
 /** Les 16 MaterialKind du catalogue — recopiés de data/product.ts. Un kind
@@ -89,7 +82,7 @@ const ALL_KINDS: MaterialKind[] = [
 ];
 
 describe("résolution des matières", () => {
-  it("expose exactement les 7 variantes attendues par la table d'attendus", () => {
+  it("expose exactement les 6 variantes attendues par la table d'attendus", () => {
     expect(variants.map((v) => v.id).sort()).toEqual(Object.keys(EXPECTED).sort());
   });
 

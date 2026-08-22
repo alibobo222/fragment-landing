@@ -325,19 +325,21 @@ function VariantPicker({
  *   1 Terracotta — brique/aluminium/câble noir      → brique-aluminium
  *   2 Lichen     — coquille/vert/laiton/câble rouge → coquille-laiton
  *   3 Craie      — porcelaine/acier noir/câble noir → porcelaine-acier-noir
- *   4 Cobalt     — porcelaine/métal bleu/câble bleu → porcelaine-epoxy-mat
- *   5 Graphite   — noir/aluminium/câble bleu        → prototype-noir-cable-bleu
- *   6 Ardoise    — verre bleu/métal bleu            → verre-bleu-acier-anodise
- *   7 Mousse     — vert bouteille/inox/câble noir   → verre-bouteille-inox
+ *   4 Graphite   — noir/aluminium/câble bleu        → prototype-noir-cable-bleu
+ *   5 Ardoise    — verre bleu/métal bleu            → verre-bleu-acier-anodise
+ *   6 Mousse     — vert bouteille/inox/câble noir   → verre-bouteille-inox
+ *
+ * Configuration 07 (Cobalt, porcelaine-epoxy-mat) retirée du catalogue :
+ * les numéros 5-7 ci-dessus sont décalés d'un cran pour combler le trou
+ * plutôt que de laisser un « 4 » manquant visible côté public.
  */
 const PROPOSITION_NUMBER: Record<string, number> = {
   "brique-aluminium": 1,
   "coquille-laiton": 2,
   "porcelaine-acier-noir": 3,
-  "porcelaine-epoxy-mat": 4,
-  "prototype-noir-cable-bleu": 5,
-  "verre-bleu-acier-anodise": 6,
-  "verre-bouteille-inox": 7,
+  "prototype-noir-cable-bleu": 4,
+  "verre-bleu-acier-anodise": 5,
+  "verre-bouteille-inox": 6,
 };
 
 /**
