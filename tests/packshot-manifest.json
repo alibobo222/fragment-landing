@@ -1,0 +1,94 @@
+{
+  "generatedAt": "2026-08-22T23:10:30.965Z",
+  "ids": [
+    "prototype-noir-cable-bleu",
+    "porcelaine-acier-noir",
+    "brique-aluminium",
+    "verre-bouteille-inox",
+    "coquille-laiton",
+    "verre-bleu-acier-anodise"
+  ],
+  "hash": "6ab45989efd4f99e0f62a7c30c010725ffbef2a719ef715b17da9fd5728e1ca5",
+  "files": [
+    {
+      "path": "app/packshot/page.tsx",
+      "sha256": "0edde9b709ccb04c25776cae35e9b816f2717e108cc3cba0337690aeff3ca272"
+    },
+    {
+      "path": "components/hero/Lamp3D.tsx",
+      "sha256": "760ab3b4c2dfcf94f9af962e29399349a782ea2faad03ff3c7d0c05dd190bd8e"
+    },
+    {
+      "path": "components/packshot/Packshot.tsx",
+      "sha256": "8bbb20d067788bc05b54903f542a9956a4de32437877e9a783c67b8b4385e9ed"
+    },
+    {
+      "path": "config/packshot.ts",
+      "sha256": "cc635a4a58206187dfdf27da9e46dd128515ad646c33941761e860d826f1ded6"
+    },
+    {
+      "path": "data/lampModel.ts",
+      "sha256": "8cbaebc46200995bbffec89046a72799b59fe805f5be1bfbdc584e495b33d251"
+    },
+    {
+      "path": "data/product.ts",
+      "sha256": "4d746ff8a584a373499e49199027b0f3036b0f947f3f60ea2c4a33e3b53f78b0"
+    },
+    {
+      "path": "lib/lampTextures.ts",
+      "sha256": "0243f7ee3e32723d0a9a2c15190b891c566efb605543add4c55c5ab2919a9269"
+    },
+    {
+      "path": "public/models/lampe-optimisee.glb",
+      "sha256": "ab06a1efd5a52454602818742da5e1d701c1726745029ccd26a600e5db6fb170"
+    },
+    {
+      "path": "public/textures/beton-bleute.png",
+      "sha256": "2fd0a65cf24c7c7d2e82ca90cab0323c455fbf31df53edbe74fd064c327ace12"
+    },
+    {
+      "path": "public/textures/brique.png",
+      "sha256": "3fff41c6d85c58c7f87a86085636f42ebb3f443960d56335a7c032188ba2486f"
+    },
+    {
+      "path": "public/textures/coquilles-huitres.png",
+      "sha256": "4f2625c9e18131fd53bffad18533694e0f7ef2d089ed91230478a01007c6fec8"
+    },
+    {
+      "path": "public/textures/douille-metal-rouille.png",
+      "sha256": "948eaf706d2dfb76804da4bde88a18f193b906b87a1f245dd97ab3d8c37ab9e9"
+    },
+    {
+      "path": "public/textures/placage-bois.webp",
+      "sha256": "7d355e04cbafdd1a867ee9ffa088a46b3eb9d504a559d56d6a03f060c2e55ead"
+    },
+    {
+      "path": "public/textures/renature.webp",
+      "sha256": "28ec238a056a500eebb81ed1bf7f347b64f6d0105f79bdaef44858344085b9c5"
+    },
+    {
+      "path": "public/textures/tole-acier-corten.jpg",
+      "sha256": "15619d3423d7eb8ba923cf964b3e3c0d07f2670eae43951e4d248e4d82c1d0b2"
+    },
+    {
+      "path": "public/textures/travertin.png",
+      "sha256": "1ff59a5b85d26215138de3147c6fd216b29d909dcfeeaf4379d649dd2ff75682"
+    },
+    {
+      "path": "public/textures/verre-bleu.png",
+      "sha256": "6b7d9ab6e405359fbfb9ead4127a183c069a4b61a57c25766f632fc678a8128d"
+    },
+    {
+      "path": "public/textures/verre-bouteille.png",
+      "sha256": "4065c9421c30dc50571a773c871b6d177de3fd053da21379eb9c1375aab14e5b"
+    },
+    {
+      "path": "public/textures/westerial-coquilles-moules.png",
+      "sha256": "86d5228ea8a697b9efca0c6042c346fb634921838b6e58eabf86943dd77a70ee"
+    },
+    {
+      "path": "scripts/render-packshots.mjs",
+      "sha256": "4a36fb78cfbaa4a4927dbe34929920d909c6231c5bdbe28a65a3fb655afe353d"
+    }
+  ]
+}
