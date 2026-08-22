@@ -29,6 +29,7 @@ import {
   applyPerforation,
   materialProfile,
   getWeaveTexture,
+  pendingRenatureLoad,
   type InteriorVeneer,
 } from "@/lib/lampTextures";
 
@@ -58,12 +59,22 @@ function LampModel({
   lampOn,
   kelvin,
   perforation,
+  onMaterialsSettled,
 }: {
   partVariants: PartVariants;
   lampOn: boolean;
   /** Température de couleur courante, en kelvins (curseur continu). */
   kelvin: number;
   perforation: PerforationShape;
+  /**
+   * Appelé une fois les matières RÉELLEMENT stables — après le placage
+   * intérieur éventuel (Renature, config 02), pas seulement après cet effet
+   * synchrone. Optionnel : seul le pipeline packshot s'en sert (voir
+   * `components/packshot/Packshot.tsx`), le configurateur live n'en a pas
+   * besoin (le bref instant en porcelaine nue avant le chargement de
+   * Renature y est déjà toléré, transition douce comprise).
+   */
+  onMaterialsSettled?: () => void;
 }) {
   const { scene } = useGLTF(LAMP_MODEL_URL);
   const invalidate = useThree((s) => s.invalidate);
@@ -273,7 +284,24 @@ function LampModel({
       cfg.glassGlowMax *
       shadeTransmission(variants[partVariants.shade].shade.material);
     invalidate();
-  }, [materials, partVariants, perforation, invalidate, spot, point]);
+
+    // Signal de stabilité DIFFÉRÉ (voir la doc du prop) : applyInteriorVeneer
+    // ci-dessus a pu lancer un chargement Renature asynchrone (config 02) —
+    // on ne prévient qu'une fois celui-ci réellement terminé, sinon le
+    // marqueur packshot bascule pendant que la porcelaine nue est encore à
+    // l'écran, sur un timing qui varie d'une exécution à l'autre.
+    if (onMaterialsSettled) {
+      let cancelled = false;
+      pendingRenatureLoad().then(() => {
+        if (cancelled) return;
+        invalidate();
+        onMaterialsSettled();
+      });
+      return () => {
+        cancelled = true;
+      };
+    }
+  }, [materials, partVariants, perforation, invalidate, spot, point, onMaterialsSettled]);
 
   // Libère les matériaux créés par ce montage (un par pièce, voir useMemo
   // ci-dessus) : sans ça, chaque aller-retour de scroll en laisse derrière lui.
@@ -426,6 +454,7 @@ export function Lamp3D({
   kelvin,
   perforation = defaultPerforation,
   onCreated,
+  onMaterialsSettled,
   camera = CAMERA,
   fov = FOV,
   controls = true,
@@ -439,6 +468,8 @@ export function Lamp3D({
   /** Géométrie des perforations de la pièce d'assemblage. */
   perforation?: PerforationShape;
   onCreated?: () => void;
+  /** Voir la doc du même prop sur `LampModel` — répercuté tel quel. */
+  onMaterialsSettled?: () => void;
   /** Cadrage caméra — permet un plan différent pour l'atelier. */
   camera?: [number, number, number];
   fov?: number;
@@ -466,6 +497,7 @@ export function Lamp3D({
         lampOn={lampOn}
         kelvin={kelvin}
         perforation={perforation}
+        onMaterialsSettled={onMaterialsSettled}
       />
       {controls && (
         <>

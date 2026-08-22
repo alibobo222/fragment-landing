@@ -153,3 +153,12 @@ un grain triplanar en espace objet injecté dans le shader
 Les géométries proviennent du GLTF mis en cache par drei et sont **partagées**
 entre les scènes : ne jamais les `dispose()`. Les matériaux, eux, sont créés par
 scène et doivent être libérés.
+
+**Un chargement de texture ASYNCHRONE (`TextureLoader`, ex. Renature config 02
+dans `applyInteriorVeneer`) rend une vignette packshot non déterministe si
+rien n'attend sa résolution.** Le canvas WebGL créé (`onCreated`) ne suffit
+pas : la capture peut avoir lieu avant ou après que la texture soit posée —
+deux résultats possibles pour la même configuration, selon le timing. Toute
+nouvelle matière chargée en asynchrone doit exposer un moyen d'attendre sa
+résolution (voir `pendingRenatureLoad` dans `lib/lampTextures.ts` et la prop
+`onMaterialsSettled` de `Lamp3D`, utilisée par `Packshot.tsx`).

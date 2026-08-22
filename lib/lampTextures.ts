@@ -1224,6 +1224,24 @@ function loadRenatureTexture(): Promise<THREE.Texture | null> {
 }
 
 /**
+ * Résout une fois le chargement Renature EN COURS terminé (texture posée ou
+ * échec confirmé) — jamais tant qu'il est en attente. `null` si aucun
+ * chargement n'a été déclenché (aucune config 02 encore rendue).
+ *
+ * Exportée pour le seul pipeline packshot (voir la prop `onMaterialsSettled`
+ * de `components/hero/Lamp3D.tsx`) : le marqueur `data-packshot-ready` ne doit
+ * basculer qu'une fois la matière RÉELLEMENT stable, pas seulement au montage
+ * du canvas WebGL — sinon la capture peut intervenir AVANT que
+ * `applyInteriorVeneer("renature")` (config 02) ait remplacé la porcelaine
+ * nue par la vraie texture, ce qui produisait une vignette non déterministe
+ * (deux résultats possibles selon le timing du chargement de l'image —
+ * découvert en comparant deux générations successives octet pour octet).
+ */
+export function pendingRenatureLoad(): Promise<unknown> {
+  return renaturePromise ?? Promise.resolve();
+}
+
+/**
  * Matières composites procédurales (texture couleur + échelle/relief).
  * `both: true` → la texture couvre AUSSI les faces intérieures (abat-jour vu
  * de l'intérieur), avec la même échelle/orientation (triplanar object-space).

@@ -34,6 +34,14 @@ export function Packshot({ index }: { index: number }) {
     if (ready) document.documentElement.dataset.packshotReady = "1";
   }, [ready]);
 
+  // Note sur onMaterialsSettled (et pas seulement onCreated, plus bas) : le
+  // canvas WebGL créé ne suffit pas — la config 02 (Renature) déclenche un
+  // chargement d'image ASYNCHRONE pour l'intérieur de l'abat-jour (voir
+  // lib/lampTextures.ts, applyInteriorVeneer). Sans attendre sa résolution,
+  // la capture peut avoir lieu avant OU après que la texture soit posée :
+  // deux vignettes possibles pour la même configuration, découvert en
+  // comparant deux générations successives octet pour octet.
+
   return (
     <div
       style={{
@@ -51,7 +59,7 @@ export function Packshot({ index }: { index: number }) {
         kelvin={DA.KELVIN}
         camera={DA.CAMERA}
         fov={DA.FOV}
-        onCreated={() => setReady(true)}
+        onMaterialsSettled={() => setReady(true)}
       />
     </div>
   );
