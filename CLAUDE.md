@@ -66,8 +66,10 @@ scripts/              conversion CAO, préparation des assets
 
 **Ne jamais inventer de donnée produit.** Dimensions, poids, source lumineuse,
 alimentation, délai, disponibilité : les champs inconnus restent `null` dans
-`productSpecs` (`data/specs.ts`) avec leur commentaire `TODO`. Aucune
-certification, aucune origine, aucun chiffre qui ne vienne pas de l'atelier.
+`productSpecs` (`data/specs.ts`) avec leur commentaire `TODO` — sauf `leadTime`,
+volontairement vide en permanence (voir le commentaire à côté du champ, pas un
+TODO à compléter). Aucune certification, aucune origine, aucun chiffre qui ne
+vienne pas de l'atelier.
 
 **Un seul contexte WebGL vivant à la fois.** Les canvas se montent et se
 démontent via `IntersectionObserver`. Le hero, le configurateur et la vue

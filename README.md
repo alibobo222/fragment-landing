@@ -277,9 +277,11 @@ Centralisées, jamais inventées. Voir les commentaires `TODO` dans le code :
 
 - `config/site.ts` : `price`, `checkoutUrl`, `contactEmail` (réel), `instagramUrl`,
   `legalNoticeUrl`, `privacyUrl`, `leadEndpoint`, `analytics*`, `siteUrl`.
-- `data/specs.ts` (`productSpecs`) : **dimensions**, **source lumineuse**,
-  **alimentation**, **poids**, **délai**, **disponibilité** — affichés
-  « Information à venir » tant qu'ils sont `null`.
+- `data/specs.ts` (`productSpecs`) : **dimensions**, **puissance de l'ampoule**
+  (culot E27 et température de couleur déjà connus), **alimentation**,
+  **poids** — affichés « Information à venir » tant qu'ils sont `null`. Le
+  **délai** de fabrication reste volontairement non communiqué : ce n'est pas
+  un TODO, c'est une décision (voir le commentaire dans `data/specs.ts`).
 
 ---
 

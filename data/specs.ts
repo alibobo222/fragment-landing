@@ -30,9 +30,15 @@ export const productSpecs: SpecField[] = [
 
   // TODO — à renseigner par l'atelier, ne pas inventer :
   { key: "dimensions", label: "Dimensions", value: null }, // TODO: H × Ø en cm
-  { key: "light", label: "Source lumineuse", value: null }, // TODO: culot (ex. E27) + puissance conseillée
+  {
+    key: "light",
+    label: "Source lumineuse",
+    value: "Culot E27 — ampoule recommandée à 4 000 K",
+  }, // TODO: puissance en watts (culot et température de couleur déjà connus)
   { key: "power", label: "Alimentation", value: null }, // TODO: tension / interrupteur / prise
   { key: "weight", label: "Poids", value: null }, // TODO: poids en kg
-  { key: "leadTime", label: "Délai", value: null }, // TODO: délai de fabrication
-  { key: "availability", label: "Disponibilité", value: null }, // TODO: statut de disponibilité
+  // Volontairement laissé vide : aucun délai de fabrication n'est communiqué
+  // au public — ne pas « compléter » ce champ par zèle.
+  { key: "leadTime", label: "Délai", value: null },
+  { key: "availability", label: "Disponibilité", value: "Sur commande" },
 ];
