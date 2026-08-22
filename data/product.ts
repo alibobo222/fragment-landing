@@ -37,7 +37,8 @@ export type MaterialKind =
   | "fabric"
   | "blackConcrete"
   | "matte"
-  | "travertine";
+  | "travertine"
+  | "corten";
 
 export interface PartFinish {
   /** Matière/finition affichée à l'utilisateur. */
@@ -186,7 +187,7 @@ export const variants: ProductVariant[] = [
     id: "brique-aluminium",
     index: "03",
     name: "Wasterial® - Brique & aluminium",
-    materialsSummary: "Wasterial® - Brique · Aluminium",
+    materialsSummary: "Wasterial® - Brique · Acier corten",
     accent: "#a8371f",
     accentOnDark: "#d9663f",
     shade: {
@@ -195,11 +196,17 @@ export const variants: ProductVariant[] = [
       material: "brick",
       textureImage: "/textures/swatch/brique.webp",
     },
-    assembly: { label: "Aluminium", color: "#c7c9cb", material: "metal" },
-    // Douille : valeur ACTUELLE de l'assemblage, figée ici. Prépare le passage
-    // de la pièce d'assemblage en acier corten sans faire rouiller la douille
-    // avec elle (voir finishFor, data/lampModel.ts) — aucun changement de
-    // rendu tant que `assembly` lui-même n'est pas modifié.
+    // Couleur mesurée : moyenne RVB de tole-acier-corten.jpg (#a4530c), pas
+    // devinée à l'œil.
+    assembly: {
+      label: "Acier corten",
+      color: "#a4530c",
+      material: "corten",
+      textureImage: "/textures/swatch/tole-acier-corten.webp",
+    },
+    // Douille : valeur de l'assemblage AVANT son passage en corten, figée ici
+    // pour qu'elle ne rouille pas avec lui (voir finishFor, data/lampModel.ts)
+    // — une douille standard du commerce n'est jamais en acier corten.
     socket: { label: "Aluminium", color: "#c7c9cb", material: "metal" },
     base: {
       label: "Wasterial® - Brique",
@@ -211,7 +218,7 @@ export const variants: ProductVariant[] = [
     description:
       "La terre cuite chaude réveille l'aluminium froid. Une matière qui garde la mémoire du feu.",
     image: "/images/variants/brique-aluminium.webp",
-    alt: "Lampe Noir Minéral en Wasterial® - Brique avec pièce d'assemblage en aluminium.",
+    alt: "Lampe Noir Minéral en Wasterial® - Brique avec pièce d'assemblage en acier corten.",
   },
   {
     id: "verre-bouteille-inox",

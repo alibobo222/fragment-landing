@@ -68,6 +68,11 @@ const PROFILES: Record<MaterialKind, Omit<MaterialProfile, "kind">> = {
   // légèrement mat comme une pierre naturelle poncée — pas de relief procédural
   // en plus de l'image, qui porte déjà les pores.
   travertine: { roughness: 0.78, metalness: 0, clearcoat: 0.04, clearcoatRoughness: 0.75, grainScale: 16, grainRough: 0.1, speckle: 0.03, grainBump: 0, transmission: 0.08 },
+  // Acier corten (assemblage, config 03) : la couche d'oxyde de surface est
+  // DIÉLECTRIQUE, pas métallique — surtout pas le profil `metal` (metalness
+  // 0,92), qui donnerait une rouille chromée. metalness bas, couleur/grain via
+  // la texture (composite), AUCUN relief ajouté (l'image porte déjà le sien).
+  corten: { roughness: 0.85, metalness: 0.12, clearcoat: 0.03, clearcoatRoughness: 0.8, grainScale: 16, grainRough: 0, speckle: 0, grainBump: 0, transmission: 0.08 },
   // Gaine textile du câble : tissage plat fin (chaîne/trame), mat, relief
   // discret — évoque un câble gainé de tissu haut de gamme sans excès.
   fabric: { roughness: 0.82, metalness: 0, clearcoat: 0.04, clearcoatRoughness: 0.8, grainScale: 60, grainRough: 0.4, speckle: 0.12, grainBump: 0.32, transmission: 0.08 },
@@ -96,7 +101,7 @@ let maxAnisotropy = 8;
 function cachedImageTextures(): THREE.Texture[] {
   return [
     terraTex, shellTex, bottleTex, blackTex, blueTex,
-    blueTerrazzoTex, woodTex, travertineTex, renatureTex,
+    blueTerrazzoTex, woodTex, travertineTex, renatureTex, cortenTex,
   ].filter((t): t is THREE.Texture => t !== null);
 }
 
@@ -1054,6 +1059,43 @@ function getTravertineTexture(): THREE.Texture {
   return tex;
 }
 
+/* --- Texture acier corten (pièce d'assemblage, config 03), IMAGE réelle --- */
+let cortenTex: THREE.Texture | null = null;
+
+/**
+ * Chemin de l'image réelle « Acier corten ». Utilisée TELLE QUELLE comme
+ * baseColor (aucune retouche, aucun repli procédural) : un fichier manquant
+ * ne doit jamais être remplacé silencieusement par un motif de rouille
+ * approchant — juste une erreur en console (voir plus bas).
+ */
+const CORTEN_URL = "/textures/tole-acier-corten.jpg";
+
+/** Échelle du motif de rouille sur la pièce d'assemblage (tiling triplanar) :
+ *  PROVISOIRE. Pièce ≈ 0,152 unité objet ≈ 15 cm ; 1 unité ≈ 101 cm, donc
+ *  scale 12 ⇒ motif large d'environ 8,4 cm. Valeur exacte à obtenir par
+ *  mesure réelle : scale = 101 / largeur en cm de la zone photographiée. */
+const CORTEN_SCALE = 12;
+
+function getCortenTexture(): THREE.Texture {
+  if (cortenTex) return cortenTex;
+  const tex = new THREE.TextureLoader().load(
+    CORTEN_URL,
+    undefined,
+    undefined,
+    (err) => {
+      // AUCUN repli visuel : une image manquante ne doit jamais passer pour
+      // un simple changement de rendu (voir le commentaire de CORTEN_URL).
+      console.error(
+        `Corten : "${CORTEN_URL}" introuvable — la pièce d'assemblage (config 03) reste sans texture.`,
+        err
+      );
+    }
+  );
+  configureImageTexture(tex);
+  cortenTex = tex;
+  return tex;
+}
+
 /* --- Texture Renature (intérieur de l'abat-jour, config 02), IMAGE réelle --- */
 let renatureTex: THREE.Texture | null = null;
 /** Dédoublonne les chargements concurrents (plusieurs appels avant résolution)
@@ -1289,6 +1331,9 @@ const COMPOSITE: Record<
   // de répétitions = motif plus fin = encore plus vite mipmappé en aplat.
   // Revenu à un ordre de grandeur comparable au béton bleuté voisin.
   travertine: { tex: getTravertineTexture, scale: 16, bump: 0, rough: 0 },
+  // Acier corten : couleur/motif de rouille via l'image, aucun relief ajouté
+  // (le profil `corten` porte déjà roughness/metalness/clearcoat adaptés).
+  corten: { tex: getCortenTexture, scale: CORTEN_SCALE, bump: 0, rough: 0 },
 };
 
 /**
@@ -1875,6 +1920,8 @@ export function disposeLampTextures() {
   bottleTex = null;
   travertineTex?.dispose();
   travertineTex = null;
+  cortenTex?.dispose();
+  cortenTex = null;
   renatureTex?.dispose();
   renatureTex = null;
   renaturePromise = null;

@@ -49,6 +49,9 @@ const SWATCH_SOURCES = [
   // Config 02 (Craie) : intérieur d'abat-jour Renature + pied travertin.
   "renature.webp",
   "travertin.png",
+  // Config 03 (Terracotta) : pièce d'assemblage en acier corten. Source en
+  // .jpg (fournie telle quelle) — voir la sortie toujours .webp ci-dessous.
+  "tole-acier-corten.jpg",
 ];
 
 /** Côté de la vignette produite, en pixels. Affichée à 22 px, elle reste nette
@@ -149,7 +152,7 @@ async function prepareTextureAssets() {
   for (const name of SWATCH_SOURCES) {
     const src = join(texturesDir, name);
     if (!(await exists(src))) continue;
-    const out = join(swatchDir, name.replace(/\.png$/, ".webp"));
+    const out = join(swatchDir, name.replace(/\.(png|jpe?g|webp)$/i, ".webp"));
 
     // Fenêtre centrée d'environ 45 % du petit côté : assez large pour montrer
     // le motif (plusieurs briques, plusieurs éclats de verre), assez serrée
