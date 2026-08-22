@@ -137,6 +137,32 @@ function configureImageTexture(tex: THREE.Texture) {
   tex.anisotropy = maxAnisotropy;
 }
 
+/**
+ * Générateur pseudo-aléatoire SEMÉ (mulberry32), déterministe : à graine
+ * identique, produit exactement la même séquence de nombres à chaque appel —
+ * donc des textures procédurales reproductibles À L'OCTET PRÈS d'une
+ * exécution à l'autre. Remplace `Math.random()` dans tout ce fichier ; ne
+ * jamais en réintroduire un appel brut ici, sous peine de re-rendre les
+ * vignettes packshot non déterministes (voir le garde-fou de
+ * tests/packshot-manifest.test.ts, qui fige leur empreinte).
+ *
+ * Chaque texture reçoit son propre flux (GRAIN_SEED + décalage constant),
+ * jamais un flux global partagé : deux matières différentes ne doivent pas
+ * reproduire le même motif de bruit sous des amplitudes différentes.
+ */
+const GRAIN_SEED = 0x9e3779b9;
+
+function createSeededRandom(seed: number): () => number {
+  let a = seed >>> 0;
+  return function seededRandom() {
+    a |= 0;
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
 /* --- Texture de bruit (value noise + moucheté), générée une fois --- */
 let noiseTex: THREE.Texture | null = null;
 
@@ -146,13 +172,14 @@ function makeNoiseTexture(): THREE.Texture {
   canvas.width = canvas.height = S;
   const ctx = canvas.getContext("2d")!;
   const img = ctx.createImageData(S, S);
+  const rand = createSeededRandom(GRAIN_SEED + 1);
 
   // Bruit de valeur *multi-octave*, tileable (grilles bouclées) → une texture
   // qui se LIT : marbrures basse fréquence + grain fin. Plus qu'un simple
   // dither, sinon la matière paraît lisse une fois éclairée.
   const makeGrid = (n: number) => {
     const g = new Float32Array(n * n);
-    for (let i = 0; i < g.length; i++) g[i] = Math.random();
+    for (let i = 0; i < g.length; i++) g[i] = rand();
     return g;
   };
   const sample = (g: Float32Array, n: number, u: number, v: number) => {
@@ -218,6 +245,7 @@ function makeWeaveTexture(): THREE.Texture {
   canvas.width = canvas.height = S;
   const ctx = canvas.getContext("2d")!;
   const img = ctx.createImageData(S, S);
+  const rand = createSeededRandom(GRAIN_SEED + 2);
 
   const threadsPerTile = 16; // tissage fin (16 fils/tuile)
   const period = S / threadsPerTile; // 16 px — divise S exactement
@@ -225,7 +253,7 @@ function makeWeaveTexture(): THREE.Texture {
   // Grain fin des fibres, tileable (grille bouclée + bilinéaire).
   const makeGrid = (n: number) => {
     const g = new Float32Array(n * n);
-    for (let i = 0; i < g.length; i++) g[i] = Math.random();
+    for (let i = 0; i < g.length; i++) g[i] = rand();
     return g;
   };
   const sample = (g: Float32Array, n: number, u: number, v: number) => {
@@ -290,11 +318,12 @@ function makeTerracottaTexture(): THREE.Texture {
   canvas.width = canvas.height = S;
   const ctx = canvas.getContext("2d")!;
   const img = ctx.createImageData(S, S);
+  const rand = createSeededRandom(GRAIN_SEED + 3);
 
   // Bruit de valeur lissé et *tileable* (grille bouclée) → pas de couture.
   const makeGrid = (n: number) => {
     const g = new Float32Array(n * n);
-    for (let i = 0; i < g.length; i++) g[i] = Math.random();
+    for (let i = 0; i < g.length; i++) g[i] = rand();
     return g;
   };
   const sample = (g: Float32Array, n: number, u: number, v: number) => {
@@ -387,10 +416,11 @@ function makeShellTexture(): THREE.Texture {
   canvas.width = canvas.height = S;
   const ctx = canvas.getContext("2d")!;
   const img = ctx.createImageData(S, S);
+  const rand = createSeededRandom(GRAIN_SEED + 4);
 
   const makeGrid = (n: number) => {
     const g = new Float32Array(n * n);
-    for (let i = 0; i < g.length; i++) g[i] = Math.random();
+    for (let i = 0; i < g.length; i++) g[i] = rand();
     return g;
   };
   const sample = (g: Float32Array, n: number, u: number, v: number) => {
@@ -451,22 +481,22 @@ function makeShellTexture(): THREE.Texture {
   };
   for (let i = 0; i < 520; i++) {
     drawFleck(
-      Math.random() * S,
-      Math.random() * S,
-      0.5 + Math.random() * 2.0,
-      fleckColors[(Math.random() * fleckColors.length) | 0],
-      0.3 + Math.random() * 0.35
+      rand() * S,
+      rand() * S,
+      0.5 + rand() * 2.0,
+      fleckColors[(rand() * fleckColors.length) | 0],
+      0.3 + rand() * 0.35
     );
   }
   // Quelques stries fibreuses très discrètes.
   ctx.lineWidth = 0.6;
   for (let i = 0; i < 18; i++) {
-    ctx.strokeStyle = Math.random() > 0.5 ? "#d8d2bf" : "#6a6248";
-    ctx.globalAlpha = 0.08 + Math.random() * 0.1;
-    const x = Math.random() * S, y = Math.random() * S;
+    ctx.strokeStyle = rand() > 0.5 ? "#d8d2bf" : "#6a6248";
+    ctx.globalAlpha = 0.08 + rand() * 0.1;
+    const x = rand() * S, y = rand() * S;
     ctx.beginPath();
     ctx.moveTo(x, y);
-    ctx.quadraticCurveTo(x + (Math.random() - 0.5) * 40, y + (Math.random() - 0.5) * 40, x + (Math.random() - 0.5) * 70, y + (Math.random() - 0.5) * 70);
+    ctx.quadraticCurveTo(x + (rand() - 0.5) * 40, y + (rand() - 0.5) * 40, x + (rand() - 0.5) * 70, y + (rand() - 0.5) * 70);
     ctx.stroke();
   }
   ctx.globalAlpha = 1;
@@ -550,10 +580,11 @@ function makeBlackConcreteTexture(): THREE.Texture {
   canvas.width = canvas.height = S;
   const ctx = canvas.getContext("2d")!;
   const img = ctx.createImageData(S, S);
+  const rand = createSeededRandom(GRAIN_SEED + 5);
 
   const makeGrid = (n: number) => {
     const g = new Float32Array(n * n);
-    for (let i = 0; i < g.length; i++) g[i] = Math.random();
+    for (let i = 0; i < g.length; i++) g[i] = rand();
     return g;
   };
   const sample = (g: Float32Array, n: number, u: number, v: number) => {
@@ -607,11 +638,11 @@ function makeBlackConcreteTexture(): THREE.Texture {
   };
   for (let i = 0; i < 520; i++) {
     drawFleck(
-      Math.random() * S,
-      Math.random() * S,
-      0.4 + Math.random() * 1.1,
-      speckColors[(Math.random() * speckColors.length) | 0],
-      0.25 + Math.random() * 0.35
+      rand() * S,
+      rand() * S,
+      0.4 + rand() * 1.1,
+      speckColors[(rand() * speckColors.length) | 0],
+      0.25 + rand() * 0.35
     );
   }
   ctx.globalAlpha = 1;
@@ -664,10 +695,11 @@ function makeBlueGlassTexture(): THREE.Texture {
   canvas.width = canvas.height = S;
   const ctx = canvas.getContext("2d")!;
   const img = ctx.createImageData(S, S);
+  const rand = createSeededRandom(GRAIN_SEED + 6);
 
   const makeGrid = (n: number) => {
     const g = new Float32Array(n * n);
-    for (let i = 0; i < g.length; i++) g[i] = Math.random();
+    for (let i = 0; i < g.length; i++) g[i] = rand();
     return g;
   };
   const sample = (g: Float32Array, n: number, u: number, v: number) => {
@@ -725,21 +757,21 @@ function makeBlueGlassTexture(): THREE.Texture {
   // majorité de très petites inclusions fines
   for (let i = 0; i < 430; i++) {
     drawFleck(
-      Math.random() * S,
-      Math.random() * S,
-      0.4 + Math.random() * 1.1,
-      fleckColors[(Math.random() * fleckColors.length) | 0],
-      0.22 + Math.random() * 0.3
+      rand() * S,
+      rand() * S,
+      0.4 + rand() * 1.1,
+      fleckColors[(rand() * fleckColors.length) | 0],
+      0.22 + rand() * 0.3
     );
   }
   // quelques rares éclats plus clairs (comme les points blancs de la référence)
   for (let i = 0; i < 7; i++) {
     drawFleck(
-      Math.random() * S,
-      Math.random() * S,
-      1.3 + Math.random() * 1.3,
+      rand() * S,
+      rand() * S,
+      1.3 + rand() * 1.3,
       "#d6e0ee",
-      0.35 + Math.random() * 0.25
+      0.35 + rand() * 0.25
     );
   }
   ctx.globalAlpha = 1;
@@ -790,6 +822,7 @@ function makeBlueTerrazzoTexture(): THREE.Texture {
   const canvas = document.createElement("canvas");
   canvas.width = canvas.height = S;
   const ctx = canvas.getContext("2d")!;
+  const rand = createSeededRandom(GRAIN_SEED + 7);
 
   // Fond sombre (le « liant » entre les éclats, visible dans les interstices).
   ctx.fillStyle = "#0c2e40";
@@ -812,12 +845,12 @@ function makeBlueTerrazzoTexture(): THREE.Texture {
     fill: string,
     stroke: string | null
   ) => {
-    const nSides = 4 + ((Math.random() * 3) | 0); // 4 à 6 côtés
-    const a0 = Math.random() * Math.PI * 2;
+    const nSides = 4 + ((rand() * 3) | 0); // 4 à 6 côtés
+    const a0 = rand() * Math.PI * 2;
     const pts: [number, number][] = [];
     for (let k = 0; k < nSides; k++) {
-      const a = a0 + (k / nSides) * Math.PI * 2 + (Math.random() - 0.5) * 0.55;
-      const rr = r * (0.55 + Math.random() * 0.6);
+      const a = a0 + (k / nSides) * Math.PI * 2 + (rand() - 0.5) * 0.55;
+      const rr = r * (0.55 + rand() * 0.6);
       pts.push([Math.cos(a) * rr, Math.sin(a) * rr]);
     }
     for (const dx of [-S, 0, S]) {
@@ -845,19 +878,19 @@ function makeBlueTerrazzoTexture(): THREE.Texture {
   // Empilement dense d'éclats (couvre le fond, ne laisse que de fins interstices).
   const N = 620;
   for (let i = 0; i < N; i++) {
-    const r = 9 + Math.random() * 16; // taille des fragments
-    const x = Math.random() * S, y = Math.random() * S;
-    const roll = Math.random();
+    const r = 9 + rand() * 16; // taille des fragments
+    const x = rand() * S, y = rand() * S;
+    const roll = rand();
     let fill: string;
     let stroke: string | null = null;
     if (roll < 0.08) {
-      fill = blackChips[(Math.random() * blackChips.length) | 0]; // inclusions noires
+      fill = blackChips[(rand() * blackChips.length) | 0]; // inclusions noires
     } else if (roll < 0.16) {
-      fill = lightGlass[(Math.random() * lightGlass.length) | 0]; // éclats clairs
+      fill = lightGlass[(rand() * lightGlass.length) | 0]; // éclats clairs
     } else {
-      fill = glass[(Math.random() * glass.length) | 0];
+      fill = glass[(rand() * glass.length) | 0];
       // liseré clair discret sur certains éclats (reflet de verre, couleur only)
-      if (Math.random() < 0.35) stroke = "rgba(190,230,245,0.35)";
+      if (rand() < 0.35) stroke = "rgba(190,230,245,0.35)";
     }
     drawShard(x, y, r, fill, stroke);
   }
@@ -865,7 +898,7 @@ function makeBlueTerrazzoTexture(): THREE.Texture {
   // Fin grain global très léger (variation de teinte, pas de relief).
   const img = ctx.getImageData(0, 0, S, S);
   for (let p = 0; p < img.data.length; p += 4) {
-    const g = (Math.random() - 0.5) * 12;
+    const g = (rand() - 0.5) * 12;
     img.data[p] = Math.max(0, Math.min(255, img.data[p] + g));
     img.data[p + 1] = Math.max(0, Math.min(255, img.data[p + 1] + g));
     img.data[p + 2] = Math.max(0, Math.min(255, img.data[p + 2] + g));
@@ -943,10 +976,11 @@ function makeTravertineTexture(): THREE.Texture {
   canvas.width = canvas.height = S;
   const ctx = canvas.getContext("2d")!;
   const img = ctx.createImageData(S, S);
+  const rand = createSeededRandom(GRAIN_SEED + 8);
 
   const makeGrid = (n: number) => {
     const g = new Float32Array(n * n);
-    for (let i = 0; i < g.length; i++) g[i] = Math.random();
+    for (let i = 0; i < g.length; i++) g[i] = rand();
     return g;
   };
   const sample = (g: Float32Array, n: number, u: number, v: number) => {
@@ -1007,18 +1041,18 @@ function makeTravertineTexture(): THREE.Texture {
         if (dx !== 0 && Math.abs(x + dx - S / 2) > S / 2 + r) continue;
         if (dy !== 0 && Math.abs(y + dy - S / 2) > S / 2 + r) continue;
         ctx.beginPath();
-        ctx.ellipse(x + dx, y + dy, r, r * (0.5 + Math.random() * 0.4), Math.random() * Math.PI, 0, Math.PI * 2);
+        ctx.ellipse(x + dx, y + dy, r, r * (0.5 + rand() * 0.4), rand() * Math.PI, 0, Math.PI * 2);
         ctx.fill();
       }
     }
   };
   for (let i = 0; i < 420; i++) {
     drawPore(
-      Math.random() * S,
-      Math.random() * S,
-      3 + Math.random() * 6,
-      poreColors[(Math.random() * poreColors.length) | 0],
-      0.55 + Math.random() * 0.35
+      rand() * S,
+      rand() * S,
+      3 + rand() * 6,
+      poreColors[(rand() * poreColors.length) | 0],
+      0.55 + rand() * 0.35
     );
   }
   ctx.globalAlpha = 1;

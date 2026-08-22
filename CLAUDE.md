@@ -73,6 +73,14 @@ démontent via `IntersectionObserver`. Le hero, le configurateur et la vue
 éclatée ne doivent jamais afficher deux canvas simultanément. Toute
 modification qui pourrait faire coexister deux `<Canvas>` est à refuser.
 
+**Le bruit procédural de `lib/lampTextures.ts` est SEMÉ, jamais `Math.random()`.**
+Chaque générateur (marbrures, mouchetures, tissage…) tire d'un
+`createSeededRandom(GRAIN_SEED + n)` propre à sa texture : à graine identique,
+deux exécutions produisent des vignettes octet pour octet identiques.
+Réintroduire un `Math.random()` ici rendrait toute détection automatique de
+vignettes périmées aveugle — incapable de distinguer un vrai changement de
+rendu du bruit de génération.
+
 **Export statique.** Aucune route API, aucun Server Action, aucun
 `next/image` optimisé côté serveur, aucune dépendance à un runtime Node en
 production. Toute route ajoutée pour le développement (par exemple une route de
