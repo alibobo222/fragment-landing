@@ -238,3 +238,16 @@ correctif de sécurité incidental.
   `data/product.ts` — repéré pendant le diagnostic de tuilage des textures de
   matière. Pas touché : à trancher à froid (garder pour une future
   configuration, ou supprimer les deux).
+- Demande : rendre la lumière du configurateur 3D « un peu moins chaude ».
+  Diagnostic fait, pas de correctif appliqué : `defaultKelvin` (2 700 K,
+  `data/lampModel.ts`) n'a aucun effet visible sur le rendu extérieur (mesuré
+  par diff pixel, y compris à l'extrême 6 500 K — delta < 1/255). La chaleur
+  perçue vient très probablement du tone mapping `ACESFilmicToneMapping`
+  (réglage par défaut de `@react-three/fiber`, jamais choisi explicitement ici)
+  — désactivé (`flat`), le rendu est nettement plus clair et froid sur les
+  matières claires (porcelaine, travertin), mais AUSSI plus saturé sur les
+  matières vives (brique, bleu), donc pas un simple correctif « moins chaud » :
+  ça change le contraste et la saturation globale de toute la scène 3D
+  (hero + configurateur + vue éclatée partagent le même Canvas). À rediscuter
+  à froid — options possibles : accepter le changement de tone mapping en
+  entier, ou retinter plus fort les lumières de studio en gardant ACES.
