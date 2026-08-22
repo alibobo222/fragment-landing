@@ -110,7 +110,13 @@ export function SiteHeader() {
                       hidden: { opacity: 0, y: reduce ? 0 : 14 },
                       visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] } },
                     }}
-                    className="group flex items-baseline gap-4 border-b border-line py-4 font-display text-[1.95rem] font-extrabold uppercase leading-[0.95] tracking-[-0.03em] text-ink transition-colors hover:text-anthracite"
+                    // Même typographie que les titres de section (u-title,
+                    // voir components/ui/SectionHeading.tsx) : taille, graisse,
+                    // interlignage et suivi de lettres identiques — une seule
+                    // source pour les deux, jamais deux réglages qui divergent.
+                    // font-display reste explicite : u-title n'impose la police
+                    // que via le sélecteur h1/h2/h3, pas sur un <a>.
+                    className="group flex items-baseline gap-4 border-b border-line py-4 font-display u-title text-ink transition-colors hover:text-anthracite"
                   >
                     <span className="u-index w-7 shrink-0 text-xs text-ink-muted">
                       {item.num}

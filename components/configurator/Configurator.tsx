@@ -67,7 +67,7 @@ export function Configurator() {
         index="03"
         kicker="Le configurateur"
         id="configurateur-title"
-        title="Composez votre pièce."
+        title="Explorer les configurations."
       />
       {/* ---------- Cartel : le nom, puis le nuancier ----------
           Le nom de la configuration tient lieu de titre courant : il change
@@ -97,13 +97,14 @@ export function Configurator() {
               Reste le nom seul, dans un corps nettement inférieur au titre de
               chapitre : il se lit alors comme la LÉGENDE de la scène, pas comme
               un second titre. */}
-          <p className="-mt-3 leading-tight text-ink">
+          <p className="-mt-3 flex items-baseline gap-2 leading-tight text-ink">
             {/* Proposition n°X : identifiée par matières, pas par ordre
-                d'affichage — voir PROPOSITION_NUMBER. Registre discret
-                (u-caption) au-dessus du nom, jamais au même poids que lui. */}
+                d'affichage — voir PROPOSITION_NUMBER. Alignée sur la même ligne
+                que le nom (items-baseline), registre discret (u-caption) qui ne
+                rivalise jamais avec son poids. */}
             {PROPOSITION_NUMBER[variant.id] && (
-              <span className="u-caption block">
-                Proposition n°{PROPOSITION_NUMBER[variant.id]}
+              <span className="u-caption">
+                Proposition n°{PROPOSITION_NUMBER[variant.id]} ·
               </span>
             )}
             <span className="font-display text-[1.35rem]">{variant.name}</span>
