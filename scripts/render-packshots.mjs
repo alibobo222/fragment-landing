@@ -13,11 +13,21 @@
  * Utilisation, dans deux terminaux :
  *   NEXT_PUBLIC_PACKSHOT=1 npm run dev
  *   npm run packshots
+ *
+ * À la fin de la génération, écrit tests/packshot-manifest.json : l'empreinte
+ * des entrées qui déterminent ce rendu (voir scripts/packshot-manifest.mjs),
+ * relue par tests/packshot-manifest.test.ts pour détecter — automatiquement,
+ * dans `npm run test` et la CI — le jour où ces vignettes deviennent périmées.
+ * Partage volontaire : la DÉTECTION est automatique, la RÉGÉNÉRATION reste
+ * manuelle et locale (elle demande Playwright, Chromium et un serveur Next
+ * actif — hors de portée d'une CI sans readonly GPU/navigateur dédié, pour un
+ * gain nul face à un simple `npm run packshots` avant de commiter).
  */
 import { chromium } from "playwright";
 import sharp from "sharp";
-import { mkdirSync, readFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { computePackshotManifest } from "./packshot-manifest.mjs";
 
 const BASE = process.env.PACKSHOT_URL ?? "http://localhost:3000";
 const OUT = join(process.cwd(), "public", "images", "variants", "packshot");
@@ -117,3 +127,24 @@ for (const { id, png } of shots) {
 }
 
 console.log(`\n${ids.length} vignettes générées dans public/images/variants/packshot/`);
+
+// Empreinte des entrées de CE rendu, écrite APRÈS la génération : c'est bien
+// l'état du dépôt qui vient de produire ces vignettes qui doit être enregistré,
+// pas un état antérieur ou hypothétique.
+const manifest = computePackshotManifest();
+if (manifest.missing.length > 0) {
+  console.warn(
+    "\n⚠️  Entrées introuvables au moment d'écrire le manifeste :\n" +
+      manifest.missing.map((f) => `   - ${f}`).join("\n")
+  );
+}
+const manifestPath = join(process.cwd(), "tests", "packshot-manifest.json");
+writeFileSync(
+  manifestPath,
+  JSON.stringify(
+    { generatedAt: new Date().toISOString(), ids, hash: manifest.hash, files: manifest.files },
+    null,
+    2
+  ) + "\n"
+);
+console.log(`manifeste écrit → ${manifestPath}`);

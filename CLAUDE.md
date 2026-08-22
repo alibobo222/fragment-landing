@@ -74,6 +74,14 @@ démontent via `IntersectionObserver`. Le hero, le configurateur et la vue
 éclatée ne doivent jamais afficher deux canvas simultanément. Toute
 modification qui pourrait faire coexister deux `<Canvas>` est à refuser.
 
+**Les vignettes de configuration sont un rendu FIGÉ du moteur 3D**
+(`public/images/variants/packshot/`, généré par `npm run packshots`), pas des
+canvas vivants. Toute modification d'une entrée listée dans
+`tests/packshot-manifest.json` (voir `scripts/packshot-manifest.mjs`) les
+périme — `tests/packshot-manifest.test.ts` l'attrape automatiquement.
+Régénérer (`npm run packshots`) fait partie de la tâche qui a périmé les
+vignettes, pas une étape optionnelle laissée pour plus tard.
+
 **Le bruit procédural de `lib/lampTextures.ts` est SEMÉ, jamais `Math.random()`.**
 Chaque générateur (marbrures, mouchetures, tissage…) tire d'un
 `createSeededRandom(GRAIN_SEED + n)` propre à sa texture : à graine identique,

@@ -1,7 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { readFileSync, existsSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
+import {
+  extractLampTextureUrls,
+  extractProductTextureImages,
+} from "../scripts/packshot-manifest.mjs";
 
 /**
  * Verrouille l'existence sur disque de toutes les textures référencées par le
@@ -17,23 +21,10 @@ import { dirname, join } from "node:path";
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const publicDir = join(root, "public");
 
-function readSource(relativePath: string): string {
-  return readFileSync(join(root, relativePath), "utf-8");
-}
-
-/** Toutes les constantes `const XXX_URL = "/textures/…";` de lampTextures.ts. */
-function extractLampTextureUrls(): string[] {
-  const source = readSource("lib/lampTextures.ts");
-  const matches = source.matchAll(/const\s+\w+_URL\s*=\s*"(\/textures\/[^"]+)"/g);
-  return [...matches].map((m) => m[1]);
-}
-
-/** Tous les `textureImage: "/textures/…"` de data/product.ts. */
-function extractProductTextureImages(): string[] {
-  const source = readSource("data/product.ts");
-  const matches = source.matchAll(/textureImage:\s*"(\/textures\/[^"]+)"/g);
-  return [...matches].map((m) => m[1]);
-}
+// extractLampTextureUrls / extractProductTextureImages : importées de
+// scripts/packshot-manifest.mjs, qui en a aussi besoin pour l'empreinte des
+// vignettes packshot — une seule regex par extraction, jamais deux copies
+// susceptibles de diverger (voir ce fichier pour le détail des deux listes).
 
 describe("textures référencées par le code", () => {
   const lampUrls = extractLampTextureUrls();
