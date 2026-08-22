@@ -232,3 +232,9 @@ correctif de sécurité incidental.
 - `EXPLODE_SCALE` et `CAMERA` de la vue éclatée se règlent ensemble : c'est
   documenté dans le code (`components/hero/ExplodedLamp3D.tsx`), mais
   mériterait d'être dérivé automatiquement plutôt que réglé à la main.
+- Un second `MaterialKind` inutilisé, dans le même genre que `glassBlue`
+  ci-dessus : `blueTerrazzo` (texture `beton-bleute.png`, entrée `COMPOSITE`
+  et profil complets, scale=16) n'est référencé par aucune variante de
+  `data/product.ts` — repéré pendant le diagnostic de tuilage des textures de
+  matière. Pas touché : à trancher à froid (garder pour une future
+  configuration, ou supprimer les deux).
