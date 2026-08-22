@@ -53,7 +53,8 @@ components/
   chapters/           chapitres éditoriaux (projet, matières, vue éclatée)
   configurator/       catalogue des 7 configurations
   ui/                 SectionHeading, Reveal, motion
-data/product.ts       LES 7 VARIANTES — données produit, source de vérité
+data/product.ts       LES VARIANTES — données produit, source de vérité du rendu 3D
+data/specs.ts         fiche technique (productSpecs) — sans effet sur le rendu 3D
 data/lampModel.ts     mapping meshes GLB ↔ rôles, config d'éclairage
 lib/lampTextures.ts   profils matières, shaders triplanar, textures procédurales
 public/models/        lampe-optimisee.glb (issu de la CAO)
@@ -65,8 +66,8 @@ scripts/              conversion CAO, préparation des assets
 
 **Ne jamais inventer de donnée produit.** Dimensions, poids, source lumineuse,
 alimentation, délai, disponibilité : les champs inconnus restent `null` dans
-`productSpecs` avec leur commentaire `TODO`. Aucune certification, aucune
-origine, aucun chiffre qui ne vienne pas de l'atelier.
+`productSpecs` (`data/specs.ts`) avec leur commentaire `TODO`. Aucune
+certification, aucune origine, aucun chiffre qui ne vienne pas de l'atelier.
 
 **Un seul contexte WebGL vivant à la fois.** Les canvas se montent et se
 démontent via `IntersectionObserver`. Le hero, le configurateur et la vue

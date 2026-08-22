@@ -3,8 +3,8 @@
  *
  * Source visuelle : photographies du prototype + planche de personnalisation
  * fournies par l'atelier (voir /public/images). Aucune caractéristique n'est
- * inventée : les champs techniques inconnus sont `null` et centralisés dans
- * `productSpecs` avec un commentaire TODO.
+ * inventée : les champs techniques inconnus (fiche technique, voir
+ * `data/specs.ts`) restent `null` avec un commentaire TODO.
  *
  * La lampe se compose de trois volumes distincts, ce qui rend chaque
  * combinaison lisible dans l'animation du hero et le configurateur :
@@ -401,29 +401,7 @@ export const partLabels: Record<PartKey, string> = {
   base: "Pied",
 };
 
-/**
- * Fiche technique. Toute valeur inconnue reste `null` et sera masquée
- * (« Information à venir »). NE PAS inventer de dimensions, poids, délais, etc.
- */
-export interface SpecField {
-  key: string;
-  label: string;
-  /** `null` = inconnu → masqué ou « Information à venir » selon le contexte. */
-  value: string | null;
-}
-
-export const productSpecs: SpecField[] = [
-  // Renseignés à partir des visuels fournis (observables) :
-  { key: "type", label: "Type", value: "Lampe de table sculpturale" },
-  { key: "assembly", label: "Structure", value: "Trois volumes assemblés (abat-jour, pièce métallique, pied)" },
-  { key: "cable", label: "Câble textile", value: "Gaine tissée (couleur selon configuration)" },
-  { key: "unique", label: "Fabrication", value: "Pièce d'atelier, assemblage manuel" },
-
-  // TODO — à renseigner par l'atelier, ne pas inventer :
-  { key: "dimensions", label: "Dimensions", value: null }, // TODO: H × Ø en cm
-  { key: "light", label: "Source lumineuse", value: null }, // TODO: culot (ex. E27) + puissance conseillée
-  { key: "power", label: "Alimentation", value: null }, // TODO: tension / interrupteur / prise
-  { key: "weight", label: "Poids", value: null }, // TODO: poids en kg
-  { key: "leadTime", label: "Délai", value: null }, // TODO: délai de fabrication
-  { key: "availability", label: "Disponibilité", value: null }, // TODO: statut de disponibilité
-];
+// La fiche technique (SpecField, productSpecs) vit dans data/specs.ts, un
+// fichier séparé : elle décrit le produit pour l'acheteur, n'a aucun effet
+// sur le rendu 3D, et ne doit donc pas invalider le garde-fou des vignettes
+// packshot (voir data/specs.ts pour le détail du problème résolu).

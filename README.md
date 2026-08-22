@@ -277,7 +277,7 @@ Centralisées, jamais inventées. Voir les commentaires `TODO` dans le code :
 
 - `config/site.ts` : `price`, `checkoutUrl`, `contactEmail` (réel), `instagramUrl`,
   `legalNoticeUrl`, `privacyUrl`, `leadEndpoint`, `analytics*`, `siteUrl`.
-- `data/product.ts` (`productSpecs`) : **dimensions**, **source lumineuse**,
+- `data/specs.ts` (`productSpecs`) : **dimensions**, **source lumineuse**,
   **alimentation**, **poids**, **délai**, **disponibilité** — affichés
   « Information à venir » tant qu'ils sont `null`.
 

@@ -1,11 +1,11 @@
 import { Reveal } from "@/components/ui/Reveal";
 import { SectionHeading } from "@/components/ui/SectionHeading";
-import { productSpecs } from "@/data/product";
+import { productSpecs } from "@/data/specs";
 
 /**
  * Fiche technique — datasheet mono (nomenclature). Uniquement les données
  * réellement disponibles ; les champs non renseignés (`value: null` dans
- * `data/product.ts`) sont filtrés à l'affichage, pas inventés. Le paragraphe
+ * `data/specs.ts`) sont filtrés à l'affichage, pas inventés. Le paragraphe
  * qui suit explique déjà qu'ils se précisent au cas par cas. Aucune donnée
  * commerciale.
  */
