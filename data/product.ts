@@ -38,7 +38,8 @@ export type MaterialKind =
   | "blackConcrete"
   | "matte"
   | "travertine"
-  | "corten";
+  | "corten"
+  | "rustedMetal";
 
 export interface PartFinish {
   /** Matière/finition affichée à l'utilisateur. */
@@ -207,19 +208,26 @@ export const variants: ProductVariant[] = [
       material: "corten",
       textureImage: "/textures/swatch/tole-acier-corten.webp",
     },
-    // Douille : valeur de l'assemblage AVANT son passage en corten, figée ici
-    // pour qu'elle ne rouille pas avec lui (voir finishFor, data/lampModel.ts)
-    // — une douille standard du commerce n'est jamais en acier corten.
-    socket: { label: "Aluminium", color: "#c7c9cb", material: "metal" },
+    // Douille : distincte de l'assemblage (voir finishFor, data/lampModel.ts)
+    // — aluminium oxydé, photo réelle. Couleur mesurée : moyenne RVB de
+    // "Douille métal rouille.png" (#402f29), pas devinée à l'œil.
+    socket: {
+      label: "Aluminium rouillé",
+      color: "#402f29",
+      material: "rustedMetal",
+      textureImage: "/textures/swatch/douille-metal-rouille.webp",
+    },
     base: {
       label: "Wasterial® - Brique",
       color: "#9c4a39",
       material: "brick",
       textureImage: "/textures/swatch/brique.webp",
     },
-    // Couleur mesurée : moyenne RVB de "cable textile orange.jpg" (#d67f5e),
-    // pas devinée à l'œil.
-    cable: { label: "Câble textile orange", color: "#d67f5e", material: "fabric" },
+    // Couleur mesurée sur "cable textile orange.jpg" : médiane RVB des pixels
+    // du câble UNIQUEMENT, fond blanc de la photo exclu (~17 % de l'image) —
+    // la moyenne brute sur l'image entière tirait la couleur vers le pâle
+    // (#d67f5e, erroné, corrigé ici).
+    cable: { label: "Câble textile orange", color: "#d0511a", material: "fabric" },
     description:
       "La terre cuite chaude réveille l'aluminium froid. Une matière qui garde la mémoire du feu.",
     image: "/images/variants/brique-aluminium.webp",

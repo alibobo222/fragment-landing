@@ -73,6 +73,12 @@ const PROFILES: Record<MaterialKind, Omit<MaterialProfile, "kind">> = {
   // 0,92), qui donnerait une rouille chromée. metalness bas, couleur/grain via
   // la texture (composite), AUCUN relief ajouté (l'image porte déjà le sien).
   corten: { roughness: 0.85, metalness: 0.12, clearcoat: 0.03, clearcoatRoughness: 0.8, grainScale: 16, grainRough: 0, speckle: 0, grainBump: 0, transmission: 0.08 },
+  // Métal rouillé (douille, config 03) : contrairement au corten, LE SUPPORT
+  // reste un métal (aluminium) sous l'oxydation — metalness intermédiaire, ni
+  // le métal propre (0,92) ni l'oxyde pur du corten (0,12). Valeurs de départ,
+  // à ajuster à l'œil : couleur/grain via la texture (composite), AUCUN
+  // relief ajouté (l'image porte déjà le sien).
+  rustedMetal: { roughness: 0.6, metalness: 0.5, clearcoat: 0.03, clearcoatRoughness: 0.7, grainScale: 16, grainRough: 0, speckle: 0, grainBump: 0, transmission: 0.08 },
   // Gaine textile du câble : tissage plat fin (chaîne/trame), mat, relief
   // discret — évoque un câble gainé de tissu haut de gamme sans excès.
   fabric: { roughness: 0.82, metalness: 0, clearcoat: 0.04, clearcoatRoughness: 0.8, grainScale: 60, grainRough: 0.4, speckle: 0.12, grainBump: 0.32, transmission: 0.08 },
@@ -101,7 +107,7 @@ let maxAnisotropy = 8;
 function cachedImageTextures(): THREE.Texture[] {
   return [
     terraTex, shellTex, bottleTex, blackTex, blueTex,
-    blueTerrazzoTex, woodTex, travertineTex, renatureTex, cortenTex,
+    blueTerrazzoTex, woodTex, travertineTex, renatureTex, cortenTex, rustedMetalTex,
   ].filter((t): t is THREE.Texture => t !== null);
 }
 
@@ -1096,6 +1102,43 @@ function getCortenTexture(): THREE.Texture {
   return tex;
 }
 
+/* --- Texture métal rouillé (douille, config 03), IMAGE réelle --- */
+let rustedMetalTex: THREE.Texture | null = null;
+
+/**
+ * Chemin de l'image réelle « Douille métal rouille ». Utilisée TELLE QUELLE
+ * comme baseColor (aucune retouche, aucun repli procédural) : un fichier
+ * manquant ne doit jamais être remplacé silencieusement par un motif
+ * approchant — juste une erreur en console (voir plus bas).
+ */
+const RUSTED_METAL_URL = "/textures/douille-metal-rouille.png";
+
+/** Échelle du motif de rouille sur la douille (tiling triplanar) : PROVISOIRE.
+ *  Pièce ≈ 0,066 unité objet ≈ 6,6 cm ; 1 unité ≈ 101 cm, donc scale 25 ⇒
+ *  motif large d'environ 4 cm. Valeur exacte à obtenir par mesure réelle :
+ *  scale = 101 / largeur en cm de la zone photographiée. */
+const RUSTED_METAL_SCALE = 25;
+
+function getRustedMetalTexture(): THREE.Texture {
+  if (rustedMetalTex) return rustedMetalTex;
+  const tex = new THREE.TextureLoader().load(
+    RUSTED_METAL_URL,
+    undefined,
+    undefined,
+    (err) => {
+      // AUCUN repli visuel : une image manquante ne doit jamais passer pour
+      // un simple changement de rendu (voir le commentaire de RUSTED_METAL_URL).
+      console.error(
+        `Métal rouillé : "${RUSTED_METAL_URL}" introuvable — la douille (config 03) reste sans texture.`,
+        err
+      );
+    }
+  );
+  configureImageTexture(tex);
+  rustedMetalTex = tex;
+  return tex;
+}
+
 /* --- Texture Renature (intérieur de l'abat-jour, config 02), IMAGE réelle --- */
 let renatureTex: THREE.Texture | null = null;
 /** Dédoublonne les chargements concurrents (plusieurs appels avant résolution)
@@ -1334,6 +1377,9 @@ const COMPOSITE: Record<
   // Acier corten : couleur/motif de rouille via l'image, aucun relief ajouté
   // (le profil `corten` porte déjà roughness/metalness/clearcoat adaptés).
   corten: { tex: getCortenTexture, scale: CORTEN_SCALE, bump: 0, rough: 0 },
+  // Métal rouillé : couleur/motif d'oxydation via l'image, aucun relief
+  // ajouté (le profil `rustedMetal` porte déjà roughness/metalness adaptés).
+  rustedMetal: { tex: getRustedMetalTexture, scale: RUSTED_METAL_SCALE, bump: 0, rough: 0 },
 };
 
 /**
@@ -1922,6 +1968,8 @@ export function disposeLampTextures() {
   travertineTex = null;
   cortenTex?.dispose();
   cortenTex = null;
+  rustedMetalTex?.dispose();
+  rustedMetalTex = null;
   renatureTex?.dispose();
   renatureTex = null;
   renaturePromise = null;

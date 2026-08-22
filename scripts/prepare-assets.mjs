@@ -52,6 +52,8 @@ const SWATCH_SOURCES = [
   // Config 03 (Terracotta) : pièce d'assemblage en acier corten. Source en
   // .jpg (fournie telle quelle) — voir la sortie toujours .webp ci-dessous.
   "tole-acier-corten.jpg",
+  // Config 03 (Terracotta) : douille en métal rouillé.
+  "douille-metal-rouille.png",
 ];
 
 /** Côté de la vignette produite, en pixels. Affichée à 22 px, elle reste nette
