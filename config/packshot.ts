@@ -70,4 +70,4 @@ export const LAMP_ON = false;
 /** Température de couleur (K) transmise à `Lamp3D` — sans effet tant que
  *  `LAMP_ON` est faux, mais garde une valeur cohérente avec le réglage par
  *  défaut de l'interface (`lampLightConfig.defaultKelvin`). */
-export const KELVIN = 2700;
+export const KELVIN = 4000;

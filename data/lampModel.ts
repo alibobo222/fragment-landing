@@ -99,8 +99,9 @@ export const lampLightConfig = {
   kelvinMid: 4000,
   /** Borne haute : canal Cool White du module CCT. */
   kelvinMax: 6500,
-  /** Réglage par défaut au chargement — canal Warm White seul (2 700 K). */
-  defaultKelvin: 2700,
+  /** Réglage par défaut au chargement — point neutre (mélange ~50/50 des
+   *  deux canaux, kelvinMid), au lieu du Warm White seul (2 700 K). */
+  defaultKelvin: 4000,
   /** Transition douce entre températures (ms). */
   tempTransitionMs: 320,
   /** Lumière dirigée (SpotLight) sortant par l'ouverture de l'abat-jour. */
