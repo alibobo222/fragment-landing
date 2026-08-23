@@ -25,7 +25,7 @@ const EXPECTED: Record<string, Record<(typeof PARTS)[number], MaterialKind>> = {
     cable: "fabric",
   },
   "brique-aluminium": {
-    shade: "blackConcrete",
+    shade: "brick",
     assembly: "corten",
     base: "brick",
     cable: "fabric",
