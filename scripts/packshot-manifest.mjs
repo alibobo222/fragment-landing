@@ -15,10 +15,11 @@
  * LISTE DES ENTRÉES — établie par lecture du graphe d'imports réel de la route
  * /packshot (app/packshot/page.tsx → components/packshot/Packshot.tsx →
  * components/hero/Lamp3D.tsx), pas supposée :
- *   - data/product.ts        (les variantes : matières, couleurs, textures — la
- *                              fiche technique, data/specs.ts, est un fichier
- *                              séparé et n'a AUCUN effet sur le rendu, elle
- *                              n'a donc pas sa place dans cette liste)
+ *   - data/product.ts        (PROJECTION NORMALISÉE seulement — voir plus bas,
+ *                              pas le fichier entier : data/specs.ts a déjà
+ *                              montré qu'un couplage de fichier entier fait
+ *                              des faux positifs sur du texte sans effet visuel ;
+ *                              ici le problème est interne à product.ts lui-même)
  *   - data/lampModel.ts       (mapping GLB↔rôles, résolution des matières, éclairage)
  *   - config/packshot.ts      (direction artistique : caméra, cadrage, éclairage)
  *   - lib/lampTextures.ts     (profils PBR, shaders triplanar, textures procédurales
@@ -38,14 +39,47 @@
  *     ci-dessous, jamais une liste tenue à la main qui se désynchroniserait à
  *     la première texture ajoutée ou retirée
  *
- * VOLONTAIREMENT EXCLU : les `textureImage` de data/product.ts (pastilles du
- * nuancier 2D de Configurator.tsx) ne sont chargées par AUCUN fichier du
- * graphe de rendu ci-dessus (vérifié par recherche) — les inclure ferait
- * échouer le garde-fou à chaque régénération de nuancier (`npm run assets`)
- * sans qu'un seul pixel de packshot n'ait changé. lib/materialSwatch.ts et
- * lib/materialLabel.ts, pour la même raison (pastilles/libellés de
- * l'interface), sont exclus aussi. `lib/socketThread.ts`, mentionné dans une
- * première liste, n'existe pas dans ce projet — pas d'entrée correspondante.
+ * PROJECTION NORMALISÉE DE data/product.ts — pas le fichier hâché en entier.
+ * Le hachage par fichier entier périmait les vignettes à chaque renommage de
+ * variante, chaque commentaire ajouté, chaque reformatage : aucun de ces
+ * changements ne bouge un seul pixel. `buildRenderProjection` importe le
+ * module par un spécificateur RELATIF (Node type-strippe le .ts nativement,
+ * voir data/package.json ; Vite, sous Vitest, le résout tout aussi bien —
+ * une URL absolue file:// s'est révélée fragile sous Vite avec un chemin
+ * contenant des espaces) et n'en retient que ce que le moteur de rendu lit
+ * RÉELLEMENT — vérifié champ par champ dans finishFor (data/lampModel.ts) et
+ * Lamp3D.tsx, pas supposé :
+ *   - variant.id                    — identifie CE qui est rendu ; en ajouter,
+ *     retirer ou renommer un change le jeu de vignettes
+ *   - {shade,assembly,base,cable,socket}.material / .color — les DEUX SEULS
+ *     champs de PartFinish que `finishFor` transmet à `applyProfile`
+ *     (Lamp3D.tsx) ; `label` et `textureImage` n'y sont jamais lus
+ *   - defaultPerforation            — Packshot.tsx ne passe aucune prop
+ *     `perforation` à Lamp3D : le packshot rend TOUJOURS cette seule valeur
+ *   - defaultVariantId              — pilote le placage bois intérieur
+ *     (`isConfig01`, Lamp3D.tsx) ; en changer déplace ce placage d'une
+ *     configuration à une autre, sans toucher `data/product.ts` ailleurs
+ *
+ * EXCLUS de la projection bien qu'ils appartiennent à ProductVariant ou
+ * PartFinish — vérifiés NON lus par le moteur 3D (grep exhaustif sur
+ * components/hero/, data/lampModel.ts, components/packshot/) :
+ *   - name, index, materialsSummary, description, alt — texte éditorial
+ *   - accent, accentOnDark — variables CSS pour l'UI (SelectionProvider),
+ *     jamais lues par Lamp3D.tsx ni par la route /packshot
+ *   - textureImage (sur CHAQUE pièce, y compris shadeInner et socket) —
+ *     PASTILLES 2D du nuancier (materialSwatch.ts, Configurator.tsx) ; le
+ *     placage intérieur réel (Renature/bois) vient d'URLs codées en dur dans
+ *     lib/lampTextures.ts, jamais de `shadeInner.textureImage`
+ *   - shadeInner (le champ entier) — même raison : aucune lecture dans le
+ *     graphe de rendu, l'interrupteur bois/Renature/aucun est un test sur
+ *     `variant.id`, pas sur ce champ
+ *   - perforationOptions — la liste des choix offerts au picker LIVE, jamais
+ *     lue par Packshot.tsx (qui ne rend QUE `defaultPerforation`)
+ *
+ * VOLONTAIREMENT EXCLU (pastilles du nuancier 2D, sans effet sur le rendu) :
+ * lib/materialSwatch.ts et lib/materialLabel.ts, pour la même raison que
+ * textureImage ci-dessus. `lib/socketThread.ts`, mentionné dans une première
+ * liste, n'existe pas dans ce projet — pas d'entrée correspondante.
  */
 import { createHash } from "node:crypto";
 import { readFileSync, existsSync } from "node:fs";
@@ -55,7 +89,6 @@ import { fileURLToPath } from "node:url";
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 
 const CODE_INPUTS = [
-  "data/product.ts",
   "data/lampModel.ts",
   "config/packshot.ts",
   "lib/lampTextures.ts",
@@ -85,10 +118,9 @@ export function extractLampTextureUrls() {
  * (vérifié : aucune occurrence de `textureImage` dans components/hero/,
  * lib/lampTextures.ts ni data/lampModel.ts). Exportée pour
  * tests/texture-assets.test.ts (qui audite TOUS les fichiers référencés, UI
- * comprise) — mais volontairement PAS incluse dans `computePackshotManifest`
- * ci-dessous : un changement de pastille ne change pas un seul pixel d'un
- * packshot, l'inclure ferait un faux positif à chaque régénération de
- * nuancier (`npm run assets`).
+ * comprise) — lecture texte volontaire ici : cette fonction vérifie une
+ * EXISTENCE sur disque, pas une empreinte de rendu, la distinction qui motive
+ * `buildRenderProjection` plus bas ne s'y applique pas.
  */
 export function extractProductTextureImages() {
   const source = readFileSync(join(ROOT, "data/product.ts"), "utf-8");
@@ -103,13 +135,40 @@ function sha256File(relPath) {
 }
 
 /**
- * Calcule l'empreinte combinée de toutes les entrées du rendu.
+ * Projection normalisée de data/product.ts — voir le doc de tête pour le
+ * détail champ par champ, inclusions et exclusions. Importe le module
+ * (au lieu de lire le fichier comme du texte) : insensible au formatage, aux
+ * commentaires, à l'ordre des propriétés non significatif — seul un
+ * changement de VALEUR d'un champ retenu modifie la projection.
+ */
+async function buildRenderProjection() {
+  const mod = await import("../data/product.ts");
+  const pick = (partFinish) =>
+    partFinish ? { material: partFinish.material, color: partFinish.color } : null;
+  return {
+    defaultVariantId: mod.defaultVariantId,
+    defaultPerforation: mod.defaultPerforation,
+    variants: mod.variants.map((v) => ({
+      id: v.id,
+      shade: pick(v.shade),
+      assembly: pick(v.assembly),
+      socket: pick(v.socket),
+      base: pick(v.base),
+      cable: pick(v.cable),
+    })),
+  };
+}
+
+/**
+ * Calcule l'empreinte combinée de toutes les entrées du rendu : hachage brut
+ * pour le code/les assets, projection normalisée pour data/product.ts.
+ * Asynchrone : `buildRenderProjection` importe un module ES.
  *
- * @returns {{ hash: string, files: Array<{path: string, sha256: string|null}>, missing: string[] }}
+ * @returns {Promise<{ hash: string, files: Array<{path: string, sha256: string|null}>, missing: string[] }>}
  *   `missing` liste les entrées attendues mais absentes du disque — un fichier
  *   manquant produit un hash `null`, jamais une exception ni un hash silencieux.
  */
-export function computePackshotManifest() {
+export async function computePackshotManifest() {
   // Uniquement les URL du moteur 3D (voir le commentaire de
   // extractProductTextureImages ci-dessus pour l'exclusion volontaire des
   // pastilles du nuancier).
@@ -123,6 +182,13 @@ export function computePackshotManifest() {
     path: relPath.replace(/\\/g, "/"),
     sha256: sha256File(relPath),
   }));
+
+  const projection = await buildRenderProjection();
+  const projectionHash = createHash("sha256")
+    .update(JSON.stringify(projection))
+    .digest("hex");
+  files.push({ path: "data/product.ts#projection", sha256: projectionHash });
+  files.sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
 
   const missing = files.filter((f) => f.sha256 === null).map((f) => f.path);
 

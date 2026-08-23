@@ -26,7 +26,7 @@ import { computePackshotManifest } from "../scripts/packshot-manifest.mjs";
  * au-dessus d'une scène 3D qui montrait la vraie.
  */
 describe("fraîcheur des vignettes packshot", () => {
-  it("l'empreinte des entrées de rendu correspond au manifeste enregistré", () => {
+  it("l'empreinte des entrées de rendu correspond au manifeste enregistré", async () => {
     const root = join(dirname(fileURLToPath(import.meta.url)), "..");
     const manifestPath = join(root, "tests", "packshot-manifest.json");
 
@@ -42,7 +42,7 @@ describe("fraîcheur des vignettes packshot", () => {
       hash: string;
       files: { path: string; sha256: string | null }[];
     };
-    const current = computePackshotManifest();
+    const current = await computePackshotManifest();
 
     if (current.missing.length > 0) {
       throw new Error(
