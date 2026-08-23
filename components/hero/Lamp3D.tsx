@@ -44,9 +44,14 @@ export interface PartVariants {
 const CAMERA: [number, number, number] = [0.2, 0.12, 0.44];
 const FOV = 32;
 
-// Luminosité de la lampe par configuration (multiplicateur). La config 01 est
-// légèrement moins lumineuse à la demande ; toutes les autres restent à 1.
-const CONFIG1_BRIGHTNESS = 0.85;
+// Luminosité de la lampe par configuration (multiplicateur, clé = id de la
+// variante du shade — voir shadeVariantId plus bas). Réglages demandés à
+// l'œil ; toute config absente de la table reste à 1.
+const BRIGHTNESS_BY_VARIANT: Partial<Record<string, number>> = {
+  "prototype-noir-cable-bleu": 0.85,
+  // Config 02 (Craie) : baisse plus marquée (0.9 jugé encore trop lumineux).
+  "porcelaine-acier-noir": 0.75,
+};
 
 const NAME_TO_PART: Record<string, LampPart> = {};
 for (const [part, names] of Object.entries(lampMeshMapping))
@@ -271,9 +276,10 @@ function LampModel({
     const shadeMat = materials.shade as THREE.MeshPhysicalMaterial | undefined;
     if (shadeMat) applyInteriorVeneer(shadeMat, interiorVeneer);
 
-    // Luminosité de la lampe : légèrement réduite pour la config 01. On
-    // ré-applique immédiatement (le fade-in peut être terminé au changement).
-    brightnessRef.current = isConfig01 ? CONFIG1_BRIGHTNESS : 1;
+    // Luminosité de la lampe : réduite pour certaines configs (voir
+    // BRIGHTNESS_BY_VARIANT). On ré-applique immédiatement (le fade-in peut
+    // être terminé au changement).
+    brightnessRef.current = BRIGHTNESS_BY_VARIANT[shadeVariantId] ?? 1;
     const e = easeOut(lit.current);
     spot.intensity = cfg.spotIntensity * e * brightnessRef.current;
     point.intensity = cfg.pointIntensity * e * brightnessRef.current;

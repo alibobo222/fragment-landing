@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-23T14:50:49.704Z",
+  "generatedAt": "2026-08-23T15:07:05.345Z",
   "ids": [
     "prototype-noir-cable-bleu",
     "porcelaine-acier-noir",
@@ -8,7 +8,7 @@
     "coquille-laiton",
     "verre-bleu-acier-anodise"
   ],
-  "hash": "e7fa89c7dea8098ffa17073bb5e6781f7270aa87996df02c1ee76d75ddd411ca",
+  "hash": "072e6bbe01fa30fe428f156c00b4b99d4deed58ba02bd6c240d071b9bc18823b",
   "files": [
     {
       "path": "app/packshot/page.tsx",
@@ -16,7 +16,7 @@
     },
     {
       "path": "components/hero/Lamp3D.tsx",
-      "sha256": "760ab3b4c2dfcf94f9af962e29399349a782ea2faad03ff3c7d0c05dd190bd8e"
+      "sha256": "108057bbc22127fb10daab52d7e305e5029040cbc73159e2ef59b67ef0ffc1dc"
     },
     {
       "path": "components/packshot/Packshot.tsx",
