@@ -79,6 +79,11 @@ const PROFILES: Record<MaterialKind, Omit<MaterialProfile, "kind">> = {
   // à ajuster à l'œil : couleur/grain via la texture (composite), AUCUN
   // relief ajouté (l'image porte déjà le sien).
   rustedMetal: { roughness: 0.6, metalness: 0.5, clearcoat: 0.03, clearcoatRoughness: 0.7, grainScale: 16, grainRough: 0, speckle: 0, grainBump: 0, transmission: 0.08 },
+  // Sable de fonderie (pied, config 02) : agrégat minéral moulé et démoulé —
+  // mat, granuleux, aucun poli. Couleur/grain via la texture (composite),
+  // AUCUN relief ajouté (l'image porte déjà le sien, comme le travertin
+  // qu'elle remplace).
+  foundrySand: { roughness: 0.86, metalness: 0, clearcoat: 0.03, clearcoatRoughness: 0.82, grainScale: 16, grainRough: 0, speckle: 0, grainBump: 0, transmission: 0.08 },
   // Gaine textile du câble : tissage plat fin (chaîne/trame), mat, relief
   // discret — évoque un câble gainé de tissu haut de gamme sans excès.
   fabric: { roughness: 0.82, metalness: 0, clearcoat: 0.04, clearcoatRoughness: 0.8, grainScale: 60, grainRough: 0.4, speckle: 0.12, grainBump: 0.32, transmission: 0.08 },
@@ -108,6 +113,7 @@ function cachedImageTextures(): THREE.Texture[] {
   return [
     terraTex, shellTex, bottleTex, blackTex, blueTex,
     blueTerrazzoTex, woodTex, travertineTex, renatureTex, cortenTex, rustedMetalTex,
+    foundrySandTex,
   ].filter((t): t is THREE.Texture => t !== null);
 }
 
@@ -1173,6 +1179,41 @@ function getRustedMetalTexture(): THREE.Texture {
   return tex;
 }
 
+/* --- Texture sable de fonderie (pied, config 02), IMAGE réelle --- */
+let foundrySandTex: THREE.Texture | null = null;
+
+/**
+ * Chemin de l'image réelle « Sable de fonderie ». Utilisée TELLE QUELLE comme
+ * baseColor (aucune retouche, aucun repli procédural) : un fichier manquant
+ * ne doit jamais être remplacé silencieusement par un motif approchant —
+ * juste une erreur en console (voir plus bas).
+ */
+const FOUNDRY_SAND_URL = "/textures/sable-fonderie.png";
+
+/** Échelle du motif sur le pied (tiling triplanar) : reprend celle du
+ *  travertin qu'elle remplace, même pièce, même ordre de grandeur de grain. */
+const FOUNDRY_SAND_SCALE = 16;
+
+function getFoundrySandTexture(): THREE.Texture {
+  if (foundrySandTex) return foundrySandTex;
+  const tex = new THREE.TextureLoader().load(
+    FOUNDRY_SAND_URL,
+    undefined,
+    undefined,
+    (err) => {
+      // AUCUN repli visuel : une image manquante ne doit jamais passer pour
+      // un simple changement de rendu (voir le commentaire de FOUNDRY_SAND_URL).
+      console.error(
+        `Sable de fonderie : "${FOUNDRY_SAND_URL}" introuvable — le pied (config 02) reste sans texture.`,
+        err
+      );
+    }
+  );
+  configureImageTexture(tex);
+  foundrySandTex = tex;
+  return tex;
+}
+
 /* --- Texture Renature (intérieur de l'abat-jour, config 02), IMAGE réelle --- */
 let renatureTex: THREE.Texture | null = null;
 /** Dédoublonne les chargements concurrents (plusieurs appels avant résolution)
@@ -1438,6 +1479,9 @@ const COMPOSITE: Record<
   // Métal rouillé : couleur/motif d'oxydation via l'image, aucun relief
   // ajouté (le profil `rustedMetal` porte déjà roughness/metalness adaptés).
   rustedMetal: { tex: getRustedMetalTexture, scale: RUSTED_METAL_SCALE, bump: 0, rough: 0 },
+  // Sable de fonderie : couleur/grain via l'image, aucun relief ajouté (le
+  // profil `foundrySand` porte déjà roughness/clearcoat adaptés).
+  foundrySand: { tex: getFoundrySandTexture, scale: FOUNDRY_SAND_SCALE, bump: 0, rough: 0 },
 };
 
 /**
@@ -2041,6 +2085,8 @@ export function disposeLampTextures() {
   cortenTex = null;
   rustedMetalTex?.dispose();
   rustedMetalTex = null;
+  foundrySandTex?.dispose();
+  foundrySandTex = null;
   renatureTex?.dispose();
   renatureTex = null;
   renaturePromise = null;

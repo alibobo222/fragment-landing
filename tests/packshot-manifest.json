@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-23T14:32:31.809Z",
+  "generatedAt": "2026-08-23T14:36:39.833Z",
   "ids": [
     "prototype-noir-cable-bleu",
     "porcelaine-acier-noir",
@@ -8,7 +8,7 @@
     "coquille-laiton",
     "verre-bleu-acier-anodise"
   ],
-  "hash": "2fbfc7c2f3a88e46a6e0670ba6b9827473831a3c852c6f735cdf3dd9076c619e",
+  "hash": "5953a6d3a6b1e0df150cc91511110e5da81f25a246973d92b4234ec55da7b35d",
   "files": [
     {
       "path": "app/packshot/page.tsx",
@@ -32,11 +32,11 @@
     },
     {
       "path": "data/product.ts#projection",
-      "sha256": "7dcbdb13491f9bc09b2fe29b5a026bbb829cf3ff6191d2009b1cd05721cc82b6"
+      "sha256": "2c618a01d1d23bef5f2daea5496286685b6ae59246f2cc5c13960474c5237336"
     },
     {
       "path": "lib/lampTextures.ts",
-      "sha256": "8fe00d38e062d01db1e2ba1734014aeea01e2bed7b8a10bbdb706af622de0440"
+      "sha256": "7ac6bed6de9594de80d3077c334ea05c2ccf2026b83eb93cc1c354a7382b45f0"
     },
     {
       "path": "public/models/lampe-optimisee.glb",
@@ -65,6 +65,10 @@
     {
       "path": "public/textures/renature.webp",
       "sha256": "28ec238a056a500eebb81ed1bf7f347b64f6d0105f79bdaef44858344085b9c5"
+    },
+    {
+      "path": "public/textures/sable-fonderie.png",
+      "sha256": "ab1ed2b4e0dcfb7a1c439b7fcbdf70638c62f923b66bf650e848a86d0f82d4fc"
     },
     {
       "path": "public/textures/tole-acier-corten.jpg",

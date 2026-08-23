@@ -39,7 +39,8 @@ export type MaterialKind =
   | "matte"
   | "travertine"
   | "corten"
-  | "rustedMetal";
+  | "rustedMetal"
+  | "foundrySand";
 
 export interface PartFinish {
   /** Matière/finition affichée à l'utilisateur. */
@@ -168,13 +169,14 @@ export const variants: ProductVariant[] = [
     // de base change ; le kind reste « metal » (metalness / roughness / reflets
     // / texture inchangés) → acier anodisé anthracite, aspect métallique conservé.
     assembly: { label: "Acier anodisé noir", color: "#3a3e44", material: "metal" },
-    // Pied : travertin beige, depuis la photo réelle
-    // /public/textures/travertin.png.
+    // Pied : Wasterial® - Sable de fonderie, depuis la photo réelle
+    // /public/textures/sable-fonderie.png. Couleur mesurée : moyenne RVB de
+    // cette image (#655a58), pas devinée à l'œil. Remplace le travertin.
     base: {
-      label: "Wasterial® - Travertin beige",
-      color: "#b3a893",
-      material: "travertine",
-      textureImage: "/textures/swatch/travertin.webp",
+      label: "Wasterial® - Sable de fonderie",
+      color: "#655a58",
+      material: "foundrySand",
+      textureImage: "/textures/swatch/sable-fonderie.webp",
     },
     // Noir profond : le tissage textile éclaircit légèrement la teinte de base
     // sous l'éclairage ; une base plus sombre garantit un câble clairement noir.

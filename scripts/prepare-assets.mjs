@@ -46,9 +46,12 @@ const SWATCH_SOURCES = [
   "westerial-coquilles-moules.png",
   "beton-bleute.png",
   "bois-brule.png",
-  // Config 02 (Craie) : intérieur d'abat-jour Renature + pied travertin.
+  // Config 02 (Craie) : intérieur d'abat-jour Renature + pied sable de
+  // fonderie (remplace le travertin — image conservée, non référencée par
+  // aucune variante).
   "renature.webp",
   "travertin.png",
+  "sable-fonderie.png",
   // Config 03 (Terracotta) : pièce d'assemblage en acier corten. Source en
   // .jpg (fournie telle quelle) — voir la sortie toujours .webp ci-dessous.
   "tole-acier-corten.jpg",

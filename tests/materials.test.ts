@@ -21,7 +21,7 @@ const EXPECTED: Record<string, Record<(typeof PARTS)[number], MaterialKind>> = {
   "porcelaine-acier-noir": {
     shade: "porcelain",
     assembly: "metal",
-    base: "travertine",
+    base: "foundrySand",
     cable: "fabric",
   },
   "brique-aluminium": {
@@ -79,6 +79,7 @@ const ALL_KINDS: MaterialKind[] = [
   "travertine",
   "corten",
   "rustedMetal",
+  "foundrySand",
 ];
 
 describe("résolution des matières", () => {
