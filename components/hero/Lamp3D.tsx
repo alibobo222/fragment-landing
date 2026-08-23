@@ -26,7 +26,6 @@ import {
   createGrainMaterial,
   applyProfile,
   applyInteriorVeneer,
-  applyPerforation,
   materialProfile,
   getWeaveTexture,
   pendingRenatureLoad,
@@ -86,18 +85,37 @@ function LampModel({
   const reduce = useReducedMotion();
 
   // Clone, matériaux dédiés, positions des pièces et lumières de la lampe.
-  const { root, materials, spot, point, groundY, shadowScale, shadowFar } = useMemo(() => {
+  const { root, materials, connectorMesh, perforatedGeometries, spot, point, groundY, shadowScale, shadowFar } = useMemo(() => {
     const root = scene.clone(true);
     root.updateMatrixWorld(true);
 
     const materials: Partial<Record<LampPart, THREE.MeshStandardMaterial>> = {};
     const boxes: Partial<Record<LampPart, THREE.Box3>> = {};
+    // Géométries RÉELLES de la pièce d'assemblage percée (voir
+    // scripts/perforation-mesh.mjs) — deux nœuds porteurs supplémentaires
+    // dans le GLB (Connector_round / Connector_square), jamais rendus tels
+    // quels : repérés ci-dessous, masqués, leur géométrie seule est retenue
+    // pour être assignée au mesh Connector visible (voir l'effet plus bas).
+    let connectorMesh: THREE.Mesh | undefined;
+    const perforatedGeometries: Partial<Record<PerforationShape, THREE.BufferGeometry>> = {};
 
     root.traverse((o) => {
       const mesh = o as THREE.Mesh;
       if (!mesh.isMesh) return;
+      if (mesh.name === "Connector_round" || mesh.name === "Connector_square") {
+        const shape = mesh.name === "Connector_round" ? "round" : "square";
+        mesh.geometry.computeBoundingBox();
+        mesh.geometry.computeBoundingSphere();
+        perforatedGeometries[shape] = mesh.geometry;
+        mesh.visible = false; // jamais rendu directement, voir commentaire ci-dessus
+        return;
+      }
       const part = NAME_TO_PART[mesh.name];
       if (!part) return;
+      if (part === "connector") {
+        connectorMesh = mesh;
+        perforatedGeometries.none = mesh.geometry; // état « Aucune » — la pièce telle que sculptée
+      }
 
       let mat: THREE.MeshStandardMaterial;
       if (part === "bulb") {
@@ -204,7 +222,7 @@ function LampModel({
     );
     const shadowFar = Math.max(bodySize.y * 1.2, 0.001);
 
-    return { root, materials, spot, point, groundY, shadowScale, shadowFar };
+    return { root, materials, connectorMesh, perforatedGeometries, spot, point, groundY, shadowScale, shadowFar };
   }, [scene]);
 
   // Cible de transmission de l'abat-jour selon la matière courante.
@@ -256,13 +274,17 @@ function LampModel({
     apply("cable", partVariants.cable);
     firstColorApply.current = false;
 
-    // TÔLE PERFORÉE — pièce d'assemblage UNIQUEMENT. Réappliqué à chaque
-    // changement de configuration : la finition métallique change (acier brut,
-    // aluminium, laiton, inox, anodisé), le percement, lui, ne change jamais.
-    // La douille (`socket`), qui partage pourtant la finition de l'assemblage,
-    // n'est volontairement PAS percée : ce n'est pas une tôle.
-    const connectorMat = materials.connector as THREE.MeshPhysicalMaterial | undefined;
-    if (connectorMat) applyPerforation(connectorMat, perforation);
+    // TÔLE PERFORÉE — pièce d'assemblage UNIQUEMENT, par ÉCHANGE DE GÉOMÉTRIE
+    // (voir scripts/perforation-mesh.mjs) : les trois états sont des maillages
+    // réels pré-construits à la conversion CAO, jamais un effet de matériau —
+    // aucune recompilation de shader, aucun drapeau posé ailleurs que sur ce
+    // seul mesh. La douille (`socket`), qui partage pourtant la finition de
+    // l'assemblage, n'est volontairement PAS percée : ce n'est pas une tôle,
+    // et de toute façon une géométrie distincte (aucun mesh Douille_round/…).
+    if (connectorMesh) {
+      const target = perforatedGeometries[perforation] ?? perforatedGeometries.none;
+      if (target && connectorMesh.geometry !== target) connectorMesh.geometry = target;
+    }
 
     // Placage à l'INTÉRIEUR de l'abat-jour. L'extérieur reste inchangé.
     // Config 01 : bois brûlé. Config 02 : Renature. Les autres gardent la
@@ -307,7 +329,7 @@ function LampModel({
         cancelled = true;
       };
     }
-  }, [materials, partVariants, perforation, invalidate, spot, point, onMaterialsSettled]);
+  }, [materials, connectorMesh, perforatedGeometries, partVariants, perforation, invalidate, spot, point, onMaterialsSettled]);
 
   // Libère les matériaux créés par ce montage (un par pièce, voir useMemo
   // ci-dessus) : sans ça, chaque aller-retour de scroll en laisse derrière lui.

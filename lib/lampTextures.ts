@@ -9,7 +9,7 @@
  * Aucune image distante : la texture de bruit est générée en canvas.
  */
 import * as THREE from "three";
-import type { PerforationShape, MaterialKind } from "@/data/product";
+import type { MaterialKind } from "@/data/product";
 
 // Réexporté : `data/product.ts` est la source de vérité du type (voir
 // CLAUDE.md), mais les profils de rendu qu'il indexe vivent ici.
@@ -1799,23 +1799,6 @@ export function applyInteriorVeneer(
   const enabled = veneer === "wood";
   const tex = enabled ? getWoodVeneerTexture() : null;
   setInteriorState(mat, { composite: enabled ? 1 : 0, scale: WOOD_VENEER_SCALE, tex });
-}
-
-/**
- * Applique la géométrie de perforation à un matériau — la pièce d'assemblage.
- *
- * REMISE À ZÉRO (voir TASKS.md) : l'implémentation précédente (masque bitmap
- * en texture, découpe par discard dans le shader) a été entièrement retirée,
- * à réécrire de zéro. Le contrat reste inchangé — signature, appelants
- * (Lamp3D, ExplodedLamp3D), option produit, contrôle d'interface — seul CE
- * CORPS est à remplir : c'est ICI que la nouvelle géométrie de perforation
- * devra se brancher.
- */
-export function applyPerforation(
-  _mat: THREE.MeshPhysicalMaterial,
-  _shape: PerforationShape
-) {
-  // no-op : voir le commentaire ci-dessus.
 }
 
 /** Libère les textures procédurales (au démontage du canvas). */

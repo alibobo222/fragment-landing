@@ -23,6 +23,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { Document, NodeIO } from "@gltf-transform/core";
 import { weld, dedup, prune } from "@gltf-transform/functions";
+import { buildPerforatedPart } from "./perforation-mesh.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const SRC = join(root, "cad-sources", "lampe2a.IGS");
@@ -607,6 +608,28 @@ for (const v of Object.values(named))
     v.pos[i + 2] = (v.pos[i + 2] - c[2]) * SCALE;
   }
 
+// Variantes PERÇÉES de la pièce d'assemblage (Route B — géométrie réelle,
+// voir scripts/perforation-mesh.mjs pour le diagnostic et la méthode).
+// Générées ici, sur la pièce déjà à l'échelle finale : le pas (250 mailles
+// par unité objet) est défini dans CES unités, pas en millimètres CAO.
+// côté du trou = 0,75 × pas (mesuré sur la photo du prototype, cf. retour
+// utilisateur) ; rayon du rond = même AIRE OUVERTE que le carré : pour un
+// carré de côté s, aire = s² ; pour un disque de même aire, r = s/√π.
+// s = 0.75 × pitch ⇒ r = 0.75/√π × pitch ≈ 0,4231 × pitch.
+const SQUARE_SIDE_OVER_PITCH = 0.75;
+const PERFORATION_PARAMS = {
+  pitch: 1 / 250,
+  squareHalf: SQUARE_SIDE_OVER_PITCH / 2,
+  squareCorner: 0.22,
+  roundRadius: (SQUARE_SIDE_OVER_PITCH / 2) / Math.sqrt(Math.PI) * 2,
+};
+console.log("Perforation de la pièce d'assemblage (géométrie réelle) :");
+const perforated = {};
+for (const shape of ["round", "square"]) {
+  const punched = buildPerforatedPart(named.Connector, shape, PERFORATION_PARAMS);
+  perforated[shape] = weldAndSmoothNormals(punched);
+}
+
 const doc = new Document();
 doc.getRoot().getAsset().generator = "noir-mineral-cad-pipeline";
 const buffer = doc.createBuffer();
@@ -642,6 +665,28 @@ for (const name of ["Shade", "Connector", "Base", "Socket", "Cable", "Bulb"]) {
     .setRoughnessFactor(name === "Bulb" ? 0.25 : 0.7)
     .setMetallicFactor(name === "Connector" ? 0.8 : 0);
   if (name === "Bulb") mat.setEmissiveFactor([0.9, 0.82, 0.62]);
+  prim.setMaterial(mat);
+  scene.addChild(doc.createNode(name).setMesh(doc.createMesh(name).addPrimitive(prim)));
+}
+
+// Nœuds porteurs des géométries perçées — JAMAIS rendus directement (voir
+// Lamp3D.tsx / ExplodedLamp3D.tsx, qui les repèrent par nom, en extraient la
+// géométrie pour l'assigner au mesh « Connector » visible, puis les masquent
+// et les détachent). Même matériau que Connector : sans effet puisqu'ils ne
+// sont jamais affichés tels quels, mais garde le GLB cohérent si inspecté.
+for (const shape of ["round", "square"]) {
+  const v = perforated[shape];
+  const name = `Connector_${shape}`;
+  const prim = doc
+    .createPrimitive()
+    .setAttribute("POSITION", doc.createAccessor(`${name}_P`).setType("VEC3").setArray(v.pos).setBuffer(buffer))
+    .setAttribute("NORMAL", doc.createAccessor(`${name}_N`).setType("VEC3").setArray(v.nrm).setBuffer(buffer))
+    .setIndices(doc.createAccessor(`${name}_I`).setType("SCALAR").setArray(v.idx).setBuffer(buffer));
+  const mat = doc
+    .createMaterial(`${name}_MAT`)
+    .setBaseColorFactor(colors.Connector)
+    .setRoughnessFactor(0.7)
+    .setMetallicFactor(0.8);
   prim.setMaterial(mat);
   scene.addChild(doc.createNode(name).setMesh(doc.createMesh(name).addPrimitive(prim)));
 }

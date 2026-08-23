@@ -26,7 +26,6 @@ import {
   createGrainMaterial,
   applyProfile,
   applyInteriorVeneer,
-  applyPerforation,
   materialProfile,
   getWeaveTexture,
   type InteriorVeneer,
@@ -249,6 +248,8 @@ function ExplodedModel({
   const {
     root,
     materials,
+    meshByPart,
+    perforatedGeometries,
     moves,
     baseMove,
     baseHalfHeight,
@@ -262,10 +263,21 @@ function ExplodedModel({
     const materials: Partial<Record<LampPart, THREE.MeshStandardMaterial>> = {};
     const boxes: Partial<Record<LampPart, THREE.Box3>> = {};
     const meshByPart: Partial<Record<LampPart, THREE.Mesh>> = {};
+    // Géométries RÉELLES de la pièce d'assemblage percée — voir le même
+    // mécanisme dans Lamp3D.tsx (scripts/perforation-mesh.mjs pour le détail).
+    const perforatedGeometries: Partial<Record<PerforationShape, THREE.BufferGeometry>> = {};
 
     root.traverse((o) => {
       const mesh = o as THREE.Mesh;
       if (!mesh.isMesh) return;
+      if (mesh.name === "Connector_round" || mesh.name === "Connector_square") {
+        const shape = mesh.name === "Connector_round" ? "round" : "square";
+        mesh.geometry.computeBoundingBox();
+        mesh.geometry.computeBoundingSphere();
+        perforatedGeometries[shape] = mesh.geometry;
+        mesh.visible = false; // jamais rendu directement, pas éclaté (absent de meshByPart)
+        return;
+      }
       const part = NAME_TO_PART[mesh.name];
       if (!part) return;
 
@@ -306,6 +318,7 @@ function ExplodedModel({
       const b = mesh.geometry.boundingBox!.clone().applyMatrix4(mesh.matrixWorld);
       boxes[part] = boxes[part] ? boxes[part]!.union(b) : b;
       meshByPart[part] = mesh;
+      if (part === "connector") perforatedGeometries.none = mesh.geometry; // état « Aucune »
     });
 
     const centerOf = (p: LampPart) =>
@@ -401,6 +414,8 @@ function ExplodedModel({
     return {
       root,
       materials,
+      meshByPart,
+      perforatedGeometries,
       moves,
       baseMove,
       baseHalfHeight,
@@ -429,10 +444,13 @@ function ExplodedModel({
     apply("socket", partVariants.connector); // douille = assemblage, sauf `variant.socket`
     apply("cable", partVariants.cable);
 
-    // MÊME traitement que le configurateur, via le MÊME helper : la pièce
-    // d'assemblage garde une identité visuelle identique dans les deux vues.
-    const connectorMat = materials.connector as THREE.MeshPhysicalMaterial | undefined;
-    if (connectorMat) applyPerforation(connectorMat, perforation);
+    // MÊME traitement que le configurateur (voir le commentaire équivalent
+    // dans Lamp3D.tsx) : échange de géométrie réelle, pas un effet de matériau.
+    const connectorMesh = meshByPart.connector;
+    if (connectorMesh) {
+      const target = perforatedGeometries[perforation] ?? perforatedGeometries.none;
+      if (target && connectorMesh.geometry !== target) connectorMesh.geometry = target;
+    }
 
     // Placage intérieur — même logique que le configurateur (voir le
     // commentaire équivalent dans Lamp3D.tsx).
@@ -464,7 +482,7 @@ function ExplodedModel({
         b;
     }
     invalidate();
-  }, [materials, partVariants, lampOn, kelvin, perforation, invalidate]);
+  }, [materials, meshByPart, perforatedGeometries, partVariants, lampOn, kelvin, perforation, invalidate]);
 
   // Libère les matériaux créés par ce montage (un par pièce, voir useMemo
   // ci-dessus) : même raison que la géométrie du filet ci-dessus.
