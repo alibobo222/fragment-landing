@@ -100,14 +100,23 @@ export function Configurator() {
           <p className="-mt-3 flex items-baseline gap-2 leading-tight text-ink">
             {/* Proposition n°X : identifiée par matières, pas par ordre
                 d'affichage — voir PROPOSITION_NUMBER. Alignée sur la même ligne
-                que le nom (items-baseline), registre discret (u-caption) qui ne
-                rivalise jamais avec son poids. */}
+                que le nom (items-baseline), MÊME POLICE et MÊME TAILLE que lui
+                (font-display, 1.35rem) — mais plus le même poids : la hiérarchie
+                se lit maintenant par la graisse et la couleur, pas par la
+                typographie elle-même. u-caption (mono) a été abandonnée ici :
+                elle rendait toute différenciation par le poids impossible
+                (une seule graisse disponible sur cette police).
+                Le chiffre seul reprend la couleur d'accent de la configuration
+                (u-accent-fg → --accent, piloté par SelectionProvider) : un
+                repère visuel de plus, réactif au changement de sélection sans
+                logique supplémentaire ici. */}
             {PROPOSITION_NUMBER[variant.id] && (
-              <span className="u-caption">
-                Proposition n°{PROPOSITION_NUMBER[variant.id]} ·
+              <span className="font-display text-[1.35rem] font-normal text-ink-muted">
+                Proposition n°
+                <span className="u-accent-fg">{PROPOSITION_NUMBER[variant.id]}</span> ·
               </span>
             )}
-            <span className="font-display text-[1.35rem]">{variant.name}</span>
+            <span className="font-display text-[1.35rem] font-semibold">{variant.name}</span>
           </p>
           {/* Nuancier — la liste des couleurs et matières de la composition,
               rien d'autre. Pas de nom de pièce : l'objet est juste en dessous,
