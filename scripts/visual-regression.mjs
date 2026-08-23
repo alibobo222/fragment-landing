@@ -15,7 +15,7 @@
  */
 import { chromium } from "playwright";
 import sharp from "sharp";
-import { mkdirSync, existsSync, readFileSync } from "node:fs";
+import { mkdirSync, existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
 const BASE = process.env.PACKSHOT_URL ?? "http://localhost:3000";
@@ -57,6 +57,29 @@ const size = Number(
 
 mkdirSync(BASELINE_DIR, { recursive: true });
 mkdirSync(DIFF_DIR, { recursive: true });
+
+/**
+ * BASES ORPHELINES — un fichier tests/visual-baseline/<id>.png qui ne
+ * correspond à AUCUNE configuration actuelle de data/product.ts (retirée
+ * depuis, id renommé...) ne sera plus jamais comparé ni régénéré : il traîne
+ * sur disque en silence, indéfiniment. Vérifié avant de lancer Playwright —
+ * aucun serveur requis pour ce contrôle, donc échec immédiat plutôt que
+ * d'attendre la fin des sept captures pour le découvrir.
+ */
+const idSet = new Set(ids);
+const orphanBaselines = readdirSync(BASELINE_DIR)
+  .filter((f) => f.endsWith(".png"))
+  .map((f) => f.slice(0, -".png".length))
+  .filter((id) => !idSet.has(id));
+if (orphanBaselines.length > 0) {
+  console.error(
+    `\n✗ Base(s) de référence orpheline(s), sans configuration correspondante ` +
+      `dans data/product.ts :\n` +
+      orphanBaselines.map((id) => `  - tests/visual-baseline/${id}.png`).join("\n") +
+      `\n\nSi la configuration a été retirée intentionnellement, supprime le fichier.`
+  );
+  process.exit(1);
+}
 
 const browser = await chromium.launch();
 const page = await browser.newPage({
