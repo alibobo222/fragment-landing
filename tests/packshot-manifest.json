@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-23T12:33:32.582Z",
+  "generatedAt": "2026-08-23T14:32:31.809Z",
   "ids": [
     "prototype-noir-cable-bleu",
     "porcelaine-acier-noir",
@@ -8,7 +8,7 @@
     "coquille-laiton",
     "verre-bleu-acier-anodise"
   ],
-  "hash": "914efe662107b37166f04f7c1852a928af7da843b8fecc0f7ba67ede4d4f6410",
+  "hash": "2fbfc7c2f3a88e46a6e0670ba6b9827473831a3c852c6f735cdf3dd9076c619e",
   "files": [
     {
       "path": "app/packshot/page.tsx",
@@ -40,7 +40,7 @@
     },
     {
       "path": "public/models/lampe-optimisee.glb",
-      "sha256": "ab06a1efd5a52454602818742da5e1d701c1726745029ccd26a600e5db6fb170"
+      "sha256": "6de7f5f102d0ab3170c559680459060ab55e3a6d4aa0667220fff3fc73ecc7ce"
     },
     {
       "path": "public/textures/beton-bleute.png",
