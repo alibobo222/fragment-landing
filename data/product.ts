@@ -113,7 +113,7 @@ export const variants: ProductVariant[] = [
   {
     id: "prototype-noir-cable-bleu",
     index: "01",
-    name: "Noir brut & câble textile bleu",
+    name: "Graphite",
     materialsSummary: "Wasterial® - Coquilles de moules · Acier brut · Câble textile bleu",
     // Accent : le bleu franc du câble textile, signature de la pièce d'origine.
     accent: "#2a3fe6",
@@ -150,7 +150,7 @@ export const variants: ProductVariant[] = [
   {
     id: "porcelaine-acier-noir",
     index: "02",
-    name: "Porcelaine & acier noir",
+    name: "Craie",
     materialsSummary: "Porcelaine · Acier anodisé noir",
     accent: "#26262b",
     accentOnDark: "#e2ddd2",
@@ -187,7 +187,7 @@ export const variants: ProductVariant[] = [
   {
     id: "brique-aluminium",
     index: "03",
-    name: "Wasterial® - Brique & aluminium",
+    name: "Terracotta",
     materialsSummary: "Wasterial® - Brique · Acier corten",
     accent: "#a8371f",
     accentOnDark: "#d9663f",
@@ -233,7 +233,7 @@ export const variants: ProductVariant[] = [
   {
     id: "verre-bouteille-inox",
     index: "04",
-    name: "Wasterial® - Coquilles d'huîtres & inox",
+    name: "Mousse",
     materialsSummary: "Wasterial® - Coquilles d'huîtres · Inox",
     accent: "#47624b",
     accentOnDark: "#86a583",
@@ -259,7 +259,7 @@ export const variants: ProductVariant[] = [
   {
     id: "coquille-laiton",
     index: "05",
-    name: "Wasterial® - Coquilles d'huîtres & laiton",
+    name: "Lichen",
     materialsSummary: "Wasterial® - Coquilles d'huîtres · Laiton",
     accent: "#5e6440",
     accentOnDark: "#9aa06e",
@@ -280,7 +280,7 @@ export const variants: ProductVariant[] = [
   {
     id: "verre-bleu-acier-anodise",
     index: "06",
-    name: "Wasterial® - Billes de verre & acier anodisé",
+    name: "Ardoise",
     materialsSummary: "Wasterial® - Billes de verre · Acier anodisé",
     accent: "#45566f",
     accentOnDark: "#8ea3c4",
