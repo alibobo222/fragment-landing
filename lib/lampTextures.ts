@@ -1199,8 +1199,14 @@ const RENATURE_SCALE = 9;
  * fichier manquant reste visible au lieu de passer pour un simple changement
  * de rendu (voir applyInteriorVeneer, qui garde alors l'intérieur en
  * porcelaine nue).
+ *
+ * Exportée pour le pipeline packshot (voir `components/packshot/Packshot.tsx`,
+ * qui l'appelle en préchargement AVANT de monter la scène 3D) : déclencher le
+ * chargement tôt garantit que `renatureTex` est déjà posé au tout premier
+ * appel d'`applyInteriorVeneer`, qui l'applique alors immédiatement et
+ * synchrone — jamais de porcelaine nue intermédiaire à figer par erreur.
  */
-function loadRenatureTexture(): Promise<THREE.Texture | null> {
+export function loadRenatureTexture(): Promise<THREE.Texture | null> {
   if (renaturePromise) return renaturePromise;
   renaturePromise = new Promise((resolve) => {
     const tex = new THREE.TextureLoader().load(
@@ -1942,11 +1948,24 @@ export function applyInteriorVeneer(
   veneer: InteriorVeneer
 ) {
   if (veneer === "renature") {
-    // Porcelaine nue par défaut, tant que l'image n'est pas CONFIRMÉE chargée
-    // (jamais avant) — un fichier manquant ne doit jamais s'afficher comme un
-    // rendu cassé, ni être masqué par un repli qui ressemble à la matière
-    // (voir loadRenatureTexture). En cas d'échec, l'état reste ici, avec
-    // l'erreur déjà écrite en console par loadRenatureTexture.
+    // IDEMPOTENT — vérifie renatureTex (déjà résolu, synchrone) avant de
+    // rebasculer en porcelaine nue. Sans ce garde, chaque nouvel appel (React
+    // StrictMode double invoque cet effet en dev, et un changement de
+    // configuration le redéclenche aussi) repartait de zéro : la matière
+    // clignotait porcelaine nue → Renature à chaque appel, même quand la
+    // texture était déjà chargée et appliquée. Sur le pipeline packshot, ce
+    // clignotement pouvait geler la capture sur l'état intermédiaire :
+    // vignette non déterministe, découverte en comparant deux générations
+    // successives octet pour octet (voir components/packshot/Packshot.tsx).
+    if (renatureTex) {
+      setInteriorState(mat, { composite: 1, scale: RENATURE_SCALE, tex: renatureTex });
+      return;
+    }
+    // Porcelaine nue tant que l'image n'est pas CONFIRMÉE chargée (jamais
+    // avant) — un fichier manquant ne doit jamais s'afficher comme un rendu
+    // cassé, ni être masqué par un repli qui ressemble à la matière (voir
+    // loadRenatureTexture). En cas d'échec, l'état reste ici, avec l'erreur
+    // déjà écrite en console par loadRenatureTexture.
     setInteriorState(mat, { composite: 0, scale: RENATURE_SCALE, tex: null });
     loadRenatureTexture().then((tex) => {
       if (tex) setInteriorState(mat, { composite: 1, scale: RENATURE_SCALE, tex });

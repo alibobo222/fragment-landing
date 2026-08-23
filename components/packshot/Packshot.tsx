@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { variants } from "@/data/product";
 import * as DA from "@/config/packshot";
@@ -25,6 +25,13 @@ const Lamp3D = dynamic(
  */
 export function Packshot({ index }: { index: number }) {
   const [ready, setReady] = useState(false);
+  // Précharge Renature AVANT de monter la scène 3D — voir le commentaire
+  // détaillé plus bas. Vaut `true` d'office pour les configurations qui n'en
+  // ont pas besoin (rien à attendre) ; le seul rôle de cet état est de
+  // retarder le montage de <Lamp3D> le temps du chargement, sur TOUTES les
+  // configurations, sans dupliquer ici la logique de sélection du placage
+  // (isConfig01 / id === "porcelaine-acier-noir") qui vit dans Lamp3D.tsx.
+  const [renaturePreloaded, setRenaturePreloaded] = useState(false);
   const i = Math.max(0, Math.min(variants.length - 1, index));
   const parts: PartVariants = { shade: i, connector: i, base: i, cable: i };
 
@@ -34,13 +41,56 @@ export function Packshot({ index }: { index: number }) {
     if (ready) document.documentElement.dataset.packshotReady = "1";
   }, [ready]);
 
+  /**
+   * PRÉCHARGEMENT RENATURE — corrige la cause, pas le symptôme.
+   *
+   * `applyInteriorVeneer("renature")` (lib/lampTextures.ts) pose la
+   * porcelaine nue puis remplace la texture une fois l'image chargée — un
+   * aller-retour normalement invisible, MASQUÉ dès que `renatureTex` est déjà
+   * en cache (l'appel devient alors synchrone, voir ce fichier). Le problème
+   * n'était donc pas seulement le premier chargement : React (StrictMode
+   * double-invoque les effets en dev, y compris pendant `npm run packshots`,
+   * qui shoote contre le serveur de DEV) pouvait réappliquer cet aller-retour
+   * PENDANT que le premier était encore en vol, avec un timing qui variait
+   * d'une exécution à l'autre — vignette non déterministe, découverte en
+   * comparant deux générations successives octet pour octet.
+   *
+   * En déclenchant le chargement ICI, avant même de monter <Lamp3D>, la
+   * scène ne voit JAMAIS `applyInteriorVeneer` pendant que Renature est en
+   * vol : `renatureTex` est déjà posé au tout premier appel, qui l'applique
+   * alors directement (branche synchrone). Plus d'aller-retour à figer au
+   * mauvais moment, sur AUCUNE configuration.
+   *
+   * Déclenché pour toutes les configurations, pas seulement config 02 : le
+   * chargement est mémoïsé (loadRenatureTexture), donc sans coût pour les
+   * autres — et ça évite de dupliquer ici la logique de sélection du
+   * placage.
+   */
+  useEffect(() => {
+    let cancelled = false;
+    import("@/lib/lampTextures").then((m) =>
+      m.loadRenatureTexture().then(() => {
+        if (!cancelled) setRenaturePreloaded(true);
+      })
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   // Note sur onMaterialsSettled (et pas seulement onCreated, plus bas) : le
-  // canvas WebGL créé ne suffit pas — la config 02 (Renature) déclenche un
-  // chargement d'image ASYNCHRONE pour l'intérieur de l'abat-jour (voir
-  // lib/lampTextures.ts, applyInteriorVeneer). Sans attendre sa résolution,
-  // la capture peut avoir lieu avant OU après que la texture soit posée :
-  // deux vignettes possibles pour la même configuration, découvert en
-  // comparant deux générations successives octet pour octet.
+  // canvas WebGL créé ne suffit pas — voir le commentaire de préchargement
+  // ci-dessus pour le mécanisme complet. Ce callback reste un filet de
+  // sécurité pour toute future matière chargée en asynchrone qui ne serait
+  // pas préchargée de la même façon.
+  //
+  // useCallback est nécessaire : ce callback est une dépendance de l'effet
+  // qui appelle applyInteriorVeneer (LampModel, Lamp3D.tsx) ; une fonction
+  // fléchée inline changerait d'identité à chaque rendu et redéclencherait
+  // cet effet sans raison.
+  const onMaterialsSettled = useCallback(() => setReady(true), []);
+
+  if (!renaturePreloaded) return null;
 
   return (
     <div
@@ -59,7 +109,7 @@ export function Packshot({ index }: { index: number }) {
         kelvin={DA.KELVIN}
         camera={DA.CAMERA}
         fov={DA.FOV}
-        onMaterialsSettled={() => setReady(true)}
+        onMaterialsSettled={onMaterialsSettled}
       />
     </div>
   );
