@@ -188,14 +188,18 @@ export const variants: ProductVariant[] = [
     id: "brique-aluminium",
     index: "03",
     name: "Terracotta",
-    materialsSummary: "Wasterial® - Brique · Acier corten",
+    materialsSummary: "Wasterial® - Coquilles de moules · Acier corten",
     accent: "#a8371f",
     accentOnDark: "#d9663f",
+    // Abat-jour : Wasterial® - Coquilles de moules (seule cette pièce — le
+    // pied garde la brique, voir `base` plus bas ; ce sont deux PartFinish
+    // distincts, pas un texturage partagé comme avant). Confirmé explicitement
+    // après un premier revers faute de citation retrouvée dans l'historique.
     shade: {
-      label: "Wasterial® - Brique",
-      color: "#9c4a39",
-      material: "brick",
-      textureImage: "/textures/swatch/brique.webp",
+      label: "Wasterial® - Coquilles de moules",
+      color: "#1a1a1c",
+      material: "blackConcrete",
+      textureImage: "/textures/swatch/westerial-coquilles-moules.webp",
     },
     // Couleur mesurée : moyenne RVB de tole-acier-corten.jpg (#a4530c), pas
     // devinée à l'œil.
@@ -228,7 +232,7 @@ export const variants: ProductVariant[] = [
     description:
       "La terre cuite chaude réveille l'aluminium froid. Une matière qui garde la mémoire du feu.",
     image: "/images/variants/brique-aluminium.webp",
-    alt: "Lampe Noir Minéral en Wasterial® - Brique avec pièce d'assemblage en acier corten.",
+    alt: "Lampe Noir Minéral : abat-jour en Wasterial® - Coquilles de moules, pied en Wasterial® - Brique et pièce d'assemblage en acier corten.",
   },
   {
     id: "verre-bouteille-inox",

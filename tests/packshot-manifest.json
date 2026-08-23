@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-23T12:10:08.289Z",
+  "generatedAt": "2026-08-23T12:33:32.582Z",
   "ids": [
     "prototype-noir-cable-bleu",
     "porcelaine-acier-noir",
@@ -8,7 +8,7 @@
     "coquille-laiton",
     "verre-bleu-acier-anodise"
   ],
-  "hash": "61270a00d6fba1ca920352c5042b6f79ec0553f7f3c3da5cf7a9d385d401ad0b",
+  "hash": "914efe662107b37166f04f7c1852a928af7da843b8fecc0f7ba67ede4d4f6410",
   "files": [
     {
       "path": "app/packshot/page.tsx",
@@ -32,7 +32,7 @@
     },
     {
       "path": "data/product.ts#projection",
-      "sha256": "de8cdc9e9766100b2db0121771aaa14e02bb6e9a316707047472aff0aac66119"
+      "sha256": "7dcbdb13491f9bc09b2fe29b5a026bbb829cf3ff6191d2009b1cd05721cc82b6"
     },
     {
       "path": "lib/lampTextures.ts",
