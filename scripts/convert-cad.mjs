@@ -37,8 +37,18 @@ const res = occt.ReadIgesFile(new Uint8Array(readFileSync(SRC)), {
 });
 if (!res.success) throw new Error("Lecture IGES échouée");
 
-/** Découpe une soupe de triangles en composantes connexes (weld 0,1 mm). */
-function components(pos, index, normal) {
+/**
+ * Découpe une soupe de triangles en composantes connexes (weld 0,1 mm).
+ *
+ * `faceRanges` (optionnel) est le tableau `brep_faces` d'occt-import-js —
+ * `[{first, last}, ...]`, bornes de triangles (inclusives, indexées comme
+ * `index`) d'une face B-Rep d'origine de l'IGES. Quand il est fourni, chaque
+ * composante retourne un `faceId` (un entier par triangle, dans l'ordre de
+ * `idx`) qui identifie sa face B-Rep d'origine — consommé par
+ * `splitSocketCable` pour classifier une face ENTIÈRE d'un coup plutôt que
+ * triangle par triangle (voir sa doc pour le pourquoi).
+ */
+function components(pos, index, normal, faceRanges) {
   const kkey = (i) =>
     `${Math.round(pos[i * 3] * 10)}_${Math.round(pos[i * 3 + 1] * 10)}_${Math.round(pos[i * 3 + 2] * 10)}`;
   const rep = new Map();
@@ -59,13 +69,24 @@ function components(pos, index, normal) {
     parent[find(vid[index[t + 1]])] = r;
     parent[find(vid[index[t + 2]])] = r;
   }
+  // Triangle (0-based) → indice de face B-Rep d'origine, si fourni.
+  let triFace = null;
+  if (faceRanges) {
+    triFace = new Int32Array(index.length / 3);
+    for (let fi = 0; fi < faceRanges.length; fi++) {
+      const { first, last } = faceRanges[fi];
+      for (let t = first; t <= last; t++) triFace[t] = fi;
+    }
+  }
   const groups = new Map();
   for (let t = 0; t < index.length; t += 3) {
     const r = find(vid[index[t]]);
-    if (!groups.has(r)) groups.set(r, []);
-    groups.get(r).push(index[t], index[t + 1], index[t + 2]);
+    if (!groups.has(r)) groups.set(r, { tris: [], faces: [] });
+    const g = groups.get(r);
+    g.tris.push(index[t], index[t + 1], index[t + 2]);
+    if (triFace) g.faces.push(triFace[t / 3]);
   }
-  return [...groups.values()].map((tris) => {
+  return [...groups.values()].map(({ tris, faces }) => {
     const remap = new Map();
     const P = [], N = [], I = [];
     for (const oi of tris) {
@@ -88,6 +109,7 @@ function components(pos, index, normal) {
       pos: new Float32Array(P),
       nrm: normal ? new Float32Array(N) : null,
       idx: Uint32Array.from(I),
+      faceId: faces.length ? Uint32Array.from(faces) : null,
       center,
       size,
       dist: Math.hypot(center[0], center[1], center[2]),
@@ -102,21 +124,84 @@ for (const n of res.root.children) {
   byNode[n.name] = components(
     m.attributes.position.array,
     m.index.array,
-    m.attributes.normal?.array
+    m.attributes.normal?.array,
+    m.brep_faces
   );
 }
 
 // Classification sémantique (déterminée par inspection géométrique) :
 /**
- * Scinde douille (métal) / fil (textile) par un critère AXIAL + RADIAL. Une face
- * appartient à la DOUILLE seulement si elle est dans la zone axiale de la douille
- * (proj ≤ socketEnd) ET éloignée de l'axe du câble (rayon > rThresh, coque large).
- * Le fil fin — toujours proche de l'axe (rayon ~4-5 mm) — reste « câble » partout,
- * y compris à la sortie de la douille : aucun métal ne déborde sur le fil.
- * (Un plan purement axial ne peut pas séparer le fil fin de l'anneau métallique
- * qui l'entoure, tous deux à la même position axiale.)
+ * Scinde douille (métal) / fil (textile) par FACE B-REP D'ORIGINE (occt
+ * `brep_faces`), jamais triangle par triangle.
+ *
+ * Un premier critère par triangle (axial + radial sur le barycentre) créait
+ * une « couronne de facettes » colorées câble à la jonction, visible sur la
+ * lampe assemblée ET la vue éclatée : diagnostiqué en dumpant les triangles
+ * à ±5 mm de la jonction (proj, rayon, appartenance) puis en projetant la
+ * géométrie brute en 2D — voir la vue en bout, qui montre un CÔNE continu
+ * (le manchon qui resserre la douille sur le câble, une face IGES à part
+ * entière, rayon ~4 à ~20 mm) coupé par la moitié par le seuil de rayon :
+ * le rayon y varie CONTINÛMENT le long de la face, pas de façon bimodale —
+ * un critère par triangle ne peut alors que trancher au milieu de la face,
+ * pas à son bord.
+ *
+ * Le rayon PAR TRIANGLE n'est donc pas le bon critère à la jonction. Le
+ * rayon MAX D'UNE FACE ENTIÈRE, lui, l'est : le fil textile (une face
+ * unique de ~400 mm de long, occt en fait deux moitiés) ne dépasse jamais
+ * quelques mm de rayon nulle part sur sa longueur, alors que toute face
+ * métallique (manchon compris) dépasse largement rThresh quelque part sur
+ * son étendue. Chaque face est donc classée EN BLOC :
+ *
+ *   1. étendue axiale (maxProj - minProj) > SPAN_THRESH → CÂBLE d'office.
+ *      Seul le fil, qui court sur ~400 mm, a une étendue pareille ; les faces
+ *      métalliques de jonction, même les plus longues mesurées (~49 mm, un
+ *      corps de douille qui s'étire sur sa longueur), restent très en-deçà.
+ *   2. sinon, hors de la zone de jonction (minProj > socketEnd) → CÂBLE.
+ *      Protège une face courte et lointaine (un détail quelconque du fil,
+ *      loin de la douille) contre une lecture de rayon faussée par la
+ *      courbure du câble à cette distance de cNear (voir cableJointPlane) —
+ *      elle ne passe même pas au test de rayon.
+ *   3. sinon, rayon max (ancré sur cNear — fiable ici : la zone de jonction
+ *      est courte et proche de cNear) > rThresh → DOUILLE, sinon CÂBLE.
+ *
+ * Résultat : le manchon (cône continu) est capturé ENTIER par le critère 1
+ * ou 3 selon sa forme — jamais tranché en deux couleurs au milieu de sa
+ * propre surface.
  */
 function splitSocketCable(part, bulbC, cNear, A, socketEnd, rThresh) {
+  // mm — mesuré : les faces de jonction (douille, manchon) vont jusqu'à
+  // ~49 mm d'étendue axiale ; le fil (deux faces occt pour ses deux moitiés)
+  // s'étire sur ~420 mm. 100 mm laisse une marge large des deux côtés.
+  const SPAN_THRESH = 100;
+
+  // 1) Un seul verdict SOCKET/CABLE par face B-Rep, sur son étendue entière.
+  const byFace = new Map(); // faceId → liste des débuts de triangle (t)
+  for (let t = 0; t < part.idx.length; t += 3) {
+    const fid = part.faceId ? part.faceId[t / 3] : -1;
+    if (!byFace.has(fid)) byFace.set(fid, []);
+    byFace.get(fid).push(t);
+  }
+  const faceIsSocket = new Map();
+  for (const [fid, triStarts] of byFace) {
+    let minProj = Infinity, maxProj = -Infinity, maxRadial = 0;
+    for (const t of triStarts) {
+      for (const vi of [part.idx[t], part.idx[t + 1], part.idx[t + 2]]) {
+        const x = part.pos[vi * 3], y = part.pos[vi * 3 + 1], z = part.pos[vi * 3 + 2];
+        const dxb = x - bulbC[0], dyb = y - bulbC[1], dzb = z - bulbC[2];
+        const proj = dxb * A[0] + dyb * A[1] + dzb * A[2];
+        if (proj < minProj) minProj = proj;
+        if (proj > maxProj) maxProj = proj;
+        const dx = x - cNear[0], dy = y - cNear[1], dz = z - cNear[2];
+        const pr = dx * A[0] + dy * A[1] + dz * A[2];
+        const radial = Math.hypot(dx - pr * A[0], dy - pr * A[1], dz - pr * A[2]);
+        if (radial > maxRadial) maxRadial = radial;
+      }
+    }
+    const span = maxProj - minProj;
+    faceIsSocket.set(fid, span <= SPAN_THRESH && minProj <= socketEnd && maxRadial > rThresh);
+  }
+
+  // 2) Répartition des triangles selon le verdict de leur face.
   const near = { P: [], N: [], I: [] }; // douille (métal)
   const far = { P: [], N: [], I: [] };  // fil (textile)
   const push = (dst, remap, oi) => {
@@ -130,16 +215,9 @@ function splitSocketCable(part, bulbC, cNear, A, socketEnd, rThresh) {
   };
   const rN = new Map(), rF = new Map();
   for (let t = 0; t < part.idx.length; t += 3) {
+    const fid = part.faceId ? part.faceId[t / 3] : -1;
+    const isSocket = faceIsSocket.get(fid);
     const a = part.idx[t], b = part.idx[t + 1], c = part.idx[t + 2];
-    const cx = (part.pos[a * 3] + part.pos[b * 3] + part.pos[c * 3]) / 3;
-    const cy = (part.pos[a * 3 + 1] + part.pos[b * 3 + 1] + part.pos[c * 3 + 1]) / 3;
-    const cz = (part.pos[a * 3 + 2] + part.pos[b * 3 + 2] + part.pos[c * 3 + 2]) / 3;
-    const proj = (cx - bulbC[0]) * A[0] + (cy - bulbC[1]) * A[1] + (cz - bulbC[2]) * A[2];
-    // Rayon par rapport à la ligne d'axe ancrée sur le fil (cNear).
-    const dx = cx - cNear[0], dy = cy - cNear[1], dz = cz - cNear[2];
-    const pr = dx * A[0] + dy * A[1] + dz * A[2];
-    const radial = Math.hypot(dx - pr * A[0], dy - pr * A[1], dz - pr * A[2]);
-    const isSocket = proj <= socketEnd && radial > rThresh;
     push(isSocket ? near : far, isSocket ? rN : rF, a);
     push(isSocket ? near : far, isSocket ? rN : rF, b);
     push(isSocket ? near : far, isSocket ? rN : rF, c);
@@ -489,6 +567,7 @@ named.Bulb = byNode.ampoule2[0];
 {
   const { A, cNear, socketEnd } = cableJointPlane(named.Cable, named.Bulb.center);
   const R_THRESH = 9; // entre le fil (~4-5 mm) et la coque de douille (14-26 mm)
+
   const { near: socket, far: cable } = splitSocketCable(
     named.Cable, named.Bulb.center, cNear, A, socketEnd, R_THRESH
   );
