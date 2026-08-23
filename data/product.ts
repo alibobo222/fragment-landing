@@ -336,7 +336,7 @@ export const perforationOptions: {
   { value: "none", label: "Aucune" },
 ];
 
-export const defaultPerforation: PerforationShape = "square";
+export const defaultPerforation: PerforationShape = "none";
 
 export const defaultVariantId = variants[0].id;
 
