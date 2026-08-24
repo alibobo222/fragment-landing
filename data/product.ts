@@ -95,6 +95,17 @@ export interface ProductVariant {
   shadeInner?: PartFinish;
   assembly: PartFinish;
   /**
+   * Perforation RECOMMANDÉE de la pièce d'assemblage pour cette
+   * configuration — point de départ appliqué automatiquement au changement de
+   * configuration (voir `SelectionProvider`), pas une contrainte : les trois
+   * boutons de perforation restent utilisables ensuite. Absente sur les
+   * configurations qui n'ont pas encore de recommandation confirmée par
+   * l'atelier — c'est ce champ, et non une table de correspondance séparée,
+   * qui décide ; une variante sans recommandation retombe sur
+   * `defaultPerforation`.
+   */
+  perforation?: PerforationShape;
+  /**
    * Finition de la DOUILLE quand elle diffère de la pièce d'assemblage.
    * Absente sur les configurations où les deux pièces partagent la même
    * matière — c'est ce champ, et non un identifiant en dur, qui décide.
@@ -134,6 +145,10 @@ export const variants: ProductVariant[] = [
       textureImage: "/textures/swatch/bois-brule.webp",
     },
     assembly: { label: "Acier brut", color: "#b7bab8", material: "metal" },
+    // Recommandation atelier — forme du prototype photographié (voir la
+    // mesure sur la photo du prototype ayant fixé le pas et la taille des
+    // trous carrés).
+    perforation: "square",
     base: {
       label: "Wasterial® - Coquilles de moules",
       color: "#1a1a1c",
@@ -169,6 +184,8 @@ export const variants: ProductVariant[] = [
     // de base change ; le kind reste « metal » (metalness / roughness / reflets
     // / texture inchangés) → acier anodisé anthracite, aspect métallique conservé.
     assembly: { label: "Acier anodisé noir", color: "#3a3e44", material: "metal" },
+    // Recommandation atelier pour cette configuration.
+    perforation: "round",
     // Pied : Wasterial® - Sable de fonderie, depuis la photo réelle
     // /public/textures/sable-fonderie.png. Couleur mesurée : moyenne RVB de
     // cette image (#655a58), pas devinée à l'œil. Remplace le travertin.
@@ -211,6 +228,8 @@ export const variants: ProductVariant[] = [
       material: "corten",
       textureImage: "/textures/swatch/tole-acier-corten.webp",
     },
+    // Recommandation atelier pour cette configuration.
+    perforation: "none",
     // Douille : distincte de l'assemblage (voir finishFor, data/lampModel.ts)
     // — aluminium oxydé, photo réelle. Couleur mesurée : moyenne RVB de
     // "Douille métal rouille.png" (#402f29), pas devinée à l'œil.

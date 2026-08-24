@@ -97,15 +97,36 @@ export function SelectionProvider({ children }: { children: React.ReactNode }) {
     );
   }, []);
 
-  const setPerforation = useCallback((shape: PerforationShape) => {
-    setPerforationState(shape);
-    try {
-      window.sessionStorage.setItem(PERFORATION_KEY, shape);
-    } catch {
-      /* ignore */
-    }
-    track("perforation_selected", { shape });
-  }, []);
+  // Partagée par le choix manuel (les trois boutons) et la recommandation
+  // appliquée au changement de configuration (`select`, plus bas) : même
+  // état, même persistance de session — seule la provenance envoyée à
+  // l'analytique diffère (voir `track` ci-dessous). Distinguer les deux SANS
+  // dupliquer cette logique est tout le rôle de ce helper.
+  const applyPerforation = useCallback(
+    (shape: PerforationShape, source: "user" | "reco") => {
+      setPerforationState(shape);
+      try {
+        window.sessionStorage.setItem(PERFORATION_KEY, shape);
+      } catch {
+        /* ignore */
+      }
+      // Un seul événement, un champ `source` — plutôt qu'un événement
+      // séparé pour la bascule automatique : même schéma que
+      // `material_variant_selected`/`from` juste en dessous (une origine
+      // contextuelle sur l'événement existant, pas une famille d'événements
+      // par déclencheur), et ça garde une seule requête pour reconstituer
+      // « quelle perforation est affichée, et pourquoi » — un filtre sur
+      // `source` suffit ensuite à isoler les bascules automatiques du choix
+      // utilisateur réel dans l'analytique.
+      track("perforation_selected", { shape, source });
+    },
+    []
+  );
+
+  const setPerforation = useCallback(
+    (shape: PerforationShape) => applyPerforation(shape, "user"),
+    [applyPerforation]
+  );
 
   const select = useCallback(
     (id: string, opts?: { silent?: boolean; from?: string }) => {
@@ -116,6 +137,13 @@ export function SelectionProvider({ children }: { children: React.ReactNode }) {
       } catch {
         /* ignore */
       }
+      // La recommandation de la configuration devient le point de départ de
+      // la perforation — écrase un choix manuel antérieur, y compris en
+      // resélectionnant la configuration déjà active (aucune garde sur un
+      // changement d'id : c'est le SEUL déclencheur de cette bascule, elle
+      // ne doit dépendre de rien d'autre). Un choix manuel ultérieur prévaut
+      // ensuite jusqu'au PROCHAIN changement de configuration — pas au-delà.
+      applyPerforation(variant.perforation ?? defaultPerforation, "reco");
       if (!opts?.silent) {
         track("material_variant_selected", {
           variant: variant.id,
@@ -124,7 +152,7 @@ export function SelectionProvider({ children }: { children: React.ReactNode }) {
         });
       }
     },
-    []
+    [applyPerforation]
   );
 
   const value = useMemo<SelectionContextValue>(
