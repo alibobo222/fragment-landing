@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import Image from "next/image";
 import dynamic from "next/dynamic";
 import { motion, useAnimationControls, useReducedMotion } from "framer-motion";
@@ -18,6 +18,41 @@ const Lamp3D = dynamic(
   () => import("@/components/hero/Lamp3D").then((m) => m.Lamp3D),
   { ssr: false }
 );
+
+/**
+ * Le canvas 3D s'étend sous les contrôles flottants (perforation + allumage,
+ * plus bas) au lieu de s'arrêter au bord de la scène — sinon le câble ne peut
+ * PAR CONSTRUCTION jamais passer derrière eux (mesuré : le canvas s'arrêtait
+ * 6,4 px AVANT leur haut, recouvrement nul à tout angle de rotation).
+ *
+ * 72 px : les contrôles descendent à 56 px sous le bas de la scène
+ * (-bottom-[3.5rem], inchangé — voir plus bas) ; le budget disponible avant
+ * de toucher le sélecteur de configuration qui suit (mt-[5rem] = 80 px dans
+ * Configurator.tsx) est donc de 80 px. 72 px laisse 16 px de marge visible
+ * SOUS les contrôles (le câble y « ressort ») et 8 px de sécurité avant le
+ * sélecteur — sans jamais empiéter dessus. Unique consommateur de
+ * `<LampStage>` : Configurator.tsx ; cette constante n'a donc rien d'autre à
+ * satisfaire.
+ */
+const CANVAS_EXTRA_PX = 72;
+
+/**
+ * Compense l'agrandissement vertical du canvas pour que la lampe garde EXACTEMENT
+ * la même taille et la même place à l'écran (la focale seule change, ni la
+ * position ni la distance de la caméra) : à focale fixe, agrandir le canvas
+ * agrandirait l'objet rendu (même tranche angulaire étalée sur plus de
+ * pixels). Élargir l'angle vertical dans les mêmes proportions que la
+ * hauteur ajoutée annule cet effet — la démonstration :
+ *   px-par-unité = hauteur / (2·tan(fov/2))  (indépendant de la distance)
+ * Pour que ce ratio reste constant quand hauteur → hauteur×k, il faut
+ * tan(fov/2) → tan(fov/2)×k, d'où la formule ci-dessous.
+ */
+function compensateFov(baseFovDeg: number, boxHeightPx: number, extraPx: number): number {
+  if (boxHeightPx <= 0) return baseFovDeg;
+  const k = (boxHeightPx + extraPx) / boxHeightPx;
+  const baseHalfRad = (baseFovDeg * Math.PI) / 180 / 2;
+  return (2 * Math.atan(k * Math.tan(baseHalfRad)) * 180) / Math.PI;
+}
 
 function webglAvailable(): boolean {
   try {
@@ -67,6 +102,20 @@ export function LampStage({
   const [active, setActive] = useState(false); // proche du viewport → monter le canvas
   const [ready3D, setReady3D] = useState(false);
   const [tabHidden, setTabHidden] = useState(false);
+  // Hauteur RÉELLE de la boîte (h-[54svh] dans Configurator.tsx — dépend du
+  // viewport, y compris mobile) : mesurée pour calculer la focale compensée
+  // du canvas agrandi (voir compensateFov). Mesurée avant peinture pour
+  // éviter un premier cadrage non compensé.
+  const [boxHeight, setBoxHeight] = useState(0);
+  useLayoutEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    const measure = () => setBoxHeight(el.clientHeight);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   const currentIndex = Math.max(
     0,
@@ -118,6 +167,14 @@ export function LampStage({
 
   const mount3D = use3D && active;
   const spin = !reduce && !tabHidden && active;
+  // Focale compensée pour le canvas agrandi (voir CANVAS_EXTRA_PX /
+  // compensateFov ci-dessus) — avant la première mesure (boxHeight===0) ou
+  // si l'appelant n'a rien précisé (Lamp3D applique alors son propre repli),
+  // la focale demandée est transmise telle quelle.
+  const effectiveFov =
+    fov !== undefined && boxHeight > 0
+      ? compensateFov(fov, boxHeight, CANVAS_EXTRA_PX)
+      : fov;
 
   const parts: PartVariants = {
     shade: currentIndex,
@@ -155,10 +212,17 @@ export function LampStage({
         />
       ))}
 
-      {/* Reproduction 3D fidèle (CAO → GLB), interactive (rotation souris/tactile). */}
+      {/* Reproduction 3D fidèle (CAO → GLB), interactive (rotation souris/tactile).
+          ⚠️ S'étend à -bottom-[72px] (CANVAS_EXTRA_PX) — PAS inset-0 : le
+          canvas doit couvrir la zone des contrôles flottants plus bas pour
+          que le câble puisse passer visiblement derrière eux (voir le
+          commentaire de CANVAS_EXTRA_PX). La boîte de référence (wrapRef,
+          la position des contrôles, le cadrage de l'image de repli) ne
+          change pas — seule l'étendue du RENDU grandit ; `effectiveFov`
+          compense pour que la lampe garde exactement la même taille. */}
       {mount3D && (
         <div
-          className={`absolute inset-0 transition-opacity duration-700 ${
+          className={`absolute inset-x-0 top-0 -bottom-[72px] transition-opacity duration-700 ${
             ready3D ? "opacity-100" : "opacity-0"
           }`}
         >
@@ -170,7 +234,7 @@ export function LampStage({
               kelvin={kelvin}
               perforation={perforation}
               camera={camera}
-              fov={fov}
+              fov={effectiveFov}
               onCreated={() => setReady3D(true)}
             />
           </motion.div>
