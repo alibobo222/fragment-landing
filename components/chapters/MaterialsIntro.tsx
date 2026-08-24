@@ -20,14 +20,29 @@ export function MaterialsIntro() {
         index="02"
         kicker="Les matières"
         id="matieres-title"
-        title="La même forme. Un objet à chaque fois différent."
+        title="La forme est constante. La matière change tout."
       />
       <div className="u-container">
         <Reveal delay={0.05}>
           <p className="mt-1 max-w-[50ch] text-sm leading-relaxed text-ink-soft">
-            Le dessin ne change pas ; la matière, oui. Elle décide du poids
-            perçu, de la température de la lumière et de la façon dont la pièce
-            prend place dans un intérieur.
+            La lampe est fabriquée principalement à partir de Wasterial®
+            d&apos;Etnisi, des matériaux composés de matières usagées et
+            revalorisées : béton, pierre, brique, verre, sable…
+          </p>
+        </Reveal>
+        <Reveal delay={0.1}>
+          <p className="mt-3 max-w-[50ch] text-sm leading-relaxed text-ink-soft">
+            Chaque matériau conserve quelque chose de son origine et lui
+            donne sa propre couleur, son grain et sa texture. La forme reste
+            la même, mais les combinaisons de couleurs et de textures lui
+            donnent des expressions différentes. Des pièces d&apos;assemblage
+            supplémentaires permettent ensuite de personnaliser et
+            d&apos;enrichir chaque composition.
+          </p>
+        </Reveal>
+        <Reveal delay={0.15}>
+          <p className="mt-3 max-w-[50ch] text-sm leading-relaxed text-ink">
+            Une même forme. Des possibilités multiples.
           </p>
         </Reveal>
       </div>
