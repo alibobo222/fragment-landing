@@ -66,6 +66,35 @@ const SWATCH_SIZE = 128;
 /** Part du petit côté de la texture prélevée dans la fenêtre. */
 const SWATCH_CROP_RATIO = 0.45;
 
+/**
+ * Bandeau d'échantillons Wasterial® (section 02, voir
+ * components/chapters/MaterialsMarquee.tsx). Sources brutes déposées sous
+ * public/images/materials/raw/ (jamais de référence à un chemin OneDrive dans
+ * le code — voir data/materials.ts). Recadrage carré CENTRÉ sur l'image
+ * entière (pas une fenêtre serrée comme les pastilles ci-dessus : ces photos
+ * sont déjà proches de la taille d'affichage, pas de grain à préserver par
+ * sur-échantillonnage). Deux largeurs, dimensionnées sur l'affichage réel du
+ * bandeau (h-24/w-24 mobile → sm:h-32/sm:w-32 desktop, voir le composant) :
+ * grandes assez pour rester nettes en Retina, jamais plus — la plus petite
+ * source du lot (coquilles-de-moules, 282 px de côté utile) borne DESKTOP_W
+ * pour ne jamais agrandir une photo au-delà de sa résolution native.
+ */
+const MATERIALS_MOBILE_W = 180;
+const MATERIALS_DESKTOP_W = 260;
+const materialsRawDir = join(root, "public", "images", "materials", "raw");
+const materialsOutDir = join(root, "public", "images", "materials");
+const MATERIAL_SLUGS = [
+  "brique",
+  "coquilles-de-moules",
+  "verre-de-bouteille",
+  "verre-bleu",
+  "coquilles-huitres",
+  "pierre-bleue",
+  "sable-fonderie",
+  "beton-bleute",
+  "travertin",
+];
+
 /** planche variantes : grille source 3×2, colonnes de 217px, rendus sur fond
  *  blanc. La cellule (440, 360) — ex. « porcelaine-epoxy-mat », configuration
  *  07 retirée du catalogue — n'est plus découpée : la planche source garde
@@ -181,9 +210,46 @@ async function prepareTextureAssets() {
   }
 }
 
+/**
+ * Bandeau d'échantillons Wasterial® : recadrage carré centré (côté = petit
+ * côté de la source, aucune fenêtre) puis deux tirages WebP par matière —
+ * mobile et desktop — voir MATERIALS_MOBILE_W / MATERIALS_DESKTOP_W plus haut.
+ * Source absente → avertissement et passage au suivant (pas d'échec dur ici :
+ * c'est tests/texture-assets.test.ts qui verrouille l'existence des sorties
+ * une fois générées, cette fonction reste un outil de préparation).
+ */
+async function prepareMaterialAssets() {
+  await mkdir(materialsOutDir, { recursive: true });
+  for (const slug of MATERIAL_SLUGS) {
+    const src = join(materialsRawDir, `${slug}.png`);
+    if (!(await exists(src))) {
+      console.warn(`  ⚠ source manquante, ignorée : ${src}`);
+      continue;
+    }
+    const { width = 0, height = 0 } = await sharp(src).metadata();
+    const side = Math.min(width, height);
+    const left = Math.round((width - side) / 2);
+    const top = Math.round((height - side) / 2);
+
+    for (const [suffix, w] of [
+      ["mobile", MATERIALS_MOBILE_W],
+      ["desktop", MATERIALS_DESKTOP_W],
+    ]) {
+      const out = join(materialsOutDir, `${slug}-${suffix}.webp`);
+      await sharp(src)
+        .extract({ left, top, width: side, height: side })
+        .resize({ width: w, height: w, kernel: "lanczos3", withoutEnlargement: true })
+        .webp({ quality: 85 })
+        .toFile(out);
+      console.log("matière →", out);
+    }
+  }
+}
+
 async function run() {
   await prepareBoardAssets();
   await prepareTextureAssets();
+  await prepareMaterialAssets();
   console.log("\nAssets générés avec succès.");
 }
 

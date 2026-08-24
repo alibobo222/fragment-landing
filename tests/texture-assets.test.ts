@@ -6,6 +6,7 @@ import {
   extractLampTextureUrls,
   extractProductTextureImages,
 } from "../scripts/packshot-manifest.mjs";
+import { materialMobileImage, materials } from "../data/materials";
 
 /**
  * Verrouille l'existence sur disque de toutes les textures référencées par le
@@ -49,4 +50,27 @@ describe("textures référencées par le code", () => {
     const path = join(publicDir, url.replace(/^\//, ""));
     expect(existsSync(path), `Fichier manquant : public${url}`).toBe(true);
   });
+
+  it("data/materials.ts n'est pas vide", () => {
+    expect(materials.length).toBeGreaterThan(0);
+  });
+
+  // Les deux largeurs (desktop = `image`, mobile = dérivé) : une image
+  // référencée mais absente doit faire échouer ce test, pas produire un 404
+  // silencieux dans le bandeau (voir le commentaire en tête de fichier).
+  it.each(materials.map((m) => ({ id: m.id, url: m.image })))(
+    "data/materials.ts : $id — $url (desktop) existe dans public/",
+    ({ url }) => {
+      const path = join(publicDir, url.replace(/^\//, ""));
+      expect(existsSync(path), `Fichier manquant : public${url}`).toBe(true);
+    }
+  );
+
+  it.each(materials.map((m) => ({ id: m.id, url: materialMobileImage(m.image) })))(
+    "data/materials.ts : $id — $url (mobile) existe dans public/",
+    ({ url }) => {
+      const path = join(publicDir, url.replace(/^\//, ""));
+      expect(existsSync(path), `Fichier manquant : public${url}`).toBe(true);
+    }
+  );
 });
