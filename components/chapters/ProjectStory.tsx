@@ -42,7 +42,10 @@ function Text({
 export function ProjectStory() {
   return (
     <section id="projet" aria-labelledby="projet-title" className="scroll-mt-16 bg-white pt-4 pb-20">
+      {/* Non épinglé (demandé) : le titre défile normalement avec le reste
+          du chapitre au lieu de rester fixé en haut d'écran pendant le scroll. */}
       <SectionHeading
+        sticky={false}
         index="01"
         kicker="Le projet"
         id="projet-title"
