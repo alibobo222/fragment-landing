@@ -50,17 +50,18 @@ export function MaterialsIntro() {
               className="absolute bottom-3 right-3 z-10 h-11 w-11 mix-blend-multiply"
             />
           </div>
+          {/* Bandeau défilant — juste sous l'image des pots, AVANT sa légende
+              (demandé) : reste un enfant de `<figure>`, mais `figcaption`
+              demeure son dernier enfant, donc toujours reconnu comme la
+              légende de la figure (règle HTML : premier OU dernier enfant). */}
+          <div className="mt-3">
+            <MaterialsMarquee />
+          </div>
           <figcaption className="u-caption mt-3 px-[1.4rem]">
             — Échantillons · finitions issues de la gamme Wasterial® (matières
             recyclées). Chaque pièce garde ses variations naturelles.
           </figcaption>
         </figure>
-
-        {/* Bandeau défilant — juste sous l'image des pots, même rythme
-            d'espacement que celui qui sépare l'intro de cette figure. */}
-        <div className="mt-8">
-          <MaterialsMarquee />
-        </div>
       </div>
     </section>
   );

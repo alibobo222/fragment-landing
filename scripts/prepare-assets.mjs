@@ -74,13 +74,13 @@ const SWATCH_CROP_RATIO = 0.45;
  * entière (pas une fenêtre serrée comme les pastilles ci-dessus : ces photos
  * sont déjà proches de la taille d'affichage, pas de grain à préserver par
  * sur-échantillonnage). Deux largeurs, dimensionnées sur l'affichage réel du
- * bandeau (h-24/w-24 mobile → sm:h-32/sm:w-32 desktop, voir le composant) :
+ * bandeau (h-28/w-28 mobile → sm:h-36/sm:w-36 desktop, voir le composant) :
  * grandes assez pour rester nettes en Retina, jamais plus — la plus petite
  * source du lot (coquilles-de-moules, 282 px de côté utile) borne DESKTOP_W
  * pour ne jamais agrandir une photo au-delà de sa résolution native.
  */
-const MATERIALS_MOBILE_W = 180;
-const MATERIALS_DESKTOP_W = 260;
+const MATERIALS_MOBILE_W = 220;
+const MATERIALS_DESKTOP_W = 280;
 const materialsRawDir = join(root, "public", "images", "materials", "raw");
 const materialsOutDir = join(root, "public", "images", "materials");
 const MATERIAL_SLUGS = [

@@ -23,7 +23,7 @@ const SPEED_PX_PER_S = 40; // 35–45 px/s demandé.
 
 function SampleItem({ sample, lazy }: { sample: MaterialSample; lazy?: boolean }) {
   return (
-    <li className="w-24 shrink-0 snap-start sm:w-32">
+    <li className="w-28 shrink-0 snap-start sm:w-36">
       {/* Pas de libellé visible sous l'échantillon (demandé) — le nom reste
           un vrai texte pour autant : porté par `alt`, lu au clavier/lecteur
           d'écran quand l'échantillon reçoit le focus ou est parcouru. */}
@@ -35,10 +35,10 @@ function SampleItem({ sample, lazy }: { sample: MaterialSample; lazy?: boolean }
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={sample.image}
-        srcSet={`${materialMobileImage(sample.image)} 180w, ${sample.image} 260w`}
-        sizes="(min-width: 640px) 8rem, 6rem"
-        width={260}
-        height={260}
+        srcSet={`${materialMobileImage(sample.image)} 220w, ${sample.image} 280w`}
+        sizes="(min-width: 640px) 9rem, 7rem"
+        width={280}
+        height={280}
         alt={sample.alt}
         // La copie visible en premier peut être à l'écran dès l'arrivée sur
         // la section → chargement immédiat. La copie dupliquée pour la
