@@ -2,6 +2,7 @@ import Image from "next/image";
 import { Reveal } from "@/components/ui/Reveal";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { RevealImage } from "@/components/ui/motion";
+import { MaterialsMarquee } from "@/components/chapters/MaterialsMarquee";
 
 /**
  * Chapitre 3 — Ouverture « matières » : un visuel fort d'échantillons introduit
@@ -54,6 +55,12 @@ export function MaterialsIntro() {
             recyclées). Chaque pièce garde ses variations naturelles.
           </figcaption>
         </figure>
+
+        {/* Bandeau défilant — juste sous l'image des pots, même rythme
+            d'espacement que celui qui sépare l'intro de cette figure. */}
+        <div className="mt-8">
+          <MaterialsMarquee />
+        </div>
       </div>
     </section>
   );

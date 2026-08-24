@@ -335,4 +335,20 @@
       opacity: 1;
     }
   }
+
+  /* Bandeau d'échantillons (MaterialsMarquee) — le ruban contient deux copies
+     de la liste bout à bout ; translater d'exactement -50% de sa largeur
+     ramène pile au début de la seconde copie, identique à la première : la
+     boucle ne saute jamais. `transform` seul (jamais left/margin/scrollLeft
+     animés) : aucun recalcul de layout par image. Durée posée en variable
+     CSS par le composant (largeur mesurée du ruban ÷ vitesse constante), pas
+     ici — voir MaterialsMarquee.tsx. */
+  @keyframes materials-marquee {
+    from {
+      transform: translate3d(0, 0, 0);
+    }
+    to {
+      transform: translate3d(-50%, 0, 0);
+    }
+  }
 }
