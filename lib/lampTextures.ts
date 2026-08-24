@@ -1605,17 +1605,95 @@ export function createGrainMaterial(
                + texture2D(uGrainTex, vGrainPos.xz * uGrainScale).r * bw.y
                + texture2D(uGrainTex, vGrainPos.xy * uGrainScale).r * bw.z;
         }
+        // --- Échantillonnage stochastique hexagonal (ÉTAPE 3, retour
+        // « effet de patchwork ») -------------------------------------------
+        // Même une texture composite parfaitement raccordée (ÉTAPE 2) reste
+        // repérable à SA PÉRIODICITÉ : le même motif revient identique à
+        // chaque tuile. Ce bloc casse cette répétition en mélangeant, à
+        // chaque fragment, 3 tuiles hexagonales voisines de la MÊME texture,
+        // chacune avec un décalage et une rotation qui lui sont propres —
+        // hachés depuis SA SEULE coordonnée de tuile entière (hexHash),
+        // jamais depuis le temps, Math.random() ni un état de session :
+        // au même cadrage, toujours exactement les mêmes pixels.
+        //
+        // Repère hexagonal « pointy-top », grille au format canonique
+        // (redblobgames.com/grids/hexagons — coordonnées axiales, arrondi en
+        // coordonnées cube) : 1 unité de \`p\` (déjà à l'échelle
+        // uCompositeScale/uInteriorScale — la taille physique du motif n'est
+        // PAS touchée) ≈ un hexagone ≈ une répétition de la texture d'origine.
+        vec4 hexHash(vec2 p) {
+          vec2 q = vec2(dot(p, vec2(127.1, 311.7)), dot(p, vec2(269.5, 183.3)));
+          vec2 s = sin(q) * 43758.5453;
+          return fract(vec4(s.x, s.y, s.x + s.y * 0.5, s.y - s.x * 0.5));
+        }
+        vec2 hexCenter(vec2 id) {
+          return vec2((id.x + id.y * 0.5) * 1.7320508, id.y * 1.5);
+        }
+        vec2 hexNearestId(vec2 p) {
+          float j = p.y / 1.5;
+          float i = p.x / 1.7320508 - j * 0.5;
+          float x = i; float z = j; float y = -x - z;
+          float rx = floor(x + 0.5); float ry = floor(y + 0.5); float rz = floor(z + 0.5);
+          float dx = abs(rx - x); float dy = abs(ry - y); float dz = abs(rz - z);
+          if (dx > dy && dx > dz) { rx = -ry - rz; }
+          else if (dy > dz) { ry = -rx - rz; }
+          else { rz = -rx - ry; }
+          return vec2(rx, rz);
+        }
+        vec3 hexSample(sampler2D tex, vec2 p) {
+          vec2 id0 = hexNearestId(p);
+          vec2 c0 = hexCenter(id0);
+          vec2 bestId1 = id0; vec2 bestId2 = id0;
+          float bestD1 = 1.0e9; float bestD2 = 1.0e9;
+          vec2 nid; vec2 nc; float d;
+          nid = id0 + vec2(1.0, 0.0); nc = hexCenter(nid); d = distance(p, nc);
+          if (d < bestD1) { bestD2 = bestD1; bestId2 = bestId1; bestD1 = d; bestId1 = nid; }
+          else if (d < bestD2) { bestD2 = d; bestId2 = nid; }
+          nid = id0 + vec2(1.0, -1.0); nc = hexCenter(nid); d = distance(p, nc);
+          if (d < bestD1) { bestD2 = bestD1; bestId2 = bestId1; bestD1 = d; bestId1 = nid; }
+          else if (d < bestD2) { bestD2 = d; bestId2 = nid; }
+          nid = id0 + vec2(0.0, -1.0); nc = hexCenter(nid); d = distance(p, nc);
+          if (d < bestD1) { bestD2 = bestD1; bestId2 = bestId1; bestD1 = d; bestId1 = nid; }
+          else if (d < bestD2) { bestD2 = d; bestId2 = nid; }
+          nid = id0 + vec2(-1.0, 0.0); nc = hexCenter(nid); d = distance(p, nc);
+          if (d < bestD1) { bestD2 = bestD1; bestId2 = bestId1; bestD1 = d; bestId1 = nid; }
+          else if (d < bestD2) { bestD2 = d; bestId2 = nid; }
+          nid = id0 + vec2(-1.0, 1.0); nc = hexCenter(nid); d = distance(p, nc);
+          if (d < bestD1) { bestD2 = bestD1; bestId2 = bestId1; bestD1 = d; bestId1 = nid; }
+          else if (d < bestD2) { bestD2 = d; bestId2 = nid; }
+          nid = id0 + vec2(0.0, 1.0); nc = hexCenter(nid); d = distance(p, nc);
+          if (d < bestD1) { bestD2 = bestD1; bestId2 = bestId1; bestD1 = d; bestId1 = nid; }
+          else if (d < bestD2) { bestD2 = d; bestId2 = nid; }
+
+          float w0 = 1.0 / (0.0001 + distance(p, c0));
+          float w1 = 1.0 / (0.0001 + bestD1);
+          float w2 = 1.0 / (0.0001 + bestD2);
+          float wsum = w0 + w1 + w2;
+          w0 = w0 / wsum; w1 = w1 / wsum; w2 = w2 / wsum;
+
+          vec4 h0 = hexHash(id0);
+          vec4 h1 = hexHash(bestId1);
+          vec4 h2 = hexHash(bestId2);
+          float a0 = h0.z * 6.2831853; float a1 = h1.z * 6.2831853; float a2 = h2.z * 6.2831853;
+          mat2 r0 = mat2(cos(a0), -sin(a0), sin(a0), cos(a0));
+          mat2 r1 = mat2(cos(a1), -sin(a1), sin(a1), cos(a1));
+          mat2 r2 = mat2(cos(a2), -sin(a2), sin(a2), cos(a2));
+          vec2 uv0 = r0 * (p - c0) + h0.xy * 9.0;
+          vec2 uv1 = r1 * (p - hexCenter(bestId1)) + h1.xy * 9.0;
+          vec2 uv2 = r2 * (p - hexCenter(bestId2)) + h2.xy * 9.0;
+          return texture2D(tex, uv0).rgb * w0 + texture2D(tex, uv1).rgb * w1 + texture2D(tex, uv2).rgb * w2;
+        }
         vec3 compositeSample() {
           vec3 bw = triBlend();
-          return texture2D(uCompositeTex, vGrainPos.yz * uCompositeScale).rgb * bw.x
-               + texture2D(uCompositeTex, vGrainPos.xz * uCompositeScale).rgb * bw.y
-               + texture2D(uCompositeTex, vGrainPos.xy * uCompositeScale).rgb * bw.z;
+          return hexSample(uCompositeTex, vGrainPos.yz * uCompositeScale) * bw.x
+               + hexSample(uCompositeTex, vGrainPos.xz * uCompositeScale) * bw.y
+               + hexSample(uCompositeTex, vGrainPos.xy * uCompositeScale) * bw.z;
         }
         vec3 interiorSample() {
           vec3 bw = triBlend();
-          return texture2D(uInteriorTex, vGrainPos.yz * uInteriorScale).rgb * bw.x
-               + texture2D(uInteriorTex, vGrainPos.xz * uInteriorScale).rgb * bw.y
-               + texture2D(uInteriorTex, vGrainPos.xy * uInteriorScale).rgb * bw.z;
+          return hexSample(uInteriorTex, vGrainPos.yz * uInteriorScale) * bw.x
+               + hexSample(uInteriorTex, vGrainPos.xz * uInteriorScale) * bw.y
+               + hexSample(uInteriorTex, vGrainPos.xy * uInteriorScale) * bw.z;
         }`
       )
       .replace(
