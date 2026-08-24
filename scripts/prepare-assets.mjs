@@ -11,7 +11,7 @@
 import sharp from "sharp";
 import { mkdir, access, rm } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
-import { dirname, join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, "..");
@@ -246,14 +246,154 @@ async function prepareMaterialAssets() {
   }
 }
 
+/**
+ * Rend une texture composite RÉELLEMENT raccordable (ÉTAPE 2, retour
+ * utilisateur « supprimer l'effet de patchwork »).
+ *
+ * Source ORIGINALE, jamais modifiée : public/textures/raw/<fichier>. Cette
+ * fonction lit toujours depuis raw/ et écrit vers la racine (même nom, mêmes
+ * dimensions) — relancer le script ne composte donc jamais le résultat d'une
+ * exécution précédente.
+ *
+ * Deux passes, dans cet ordre :
+ *
+ *   1. APLATIT LA LUMIÈRE (dérive basse fréquence de LUMINANCE seulement,
+ *      chrominance intacte) : une carte basse fréquence de la luminance est
+ *      obtenue par flou gaussien large ; chaque pixel est ramené à
+ *      Y' = Y − (Yflou − Yflou_moyen), et R,G,B sont remis à l'échelle par
+ *      Y'/Y (préserve la teinte). C'est le facteur n°1 de visibilité d'une
+ *      répétition : une photo éclairée d'un côté trahit sa tuile même bords
+ *      raccordés.
+ *
+ *   2. RACCORDE LES BORDS SANS MIROIR (« décalage d'une demi-tuile puis
+ *      reprise de la couture apparue au centre ») : `shifted` est l'image
+ *      décalée de (W/2, H/2) avec repli circulaire — ses propres bords sont
+ *      donc le CENTRE de l'original, continu par construction. Le résultat
+ *      final mélange `flat` et `shifted` avec un poids cosinus surélevé
+ *      PÉRIODIQUE (mask(0) = 0, mask(W/2) = 1) : aux bords, le résultat vaut
+ *      `shifted` (continu) ; au centre, `flat` (l'image d'origine, intacte
+ *      là où c'est déjà bon). Deux copies TRANSLATÉES de la même image,
+ *      jamais retournées : aucune symétrie en papillon possible. Le mélange
+ *      d'un poids périodique entre deux images elles-mêmes périodiques (par
+ *      construction du repli) est mathématiquement garanti raccordable —
+ *      pas une approximation visuelle.
+ *
+ * Déterministe : aucune source d'aléa, uniquement des opérations
+ * arithmétiques sur les pixels d'entrée.
+ */
+async function makeSeamlessTexture(rawPath, outPath) {
+  const img = sharp(rawPath);
+  const meta = await img.metadata();
+  const { width: w, height: h } = meta;
+  const { data: buf, info } = await img.raw().toBuffer({ resolveWithObject: true });
+  const channels = info.channels; // 3 (RGB) ou 4 (RGBA) selon la source
+
+  // --- 1. Aplatissement de la dérive basse fréquence de luminance ---
+  const sigma = Math.max(4, Math.min(w, h) / 5);
+  const { data: blurBuf } = await sharp(rawPath)
+    .blur(sigma)
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+
+  const lum = (i) => 0.299 * buf[i] + 0.587 * buf[i + 1] + 0.114 * buf[i + 2];
+  const lumBlur = (i) => 0.299 * blurBuf[i] + 0.587 * blurBuf[i + 1] + 0.114 * blurBuf[i + 2];
+
+  let meanYBlur = 0;
+  const N = w * h;
+  for (let p = 0; p < buf.length; p += channels) meanYBlur += lumBlur(p);
+  meanYBlur /= N;
+
+  const flat = Buffer.alloc(buf.length);
+  for (let p = 0; p < buf.length; p += channels) {
+    const Y = lum(p);
+    const Yb = lumBlur(p);
+    const Yprime = Y - (Yb - meanYBlur);
+    const ratio = Y > 1 ? Math.max(0, Yprime) / Y : 1;
+    flat[p] = Math.max(0, Math.min(255, buf[p] * ratio));
+    flat[p + 1] = Math.max(0, Math.min(255, buf[p + 1] * ratio));
+    flat[p + 2] = Math.max(0, Math.min(255, buf[p + 2] * ratio));
+    if (channels === 4) flat[p + 3] = buf[p + 3];
+  }
+
+  // --- 2. Tuilage sans couture (décalage d'une demi-tuile + reprise) ---
+  const idx = (x, y) => (((y % h) + h) % h) * w * channels + (((x % w) + w) % w) * channels;
+  const shifted = Buffer.alloc(flat.length);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const src = idx(x + Math.floor(w / 2), y + Math.floor(h / 2));
+      const dst = idx(x, y);
+      for (let c = 0; c < channels; c++) shifted[dst + c] = flat[src + c];
+    }
+  }
+  const raisedCos = (t, period) => 0.5 - 0.5 * Math.cos((2 * Math.PI * t) / period);
+  const tileable = Buffer.alloc(flat.length);
+  for (let y = 0; y < h; y++) {
+    const my = raisedCos(y, h);
+    for (let x = 0; x < w; x++) {
+      const mx = raisedCos(x, w);
+      const mask = mx * my; // 0 aux bords (x=0 ou y=0), 1 au centre
+      const p = idx(x, y);
+      for (let c = 0; c < channels; c++) {
+        tileable[p + c] = Math.round(flat[p + c] * mask + shifted[p + c] * (1 - mask));
+      }
+    }
+  }
+
+  const out = sharp(tileable, { raw: { width: w, height: h, channels } });
+  const ext = outPath.toLowerCase().split(".").pop();
+  if (ext === "png") await out.png({ compressionLevel: 9 }).toFile(outPath);
+  else if (ext === "jpg" || ext === "jpeg") await out.jpeg({ quality: 92 }).toFile(outPath);
+  else if (ext === "webp") await out.webp({ quality: 90 }).toFile(outPath);
+  else throw new Error(`Format non géré pour ${outPath}`);
+  console.log("raccordable →", outPath);
+}
+
+/** Textures composites concernées (ÉTAPE 2) — toutes celles qui pilotent le
+ *  rendu 3D via COMPOSITE dans lib/lampTextures.ts, plus les deux placages
+ *  intérieurs (bois config 01, Renature config 02). Même liste que le
+ *  diagnostic (voir le rapport ÉTAPE 1) : chacune montre une discontinuité de
+ *  bord mesurable dans son état d'origine. */
+export const SEAMLESS_TEXTURES = [
+  "brique.png",
+  "coquilles-huitres.png",
+  "verre-bouteille.png",
+  "westerial-coquilles-moules.png",
+  "verre-bleu.png",
+  "beton-bleute.png",
+  "travertin.png",
+  "tole-acier-corten.jpg",
+  "douille-metal-rouille.png",
+  "sable-fonderie.png",
+  "placage-bois.webp",
+  "renature.webp",
+];
+
+async function prepareSeamlessTextures() {
+  const rawDir = join(texturesDir, "raw");
+  for (const name of SEAMLESS_TEXTURES) {
+    const rawPath = join(rawDir, name);
+    if (!(await exists(rawPath))) {
+      console.warn(`  ⚠ original manquant sous raw/, ignoré : ${rawPath}`);
+      continue;
+    }
+    await makeSeamlessTexture(rawPath, join(texturesDir, name));
+  }
+}
+
 async function run() {
   await prepareBoardAssets();
+  await prepareSeamlessTextures();
   await prepareTextureAssets();
   await prepareMaterialAssets();
   console.log("\nAssets générés avec succès.");
 }
 
-run().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+// Ne s'exécute que lancé directement (`npm run assets`), jamais quand ce
+// module est IMPORTÉ pour SEAMLESS_TEXTURES (voir tests/texture-seams.test.ts)
+// — sinon charger le test relancerait tout le pipeline d'assets à chaque run.
+if (fileURLToPath(import.meta.url) === resolve(process.argv[1] ?? "")) {
+  run().catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
+}
