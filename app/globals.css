@@ -314,6 +314,46 @@
     border-radius: 999px;
   }
 
+  /* Variantes OPAQUES — configurateur 3D uniquement (LampPowerButton et
+     PerforationControl, components/lamp/LampStage.tsx) : le câble de la
+     lampe doit disparaître SOUS ces contrôles pendant la rotation, jamais
+     transparaître à travers un fond translucide ou un flou de fond. Classes
+     séparées plutôt que modification de .btn-glass-icon (partagée avec le
+     bouton menu de SiteHeader) — .btn-glass-group/-segment n'ont aucun autre
+     consommateur, mais gardées séparées par cohérence et pour ne changer QUE
+     le remplissage : padding, gap, rayon, ombre, bordure viennent toujours
+     des classes de base ci-dessus, intactes. Seuls `background` et
+     `backdrop-filter` sont redéfinis ; mêmes tokens que l'état visé
+     (`--color-paper` remplace le blanc translucide, `--color-ink` remplace
+     le noir translucide — même teinte, opacité 100 % au lieu de 55–92 %).
+     `color-mix()` pour les survols : la seule façon de rester visiblement
+     DISTINCTE de l'état repos/actif tout en ne dérivant que de tokens
+     existants, sans valeur en dur ni retour à une transparence qui
+     laisserait deviner la scène 3D pendant le survol. */
+  .btn-glass-icon-opaque {
+    background: var(--color-paper);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  .btn-glass-icon-opaque:hover {
+    background: color-mix(in srgb, var(--color-ink) 6%, var(--color-paper));
+  }
+  .btn-glass-icon-opaque[data-active="true"] {
+    background: var(--color-ink);
+  }
+  .btn-glass-icon-opaque[data-active="true"]:hover {
+    background: color-mix(in srgb, var(--color-paper) 12%, var(--color-ink));
+  }
+
+  .btn-glass-group-opaque {
+    background: var(--color-paper);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  .btn-glass-group-opaque .btn-glass-segment[data-active="true"] {
+    background: var(--color-ink);
+  }
+
   .hero-scroll-line {
     transform-origin: top center;
   }

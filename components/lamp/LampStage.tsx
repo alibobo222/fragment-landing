@@ -219,7 +219,7 @@ function LampPowerButton({ on, onToggle }: { on: boolean; onToggle: () => void }
       aria-pressed={on}
       title={label}
       data-active={on}
-      className="btn-glass btn-glass-icon inline-flex h-11 w-11 items-center justify-center"
+      className="btn-glass btn-glass-icon btn-glass-icon-opaque inline-flex h-11 w-11 items-center justify-center"
     >
       <BulbIcon on={on} />
     </motion.button>
@@ -242,7 +242,7 @@ function PerforationControl({
   onSelect: (shape: PerforationShape) => void;
 }) {
   return (
-    <div role="group" aria-label="Perforation de l'assemblage" className="btn-glass-group">
+    <div role="group" aria-label="Perforation de l'assemblage" className="btn-glass-group btn-glass-group-opaque">
       {perforationOptions.map((o) => (
         <TempOption
           key={o.value}
