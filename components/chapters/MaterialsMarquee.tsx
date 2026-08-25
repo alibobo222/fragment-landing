@@ -59,7 +59,13 @@ function ManualStrip() {
     <div
       role="region"
       aria-label="Échantillons de la gamme Wasterial®"
-      className="u-bleed overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      // PAS de u-bleed ici : ce bandeau est déjà rendu à l'intérieur de
+      // <figure className="u-bleed"> (MaterialsIntro.tsx), qui a déjà annulé
+      // la gouttière de .u-container une fois. Un second u-bleed cumulerait
+      // deux marges négatives et ferait déborder le bandeau de 1,4rem
+      // (22,4px) de chaque côté au-delà du bord réel de la page — largeur
+      // pleine héritée du parent, pas recalculée ici.
+      className="overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
     >
       <ul className="flex snap-x snap-mandatory">
         {materials.map((m) => (
@@ -122,8 +128,11 @@ export function MaterialsMarquee() {
       tabIndex={0}
       // Coupe franche sur les deux bords (pas de dégradé de fondu) — le
       // ruban sort du conteneur de texte et touche les deux bords de l'écran
-      // (app-shell), comme l'image des pots juste au-dessus.
-      className="u-bleed relative overflow-hidden focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ink"
+      // (app-shell), comme l'image des pots juste au-dessus. PAS de u-bleed
+      // ici (voir le commentaire de ManualStrip, même raison) : ce cadre
+      // hérite déjà la pleine largeur de <figure className="u-bleed">, il
+      // n'a qu'à la remplir et la rogner (overflow-hidden), pas la recréer.
+      className="relative overflow-hidden focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ink"
       // Pause au survol, au focus clavier ET au toucher (:hover/:focus-within
       // ne suffisent pas seuls : le tactile ne déclenche ni l'un ni l'autre,
       // d'où ces gestionnaires plutôt qu'un pur CSS).
