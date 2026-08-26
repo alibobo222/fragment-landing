@@ -69,6 +69,36 @@ if (!MANIFEST_ONLY) {
   });
 
   const shots = [];
+  /**
+   * ÉCHAUFFEMENT — un premier montage dont la capture part à la poubelle.
+   *
+   * Le tout PREMIER contexte WebGL de la session est systématiquement perdu
+   * ("THREE.WebGLRenderer: Context Lost.") le temps que SwiftShader — le
+   * rasteriseur logiciel de Chromium headless, seul disponible ici — finisse
+   * de se mettre en route : la compilation des shaders composites, nettement
+   * plus lourds depuis l'échantillonnage hexagonal, dépasse ce qu'il encaisse
+   * à froid. Le contexte suivant est sain, et tous ceux d'après le restent.
+   *
+   * Sans ce tour de chauffe, la première configuration ressortait BLANCHE —
+   * et comme c'est justement elle qui mesure le cadrage commun imposé aux
+   * six, le script mourait sur une fenêtre négative (sharp: "Expected integer
+   * ... received -1191") au lieu de produire des vignettes.
+   *
+   * Le résultat est jeté volontairement : rien de ce tour ne doit influencer
+   * le cadrage ni les pixels finaux.
+   */
+  await page.goto(`${BASE}/packshot/?v=${encodeURIComponent(ids[0])}`, {
+    waitUntil: "networkidle",
+    timeout: 90000,
+  });
+  await page
+    .waitForFunction(() => document.documentElement.dataset.packshotReady === "1", null, {
+      timeout: 90000,
+    })
+    .catch(() => {});
+  await page.waitForTimeout(1500);
+  await page.screenshot({ omitBackground: false });
+
   for (const id of ids) {
     await page.goto(`${BASE}/packshot/?v=${encodeURIComponent(id)}`, {
       waitUntil: "networkidle",
