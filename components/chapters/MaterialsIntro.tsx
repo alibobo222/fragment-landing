@@ -23,14 +23,17 @@ export function MaterialsIntro() {
         title="La forme est constante. La matière change tout."
       />
       <div className="u-container">
+        {/* Un seul Reveal pour les trois paragraphes (pas un par paragraphe) —
+            même convention que le reste du site (ProjectStory, Details,
+            ContactSection…) : un bloc de texte descriptif se révèle comme UNE
+            unité. Trois Reveal séparés en cascade donnait un effet de surplus
+            sur une zone de simple lecture, corrigé ici. */}
         <Reveal delay={0.05}>
           <p className="mt-1 max-w-[50ch] text-sm leading-relaxed text-ink-soft">
             La lampe est fabriquée principalement à partir de Wasterial®
             d&apos;Etnisi, des matériaux composés de matières usagées et
             revalorisées : béton, pierre, brique, verre, sable…
           </p>
-        </Reveal>
-        <Reveal delay={0.1}>
           <p className="mt-3 max-w-[50ch] text-sm leading-relaxed text-ink-soft">
             Chaque matériau conserve quelque chose de son origine et lui
             donne sa propre couleur, son grain et sa texture. La forme reste
@@ -39,8 +42,6 @@ export function MaterialsIntro() {
             supplémentaires permettent ensuite de personnaliser et
             d&apos;enrichir chaque composition.
           </p>
-        </Reveal>
-        <Reveal delay={0.15}>
           <p className="mt-3 max-w-[50ch] text-sm leading-relaxed text-ink">
             Une même forme. Des possibilités multiples.
           </p>
