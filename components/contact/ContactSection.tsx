@@ -20,12 +20,19 @@ export function ContactSection() {
       aria-labelledby="contact-title"
       className="scroll-mt-16 border-t border-ink bg-white pt-4 pb-20"
     >
-      <SectionHeading
-        index="05"
-        kicker="Prendre contact"
-        id="contact-title"
-        title="Échangeons autour du projet."
-      />
+      {/* Non épinglé (demandé) : le titre défile normalement avec le reste
+          du chapitre. La révélation au scroll (même Reveal que le corps de
+          section, juste en-dessous) crée le point de repère qui remplaçait
+          l'épinglage — un temps d'arrêt à l'arrivée, pas un titre qui suit. */}
+      <Reveal>
+        <SectionHeading
+          sticky={false}
+          index="05"
+          kicker="Prendre contact"
+          id="contact-title"
+          title="Échangeons autour du projet."
+        />
+      </Reveal>
       <div className="u-container">
         <Reveal delay={0.05}>
           <p className="mt-1 max-w-[50ch] text-sm leading-relaxed text-ink-soft">
