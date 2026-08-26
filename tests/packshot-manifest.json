@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-23T15:07:05.345Z",
+  "generatedAt": "2026-08-26T21:37:35.780Z",
   "ids": [
     "prototype-noir-cable-bleu",
     "porcelaine-acier-noir",
@@ -8,7 +8,7 @@
     "coquille-laiton",
     "verre-bleu-acier-anodise"
   ],
-  "hash": "072e6bbe01fa30fe428f156c00b4b99d4deed58ba02bd6c240d071b9bc18823b",
+  "hash": "e80a9ba84e428f98e926de042b4f5f8919eef37f4e4cec7876dc54d3c425b3ca",
   "files": [
     {
       "path": "app/packshot/page.tsx",
@@ -16,7 +16,7 @@
     },
     {
       "path": "components/hero/Lamp3D.tsx",
-      "sha256": "108057bbc22127fb10daab52d7e305e5029040cbc73159e2ef59b67ef0ffc1dc"
+      "sha256": "15481697e1e60f4d3887b9e549aa8da8575705a4b6ea9c85d65e1ad00d7d0262"
     },
     {
       "path": "components/packshot/Packshot.tsx",
@@ -36,63 +36,63 @@
     },
     {
       "path": "lib/lampTextures.ts",
-      "sha256": "7ac6bed6de9594de80d3077c334ea05c2ccf2026b83eb93cc1c354a7382b45f0"
+      "sha256": "72a42c2fb4e731f189716d869fff60e8fd96daf1d1bfcc91d181cebff35b82f2"
     },
     {
       "path": "public/models/lampe-optimisee.glb",
-      "sha256": "6de7f5f102d0ab3170c559680459060ab55e3a6d4aa0667220fff3fc73ecc7ce"
+      "sha256": "1613186c28e70851b4ff64ba4cfd2f0cecd4a964c878f98ca101e5a5a71a6f2c"
     },
     {
       "path": "public/textures/beton-bleute.png",
-      "sha256": "2fd0a65cf24c7c7d2e82ca90cab0323c455fbf31df53edbe74fd064c327ace12"
+      "sha256": "9e79435d95bd5e9e5a4d1e64b17f23891e45f5ca56d3f76083c9143dc9e5d2fd"
     },
     {
       "path": "public/textures/brique.png",
-      "sha256": "3fff41c6d85c58c7f87a86085636f42ebb3f443960d56335a7c032188ba2486f"
+      "sha256": "0878d00387cef4e3592da255fc6dc6448215a6252f86c86e04be346d7c5f131f"
     },
     {
       "path": "public/textures/coquilles-huitres.png",
-      "sha256": "4f2625c9e18131fd53bffad18533694e0f7ef2d089ed91230478a01007c6fec8"
+      "sha256": "6d4f190f9eecee5bfac042e19b7aa50f76febc0a68f173a9a7386558803229d6"
     },
     {
       "path": "public/textures/douille-metal-rouille.png",
-      "sha256": "948eaf706d2dfb76804da4bde88a18f193b906b87a1f245dd97ab3d8c37ab9e9"
+      "sha256": "5af3e6b90e7c7b82885ca50e0e131372dffabcac1e3696615da755d168145eef"
     },
     {
       "path": "public/textures/placage-bois.webp",
-      "sha256": "7d355e04cbafdd1a867ee9ffa088a46b3eb9d504a559d56d6a03f060c2e55ead"
+      "sha256": "db07d2121311c6d0920e944be7ae93b6bf0c35be8775d011ac005500f6986396"
     },
     {
       "path": "public/textures/renature.webp",
-      "sha256": "28ec238a056a500eebb81ed1bf7f347b64f6d0105f79bdaef44858344085b9c5"
+      "sha256": "d07baabdd0bd7362f0ed9b304076ec30f00196128783cf4867eda056602d8f38"
     },
     {
       "path": "public/textures/sable-fonderie.png",
-      "sha256": "ab1ed2b4e0dcfb7a1c439b7fcbdf70638c62f923b66bf650e848a86d0f82d4fc"
+      "sha256": "3356eec75c575f2a0df84f892d51351f2e7b6886f1eaeca2b50b1f3d64e3fa55"
     },
     {
       "path": "public/textures/tole-acier-corten.jpg",
-      "sha256": "15619d3423d7eb8ba923cf964b3e3c0d07f2670eae43951e4d248e4d82c1d0b2"
+      "sha256": "1dae7c28c6be52c1c83a70ad689358d62a376dabf4f68c7f23ff3b7c40bf9d12"
     },
     {
       "path": "public/textures/travertin.png",
-      "sha256": "1ff59a5b85d26215138de3147c6fd216b29d909dcfeeaf4379d649dd2ff75682"
+      "sha256": "4c46fc5fce860a0e409b83126a9c4a3aff2df9ab77c35f354f62bc0da48d27c6"
     },
     {
       "path": "public/textures/verre-bleu.png",
-      "sha256": "6b7d9ab6e405359fbfb9ead4127a183c069a4b61a57c25766f632fc678a8128d"
+      "sha256": "71e0ebb17b9937ed7972d777aa7dd6cbb57ec06f9f22a0d2db10c7c4b4ce76c5"
     },
     {
       "path": "public/textures/verre-bouteille.png",
-      "sha256": "4065c9421c30dc50571a773c871b6d177de3fd053da21379eb9c1375aab14e5b"
+      "sha256": "30061cab05a85a1b05885ed0ae34c3c48515cc7639b59abf6b102bea9b426bb5"
     },
     {
       "path": "public/textures/westerial-coquilles-moules.png",
-      "sha256": "86d5228ea8a697b9efca0c6042c346fb634921838b6e58eabf86943dd77a70ee"
+      "sha256": "11eb0ffee8175383a6104c57cafa1f6e8ffabbcf808767bb3cb52ce6c9c42509"
     },
     {
       "path": "scripts/render-packshots.mjs",
-      "sha256": "4410c34e58506cedb84b4111966044e43318975640ebc0c1863fc6761daa46d7"
+      "sha256": "b5f600cfbb760ede7cb934b3ddd15fec886c0e59675b418f640ac2bad715e3ae"
     }
   ]
 }
