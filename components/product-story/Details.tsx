@@ -11,7 +11,10 @@ import { composer } from "@/lib/typographie";
  * commerciale.
  */
 export function Details() {
-  const specs = productSpecs.filter((spec) => spec.value !== null);
+  // Un champ sans valeur reste masqué — on n'affiche pas une ligne vide. Sauf
+  // s'il est marqué `pending` : la donnée est demandée à l'atelier, et le dire
+  // vaut mieux que de laisser croire qu'elle n'existe pas.
+  const specs = productSpecs.filter((spec) => spec.value !== null || spec.pending);
   return (
     <section id="details" aria-labelledby="details-title" className="scroll-mt-16 bg-white pt-4 pb-20">
       {/* Non épinglé (demandé) : le titre défile normalement avec le reste
@@ -40,7 +43,13 @@ export function Details() {
                 <dt className="u-mono shrink-0 text-[0.72rem] uppercase tracking-[0.12em] text-ink-muted">
                   {composer(spec.label)}
                 </dt>
-                <dd className="u-mono text-right text-[0.82rem] text-ink">{composer(spec.value ?? "")}</dd>
+                <dd
+                  className={`u-mono text-right text-[0.82rem] ${
+                    spec.value === null ? "text-ink-muted" : "text-ink"
+                  }`}
+                >
+                  {spec.value === null ? "En attente de l’atelier" : composer(spec.value)}
+                </dd>
               </div>
             ))}
           </dl>
