@@ -53,7 +53,12 @@ export function Details() {
               </div>
             ))}
           </dl>
-          <p className="mt-6 max-w-[36ch] text-sm leading-relaxed text-ink-muted">
+          {/* Information secondaire : elle commente la fiche, elle ne la
+              complète pas. Corps réduit et italique la mettent au rang de
+              note, et le rapprochement la rattache au tableau qu'elle
+              commente — l'espace plus large qui la suit revient au bouton,
+              qui est une action, pas une suite de lecture. */}
+          <p className="mt-3 max-w-[36ch] text-xs italic leading-relaxed text-ink-muted">
             Certaines caractéristiques (poids, source lumineuse,
             alimentation) sont précisées au cas par cas selon la configuration,
             lors de votre prise de contact.
