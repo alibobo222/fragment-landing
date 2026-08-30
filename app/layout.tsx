@@ -65,10 +65,14 @@ export const metadata: Metadata = {
     description,
     images: [
       {
-        url: `${basePath}/images/og.webp`,
+        url: `${basePath}/images/og/noir-mineral.jpg`,
         width: 1200,
         height: 630,
-        alt: "La lampe sculpturale Noir Minéral.",
+        // JPEG volontaire, PAS de WebP : plusieurs plateformes d'aperçu ne
+        // savent pas le rendre et l'image disparaîtrait de la carte.
+        type: "image/jpeg",
+        alt:
+          "Lampe de table Noir Minéral : abat-jour incliné en acier noirci, grille perforée apparente, douille inox et câble textile bleu, sur pied cylindrique.",
       },
     ],
   },
@@ -76,7 +80,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title,
     description,
-    images: [`${basePath}/images/og.webp`],
+    images: [`${basePath}/images/og/noir-mineral.jpg`],
   },
   robots: { index: true, follow: true },
   icons: {
