@@ -6,6 +6,7 @@ import { MaterialsIntro } from "@/components/chapters/MaterialsIntro";
 import { Configurator } from "@/components/configurator/Configurator";
 import { Details } from "@/components/product-story/Details";
 import { ContactSection } from "@/components/contact/ContactSection";
+import { PrechargementLampe } from "@/components/PrechargementLampe";
 import { SiteFooter } from "@/components/SiteFooter";
 
 /**
@@ -20,6 +21,11 @@ export default function Home() {
         <SiteHeader />
         <main>
           {/* Découvrir */}
+          {/* Ne rend rien : télécharge et analyse le modèle 3D en temps mort,
+              pendant la lecture du haut de page. Supprime l'attente devant un
+              configurateur vide en données mobiles — le cas d'arrivée par QR
+              code. Aucun contexte WebGL ouvert ici. */}
+          <PrechargementLampe />
           <Hero />
           {/* Comprendre */}
           <ProjectStory />
