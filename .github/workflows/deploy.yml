@@ -1,11 +1,22 @@
 name: Déploiement GitHub Pages
 
-# Vérifie types, lint et tests sur chaque pull request ET chaque push sur la
-# branche principale ; ne déploie sur GitHub Pages que dans ce second cas (voir
-# le `if` du job deploy) — une pull request valide son code sans jamais publier.
+# Vérifie types, lint et tests sur chaque pull request.
+# ⚠️ DÉPLOIEMENT SUSPENDU — 27/08/2026
+#
+# Le site publié plantait entièrement : les assets chargés HORS de Next (GLB,
+# textures, images de public/) sont écrits en chemins absolus, sans basePath.
+# Sous /fragment-landing/ ils répondaient 404 ; useGLTF levait, aucune barrière
+# d'erreur ne l'attrapait, et React démontait toute la page — plus de site du
+# tout dès qu'on approchait du configurateur.
+#
+# Le déclencheur `push` est retiré pour qu'aucun déploiement ne reparte tant que
+# les chemins ne sont pas corrigés. La validation sur pull request reste active :
+# on continue de vérifier le code, on cesse seulement de le publier.
+#
+# POUR REDÉPLOYER : remettre les deux lignes `push:` / `branches:` ci-dessous.
+# Le job `deploy` exige `github.event_name == 'push'`, il ne peut donc pas
+# partir par `workflow_dispatch` — la suspension ne dépend pas d'un oubli.
 on:
-  push:
-    branches: [main, master]
   pull_request:
   workflow_dispatch:
 
