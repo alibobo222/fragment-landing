@@ -32,14 +32,22 @@ export interface SpecField {
   pending?: boolean;
 }
 
+/**
+ * L'ORDRE EST LA HIÉRARCHIE. La liste se lit de haut en bas, du plus général au
+ * plus particulier, en cinq temps : ce que c'est, combien ça mesure, de quoi
+ * c'est fait, comment ça s'allume, comment ça se fabrique. C'est l'ordre dans
+ * lequel on découvre un objet qu'on a devant soi.
+ *
+ * Insérer un champ ailleurs que dans son groupe casse cette lecture : le câble
+ * figurait en troisième position, avant même les dimensions, et « Fabrication »
+ * se glissait entre deux caractéristiques physiques.
+ */
 export const productSpecs: SpecField[] = [
-  // Renseignés à partir des visuels fournis (observables) :
+  // — CE QUE C'EST
   { key: "type", label: "Type", value: "Lampe de table sculpturale" },
-  { key: "assembly", label: "Structure", value: "Trois volumes assemblés (abat-jour, pièce métallique, pied)" },
-  { key: "cable", label: "Câble textile", value: "Gaine tissée (couleur selon configuration)" },
-  { key: "unique", label: "Fabrication", value: "Pièce d'atelier, assemblage manuel" },
 
-  // TODO — à renseigner par l'atelier, ne pas inventer :
+  // — COMBIEN ÇA MESURE
+  //
   // Mesuré sur public/models/lampe-optimisee.glb (boîte englobante, câble
   // exclu — déployé, il porte la largeur à 50,9 cm et ne décrit plus l'objet).
   // Le résultat est stable qu'on retire ou non l'ampoule, intérieure à
@@ -48,13 +56,27 @@ export const productSpecs: SpecField[] = [
   // Ce chiffre vient de la CAO, pas d'un mètre posé sur l'objet fini : à
   // remplacer par la mesure de l'atelier dès qu'elle est disponible.
   { key: "dimensions", label: "Dimensions", value: "H 20 × l 22 × P 16 cm (hors câble)" },
+  { key: "weight", label: "Poids", value: null, pending: true }, // TODO: poids en kg
+
+  // — DE QUOI C'EST FAIT
+  { key: "assembly", label: "Structure", value: "Trois volumes assemblés (abat-jour, pièce métallique, pied)" },
+  {
+    key: "cable",
+    label: "Câble textile",
+    // Section des conducteurs et diamètre extérieur, donnés par l'atelier.
+    value: "Gaine tissée, 2 × 0,75 mm², Ø 6 mm (couleur selon configuration)",
+  },
+
+  // — COMMENT ÇA S'ALLUME
   {
     key: "light",
     label: "Source lumineuse",
     value: "Culot E27 — ampoule recommandée à 4 000 K",
   }, // TODO: puissance en watts (culot et température de couleur déjà connus)
   { key: "power", label: "Alimentation", value: null }, // TODO: tension / interrupteur / prise
-  { key: "weight", label: "Poids", value: null, pending: true }, // TODO: poids en kg
+
+  // — COMMENT ÇA SE FABRIQUE
+  { key: "unique", label: "Fabrication", value: "Pièce d'atelier, assemblage manuel" },
   // Volontairement laissé vide : aucun délai de fabrication n'est communiqué
   // au public — ne pas « compléter » ce champ par zèle.
   { key: "leadTime", label: "Délai", value: null },

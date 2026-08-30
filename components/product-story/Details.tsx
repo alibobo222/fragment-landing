@@ -54,7 +54,7 @@ export function Details() {
             ))}
           </dl>
           <p className="mt-6 max-w-[36ch] text-sm leading-relaxed text-ink-muted">
-            Certaines caractéristiques (dimensions, source lumineuse,
+            Certaines caractéristiques (poids, source lumineuse,
             alimentation) sont précisées au cas par cas selon la configuration,
             lors de votre prise de contact.
           </p>
