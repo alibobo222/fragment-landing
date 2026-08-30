@@ -19,10 +19,10 @@ export default function MentionsLegales() {
       </ul>
       <p>
         Les éditeurs interviennent à titre non professionnel. À ce titre, et
-        conformément à l&apos;article 6, III, 2° de la loi n° 2004-575 du 21 juin
-        2004 pour la confiance dans l&apos;économie numérique, leurs coordonnées
+        conformément à l’article 6, III, 2° de la loi n° 2004-575 du 21 juin
+        2004 pour la confiance dans l’économie numérique, leurs coordonnées
         personnelles ne sont pas rendues publiques ; leur identité est tenue à la
-        disposition de l&apos;hébergeur.
+        disposition de l’hébergeur.
       </p>
       <p>
         <strong className="font-medium text-ink">
@@ -36,7 +36,7 @@ export default function MentionsLegales() {
       </p>
       <p>
         Aucune immatriculation au registre du commerce et des sociétés ni au
-        répertoire des métiers : le projet n&apos;a pas d&apos;activité
+        répertoire des métiers : le projet n’a pas d’activité
         commerciale.
       </p>
 
@@ -57,13 +57,13 @@ export default function MentionsLegales() {
       <p>
         FRAGMENT — Noir Minéral est un projet de design présentant une lampe de
         table sculpturale réalisée en matières recyclées. Une part de la matière
-        première provient de la gamme Wasterial® d&apos;ETNISI. ETNISI n&apos;est
-        pas éditeur de ce site et n&apos;intervient pas dans sa publication.
+        première provient de la gamme Wasterial® d’ETNISI. ETNISI n’est
+        pas éditeur de ce site et n’intervient pas dans sa publication.
       </p>
       <p>
         Le site est un site de présentation. Il ne propose aucune vente, aucun
         paiement, aucune prise de commande. Le formulaire de contact permet
-        uniquement d&apos;ouvrir un échange autour du projet.
+        uniquement d’ouvrir un échange autour du projet.
       </p>
 
       <TitreRubrique>Propriété intellectuelle</TitreRubrique>
@@ -91,7 +91,7 @@ export default function MentionsLegales() {
       <TitreRubrique>Signalement</TitreRubrique>
       <p>
         Toute remarque relative au contenu de ce site peut être adressée à
-        l&apos;adresse de contact indiquée plus haut.
+        l’adresse de contact indiquée plus haut.
       </p>
     </PageLegale>
   );

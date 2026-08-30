@@ -189,8 +189,8 @@ export function ContactForm() {
           className="mt-1 h-4 w-4 shrink-0 accent-[var(--accent)]"
         />
         <label htmlFor={ids.consent} className="text-sm leading-snug text-ink-soft">
-          J&apos;accepte d&apos;être recontacté(e) au sujet de ce message. Mes
-          données ne servent qu&apos;à cet échange.
+          J’accepte d’être recontacté(e) au sujet de ce message. Mes
+          données ne servent qu’à cet échange.
         </label>
       </div>
       {errors.consent && (
@@ -223,7 +223,7 @@ export function ContactForm() {
         Votre prénom, votre e-mail et votre message sont enregistrés par les
         éditeurs du site dans le seul but de vous répondre. Ils sont conservés
         trois ans après notre dernier échange, ne sont transmis à personne
-        d&apos;autre que nos prestataires techniques, et ne servent à aucune
+        d’autre que nos prestataires techniques, et ne servent à aucune
         prospection. Vous pouvez demander leur suppression à tout moment. En
         savoir plus :{" "}
         <a href="/confidentialite/" className="underline underline-offset-2 hover:text-ink">

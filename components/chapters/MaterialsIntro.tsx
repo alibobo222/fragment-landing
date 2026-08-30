@@ -31,16 +31,16 @@ export function MaterialsIntro() {
         <Reveal delay={0.05}>
           <p className="mt-1 max-w-[50ch] text-sm leading-relaxed text-ink-soft">
             La lampe est fabriquée principalement à partir de Wasterial®
-            d&apos;Etnisi, des matériaux composés de matières usagées et
+            d’Etnisi, des matériaux composés de matières usagées et
             revalorisées : béton, pierre, brique, verre, sable…
           </p>
           <p className="mt-3 max-w-[50ch] text-sm leading-relaxed text-ink-soft">
             Chaque matériau conserve quelque chose de son origine et lui
             donne sa propre couleur, son grain et sa texture. La forme reste
             la même, mais les combinaisons de couleurs et de textures lui
-            donnent des expressions différentes. Des pièces d&apos;assemblage
+            donnent des expressions différentes. Des pièces d’assemblage
             supplémentaires permettent ensuite de personnaliser et
-            d&apos;enrichir chaque composition.
+            d’enrichir chaque composition.
           </p>
           <p className="mt-3 max-w-[50ch] text-sm leading-relaxed text-ink">
             Une même forme. Des possibilités multiples.

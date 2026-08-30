@@ -2,6 +2,7 @@
 
 import { useSelection } from "@/components/SelectionProvider";
 import { siteConfig } from "@/config/site";
+import { composer } from "@/lib/typographie";
 import { Reveal } from "@/components/ui/Reveal";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { ContactForm } from "@/components/contact/ContactForm";
@@ -37,8 +38,8 @@ export function ContactSection() {
         <Reveal delay={0.05}>
           <p className="mt-1 max-w-[50ch] text-sm leading-relaxed text-ink-soft">
             FRAGMENT est un projet de design. Écrivez-nous pour découvrir la
-            lampe, discuter d&apos;une configuration ou d&apos;une pièce
-            d&apos;atelier sur mesure.
+            lampe, discuter d’une configuration ou d’une pièce
+            d’atelier sur mesure.
           </p>
         </Reveal>
 
@@ -47,7 +48,7 @@ export function ContactSection() {
             <span className="u-eyebrow shrink-0">Réf.</span>
             <span className="min-w-0">
               <span className="block text-sm font-medium text-ink">{variant.name}</span>
-              <span className="u-caption block">{variant.materialsSummary}</span>
+              <span className="u-caption block">{composer(variant.materialsSummary)}</span>
             </span>
           </div>
         </Reveal>

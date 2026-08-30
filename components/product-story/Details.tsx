@@ -1,6 +1,7 @@
 import { Reveal } from "@/components/ui/Reveal";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { productSpecs } from "@/data/specs";
+import { composer } from "@/lib/typographie";
 
 /**
  * Fiche technique — datasheet mono (nomenclature). Uniquement les données
@@ -34,10 +35,12 @@ export function Details() {
                 key={spec.key}
                 className="flex items-baseline justify-between gap-5 border-b border-line py-3.5"
               >
+                {/* Composé au rendu : data/specs.ts reste écrit en
+                    caractères ordinaires, lisible et modifiable. */}
                 <dt className="u-mono shrink-0 text-[0.72rem] uppercase tracking-[0.12em] text-ink-muted">
-                  {spec.label}
+                  {composer(spec.label)}
                 </dt>
-                <dd className="u-mono text-right text-[0.82rem] text-ink">{spec.value}</dd>
+                <dd className="u-mono text-right text-[0.82rem] text-ink">{composer(spec.value ?? "")}</dd>
               </div>
             ))}
           </dl>

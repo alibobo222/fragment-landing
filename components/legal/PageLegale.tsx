@@ -32,7 +32,7 @@ export function PageLegale({
             href="/"
             className="u-eyebrow inline-block text-ink-muted underline underline-offset-4 hover:text-ink"
           >
-            Retour à l&apos;accueil
+            Retour à l’accueil
           </Link>
 
           <h1 id={id} className="u-title mt-6 text-ink">
@@ -50,7 +50,7 @@ export function PageLegale({
             href="/"
             className="u-eyebrow mt-6 inline-block text-ink-muted underline underline-offset-4 hover:text-ink"
           >
-            Retour à l&apos;accueil
+            Retour à l’accueil
           </Link>
         </div>
       </section>

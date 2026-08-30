@@ -326,3 +326,22 @@ Attention pour toute mesure future : Chromium headless rend en LOGICIEL
 (SwiftShader) et donne 1,5 à 4 fps là où le GPU en donne 33 à 54. Sans les
 drapeaux `--use-angle=d3d11 --enable-gpu-rasterization --ignore-gpu-blocklist`,
 on mesure une machine que presque aucun visiteur n'a.
+
+### Micro-typographie — découvert en chemin, 30/08/2026
+
+- **La ponctuation double des paragraphes JSX n'est pas traitée** (27 occurrences
+  mesurées sur le DOM rendu, inchangées). Elle vit dans du texte écrit
+  directement en JSX, que `composer()` ne traverse pas : la fonction s'applique
+  aux DONNÉES au point de rendu, pas au balisage. Un remplacement automatique a
+  été écarté après essai — le filtre attrapait des ternaires (`ready ?
+  "opacity-100" : "opacity-0"`, `) : (`) qu'il aurait cassés. La voie propre est
+  un composant qui compose ses enfants texte, à faire à froid.
+- **`u-bleed` exige un `u-container` parent.** `margin-inline: -1.4rem` sans le
+  padding qui le compense fait sortir l'élément du viewport et élargit le
+  document de 22 px. Rien ne le signale : ni le typage, ni le lint, ni un test.
+  Le piège a été rencontré en posant le filet de séparation, et attrapé
+  seulement par la mesure de `scrollWidth`.
+- **Les `alt` des données ne sont pas composés, volontairement.** Les 15
+  occurrences de ponctuation double de `data/product.ts` et `data/materials.ts`
+  sont toutes dans des textes alternatifs : jamais affichés, donc jamais coupés
+  en fin de ligne, et une insécable y gênerait plutôt la synthèse vocale.

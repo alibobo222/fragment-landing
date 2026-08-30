@@ -72,7 +72,7 @@ export function SiteFooter() {
       </div>
 
       <div className="u-container flex flex-col gap-2 border-t border-paper/15 py-6 text-xs text-paper/50">
-        <p>© {year} {siteConfig.brandName}. Projet de design — pièce d&apos;atelier.</p>
+        <p>© {year} {siteConfig.brandName}. Projet de design — pièce d’atelier.</p>
         <a href="#top" className={link}>Retour en haut ↑</a>
       </div>
     </footer>
