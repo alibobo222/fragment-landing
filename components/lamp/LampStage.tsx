@@ -107,6 +107,15 @@ export function LampStage({
   // Le focus n'est déplacé QUE s'il était dans les contrôles qu'on retire :
   // le voler à quelqu'un qui lisait plus bas serait pire que le problème.
   const focusADeplacer = useRef(false);
+  // three.js appelle forceContextLoss() quand il rend le GPU au démontage :
+  // une libération VOULUE émet donc `webglcontextlost` exactement comme un
+  // incident. Or ce projet démonte et remonte ses canvas au scroll — sans ce
+  // marqueur, un simple aller-retour condamnait la 3D pour la session.
+  //
+  // Le marqueur est levé AVANT le rendu qui démonte (React applique les états
+  // après ce callback) et ne retombe qu'au montage suivant, une fois le
+  // nouveau contexte créé.
+  const demontageVolontaire = useRef(false);
   const [tabHidden, setTabHidden] = useState(false);
   // Hauteur RÉELLE de la boîte (h-[54svh] dans Configurator.tsx — dépend du
   // viewport, y compris mobile) : mesurée pour calculer la focale compensée
@@ -170,8 +179,14 @@ export function LampStage({
     if (!el) return;
     const obs = new IntersectionObserver(
       ([e]) => {
+        if (!e.isIntersecting) {
+          demontageVolontaire.current = true;
+          setReady3D(false);
+          // L'échec ne survit pas à la sortie de scène : au prochain passage,
+          // la 3D est retentée par le cycle de montage normal.
+          setContextePerdu(false);
+        }
         setActive(e.isIntersecting);
-        if (!e.isIntersecting) setReady3D(false);
       },
       { rootMargin: "300px 0px 300px 0px" }
     );
@@ -261,8 +276,13 @@ export function LampStage({
               perforation={perforation}
               camera={camera}
               fov={effectiveFov}
-              onCreated={() => setReady3D(true)}
+              onCreated={() => {
+                demontageVolontaire.current = false;
+                setReady3D(true);
+              }}
               onContextLost={() => {
+                // Libération voulue (sortie de viewport) : rien à rattraper.
+                if (demontageVolontaire.current) return;
                 // Lu AVANT le rendu qui démonte les contrôles, sinon
                 // document.activeElement est déjà retombé sur le body.
                 focusADeplacer.current =

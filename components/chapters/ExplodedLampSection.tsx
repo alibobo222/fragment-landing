@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 import dynamic from "next/dynamic";
 import {
   motion,
@@ -66,9 +66,9 @@ const STAGE_BOTTOM = 30;
 const STAGE_TOP = 18;
 
 /** Illustration statique d'origine (repli : pas de WebGL / reduced-motion). */
-function StaticEclate() {
+function StaticEclate({ conteneurRef }: { conteneurRef?: RefObject<HTMLElement | null> }) {
   return (
-    <figure className="u-container">
+    <figure ref={conteneurRef} className="u-container">
       <RevealImage
         className="u-bleed"
         src="/images/chapter2/eclate.webp"
@@ -104,6 +104,15 @@ function ExplodedScrollTrack({ onContextLost }: { onContextLost: () => void }) {
   const [tabHidden, setTabHidden] = useState(false);
   // 0 = désassemblage en cours, 1 = nomenclature (tracé puis lecture).
   const [act, setAct] = useState<0 | 1>(0);
+  // three.js appelle forceContextLoss() quand il rend le GPU au démontage :
+  // une libération VOULUE émet donc `webglcontextlost` exactement comme un
+  // incident. Or ce projet démonte et remonte ses canvas au scroll — sans ce
+  // marqueur, un simple aller-retour condamnait la 3D pour la session.
+  //
+  // Le marqueur est levé AVANT le rendu qui démonte (React applique les états
+  // après ce callback) et ne retombe qu'au montage suivant, une fois le
+  // nouveau contexte créé.
+  const demontageVolontaire = useRef(false);
   const progressRef = useRef(0);
   const anchorsRef = useRef<AnchorMap | null>(null);
 
@@ -166,8 +175,11 @@ function ExplodedScrollTrack({ onContextLost }: { onContextLost: () => void }) {
     if (!el) return;
     const obs = new IntersectionObserver(
       ([e]) => {
+        if (!e.isIntersecting) {
+          demontageVolontaire.current = true;
+          setReady(false);
+        }
         setMounted(e.isIntersecting);
-        if (!e.isIntersecting) setReady(false);
       },
       { rootMargin: "300px 0px 300px 0px" }
     );
@@ -215,8 +227,15 @@ function ExplodedScrollTrack({ onContextLost }: { onContextLost: () => void }) {
               perforation={perforation}
               progressRef={progressRef}
               active={mounted && !tabHidden}
-              onCreated={() => setReady(true)}
-              onContextLost={onContextLost}
+              onCreated={() => {
+                demontageVolontaire.current = false;
+                setReady(true);
+              }}
+              onContextLost={() => {
+                // Libération voulue (sortie de viewport) : rien à rattraper.
+                if (demontageVolontaire.current) return;
+                onContextLost();
+              }}
               anchorsRef={anchorsRef}
             />
           </div>
@@ -331,15 +350,35 @@ export function ExplodedLampSection() {
   // null = pas encore décidé (SSR / 1er rendu) → repli statique en attendant.
   const [use3D, setUse3D] = useState<boolean | null>(null);
   const [contextePerdu, setContextePerdu] = useState(false);
+  const repliRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     setUse3D(!reduce && webglAvailable());
   }, [reduce]);
 
+  // RÉARMEMENT — un échec ne doit pas devenir définitif. Quand le repli sort
+  // du viewport, on relève le drapeau : au prochain passage, la 3D est
+  // retentée par le cycle de montage normal. Si elle échoue encore, le filet
+  // rebascule aussitôt — sans boucle serrée, puisqu'il faut re-scroller.
+  useEffect(() => {
+    if (!contextePerdu) return;
+    const el = repliRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([e]) => {
+        if (!e.isIntersecting) setContextePerdu(false);
+      },
+      { rootMargin: "300px 0px 300px 0px" }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [contextePerdu]);
+
   // Même filet que LampStage (voir le commentaire détaillé là-bas) : contexte
   // perdu → l'illustration statique reprend la place, définitivement pour ce
   // chargement. Ici le repli REMPLACE la piste au lieu d'être empilé dessous,
   // donc rien à masquer : c'est le même retour que « pas de WebGL du tout ».
-  if (use3D !== true || contextePerdu) return <StaticEclate />;
+  if (use3D !== true || contextePerdu)
+    return <StaticEclate conteneurRef={contextePerdu ? repliRef : undefined} />;
   return <ExplodedScrollTrack onContextLost={() => setContextePerdu(true)} />;
 }
