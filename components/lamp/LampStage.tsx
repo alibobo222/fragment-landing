@@ -101,6 +101,7 @@ export function LampStage({
   const [use3D, setUse3D] = useState(false);
   const [active, setActive] = useState(false); // proche du viewport → monter le canvas
   const [ready3D, setReady3D] = useState(false);
+  const [contextePerdu, setContextePerdu] = useState(false);
   const [tabHidden, setTabHidden] = useState(false);
   // Hauteur RÉELLE de la boîte (h-[54svh] dans Configurator.tsx — dépend du
   // viewport, y compris mobile) : mesurée pour calculer la focale compensée
@@ -165,7 +166,19 @@ export function LampStage({
     return () => obs.disconnect();
   }, []);
 
-  const mount3D = use3D && active;
+  // Contexte WebGL perdu (mémoire, pilote, trop d'onglets 3D) : on démonte la
+  // scène et on rend la main à la photo de repli — qui redevient visible ET
+  // perd son aria-hidden, puisque les deux dépendent de `ready3D`.
+  //
+  // Choix ASSUMÉ de ne pas reprendre la 3D si le navigateur restaure le
+  // contexte : il faudrait reconstruire des matériaux créés par scène
+  // (`onBeforeCompile`), des textures procédurales et un chargement
+  // asynchrone, sans garantie — un canvas à moitié reconstruit serait le même
+  // écran vide, en moins détectable. Et une restauration survient justement
+  // sur une machine à court de ressources : la scène se reperdrait en boucle.
+  // La photo est un repli de qualité (c'est déjà le LCP) ; la 3D revient au
+  // prochain chargement.
+  const mount3D = use3D && active && !contextePerdu;
   const spin = !reduce && !tabHidden && active;
   // Focale compensée pour le canvas agrandi (voir CANVAS_EXTRA_PX /
   // compensateFov ci-dessus) — avant la première mesure (boxHeight===0) ou
@@ -236,6 +249,10 @@ export function LampStage({
               camera={camera}
               fov={effectiveFov}
               onCreated={() => setReady3D(true)}
+              onContextLost={() => {
+                setReady3D(false);
+                setContextePerdu(true);
+              }}
             />
           </motion.div>
         </div>

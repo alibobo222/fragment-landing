@@ -482,6 +482,7 @@ export function Lamp3D({
   kelvin,
   perforation = defaultPerforation,
   onCreated,
+  onContextLost,
   onMaterialsSettled,
   camera = CAMERA,
   fov = FOV,
@@ -496,6 +497,8 @@ export function Lamp3D({
   /** Géométrie des perforations de la pièce d'assemblage. */
   perforation?: PerforationShape;
   onCreated?: () => void;
+  /** Contexte WebGL perdu — l'appelant doit remettre la photo de repli. */
+  onContextLost?: () => void;
   /** Voir la doc du même prop sur `LampModel` — répercuté tel quel. */
   onMaterialsSettled?: () => void;
   /** Cadrage caméra — permet un plan différent pour l'atelier. */
@@ -511,7 +514,25 @@ export function Lamp3D({
       frameloop={spin ? "always" : "demand"}
       shadows={cfg.shadows}
       gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
-      onCreated={() => onCreated?.()}
+      onCreated={(state) => {
+        // FILET — un contexte WebGL n'est jamais acquis : le navigateur le
+        // sacrifie quand la mémoire manque, quand le pilote redémarre, ou
+        // quand trop d'onglets se disputent le GPU. Sans ce gestionnaire la
+        // scène disparaissait sans rien pour la remplacer, la photo de repli
+        // étant masquée dès le premier rendu réussi et ne revenant jamais.
+        //
+        // preventDefault() est OBLIGATOIRE : sans lui le navigateur renonce
+        // définitivement à restaurer le contexte. L'affichage n'est pourtant
+        // pas raccroché à cette restauration — voir le gestionnaire appelant.
+        //
+        // L'écouteur n'est pas retiré : il vit et meurt avec le canvas, que
+        // R3F détruit au démontage.
+        state.gl.domElement.addEventListener("webglcontextlost", (event) => {
+          event.preventDefault();
+          onContextLost?.();
+        });
+        onCreated?.();
+      }}
       style={{ width: "100%", height: "100%" }}
     >
       {/* Éclairage de studio doux (montre les matériaux sans les écraser)

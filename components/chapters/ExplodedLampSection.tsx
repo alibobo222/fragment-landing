@@ -94,7 +94,7 @@ function StaticEclate() {
  * annotations se tracent ensuite sur scène immobile, puis vient un long palier
  * de lecture où plus rien ne bouge. Le fondu de sortie n'intervient qu'après.
  */
-function ExplodedScrollTrack() {
+function ExplodedScrollTrack({ onContextLost }: { onContextLost: () => void }) {
   const { variant, lampOn, kelvin, perforation } = useSelection();
   const reduce = useReducedMotion();
 
@@ -216,6 +216,7 @@ function ExplodedScrollTrack() {
               progressRef={progressRef}
               active={mounted && !tabHidden}
               onCreated={() => setReady(true)}
+              onContextLost={onContextLost}
               anchorsRef={anchorsRef}
             />
           </div>
@@ -329,11 +330,16 @@ export function ExplodedLampSection() {
   const reduce = useReducedMotion();
   // null = pas encore décidé (SSR / 1er rendu) → repli statique en attendant.
   const [use3D, setUse3D] = useState<boolean | null>(null);
+  const [contextePerdu, setContextePerdu] = useState(false);
 
   useEffect(() => {
     setUse3D(!reduce && webglAvailable());
   }, [reduce]);
 
-  if (use3D !== true) return <StaticEclate />;
-  return <ExplodedScrollTrack />;
+  // Même filet que LampStage (voir le commentaire détaillé là-bas) : contexte
+  // perdu → l'illustration statique reprend la place, définitivement pour ce
+  // chargement. Ici le repli REMPLACE la piste au lieu d'être empilé dessous,
+  // donc rien à masquer : c'est le même retour que « pas de WebGL du tout ».
+  if (use3D !== true || contextePerdu) return <StaticEclate />;
+  return <ExplodedScrollTrack onContextLost={() => setContextePerdu(true)} />;
 }

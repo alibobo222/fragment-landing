@@ -625,6 +625,7 @@ export function ExplodedLamp3D({
   progressRef,
   active,
   onCreated,
+  onContextLost,
   anchorsRef,
 }: {
   partVariants: PartVariants;
@@ -637,6 +638,8 @@ export function ExplodedLamp3D({
   /** Section proche du viewport → boucle de rendu continue (suit le scroll). */
   active: boolean;
   onCreated?: () => void;
+  /** Contexte WebGL perdu — l'appelant doit remettre la photo de repli. */
+  onContextLost?: () => void;
   /** Reçoit la projection 2D des pièces pour l'overlay d'annotations. */
   anchorsRef?: MutableRefObject<AnchorMap | null>;
 }) {
@@ -646,7 +649,25 @@ export function ExplodedLamp3D({
       dpr={[1, 1.8]}
       frameloop={active ? "always" : "demand"}
       gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
-      onCreated={() => onCreated?.()}
+      onCreated={(state) => {
+        // FILET — un contexte WebGL n'est jamais acquis : le navigateur le
+        // sacrifie quand la mémoire manque, quand le pilote redémarre, ou
+        // quand trop d'onglets se disputent le GPU. Sans ce gestionnaire la
+        // scène disparaissait sans rien pour la remplacer, la photo de repli
+        // étant masquée dès le premier rendu réussi et ne revenant jamais.
+        //
+        // preventDefault() est OBLIGATOIRE : sans lui le navigateur renonce
+        // définitivement à restaurer le contexte. L'affichage n'est pourtant
+        // pas raccroché à cette restauration — voir le gestionnaire appelant.
+        //
+        // L'écouteur n'est pas retiré : il vit et meurt avec le canvas, que
+        // R3F détruit au démontage.
+        state.gl.domElement.addEventListener("webglcontextlost", (event) => {
+          event.preventDefault();
+          onContextLost?.();
+        });
+        onCreated?.();
+      }}
       style={{ width: "100%", height: "100%" }}
     >
       {/* Éclairage de studio identique au configurateur (principal, inchangé). */}
