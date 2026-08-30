@@ -14,3 +14,8 @@ supabase/.env.local
 
 # Régression visuelle — images de différence, transitoires (voir npm run visual)
 tests/visual-diff/
+
+# Fiche technique PDF — GÉNÉRÉE au build depuis data/specs.ts (prebuild/predev).
+# Ne pas la versionner : un artefact dérivé qu'on commite finit par diverger de
+# sa source, et c'est précisément ce que la génération automatique évite.
+public/documents/

@@ -4,7 +4,9 @@
   "private": true,
   "description": "Landing page produit premium pour la lampe sculpturale Etnisi.",
   "scripts": {
+    "predev": "node scripts/generer-fiche.mjs",
     "dev": "next dev",
+    "prebuild": "node scripts/generer-fiche.mjs",
     "build": "next build",
     "preview": "npx --yes serve out",
     "start": "npx --yes serve out",
@@ -21,7 +23,8 @@
     "sb:secrets": "npx supabase@latest secrets set --env-file supabase/.env.local",
     "sb:deploy": "npx supabase@latest functions deploy contact",
     "sb:serve": "npx supabase@latest functions serve contact --env-file supabase/.env.local",
-    "sb:logs": "npx supabase@latest functions logs contact"
+    "sb:logs": "npx supabase@latest functions logs contact",
+    "fiche": "node scripts/generer-fiche.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.7",
@@ -47,6 +50,7 @@
     "eslint-config-next": "^15.5.23",
     "jsdom": "^25.0.1",
     "occt-import-js": "^0.0.23",
+    "pdf-lib": "^1.17.1",
     "playwright": "^1.62.1",
     "sharp": "^0.35.3",
     "tailwindcss": "^4.0.0",

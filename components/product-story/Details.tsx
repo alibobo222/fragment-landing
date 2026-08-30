@@ -58,6 +58,31 @@ export function Details() {
             alimentation) sont précisées au cas par cas selon la configuration,
             lors de votre prise de contact.
           </p>
+
+          {/* Variante CLAIRE des boutons du site — `btn-glass-secondary`, la
+              même famille que le CTA du configurateur, même géométrie. Son
+              filet du système est très pâle (rgba(8,8,10,0.1)) : sur fond
+              blanc un bouton blanc n'existe que par son filet, donc il est
+              renforcé ICI seulement — avec `!`, car la classe pose `border`
+              et l'emporte sur l'utilitaire — sans toucher la classe partagée que
+              deux autres endroits utilisent.
+
+              `download` plutôt qu'une simple ouverture : le fichier est un
+              document à emporter, pas une page à consulter. Le PDF est
+              produit au build depuis data/specs.ts — il ne peut pas diverger
+              de la fiche affichée juste au-dessus. */}
+          <a
+            href="/documents/fiche-technique.pdf"
+            download
+            className="btn-glass btn-glass-secondary mt-6 inline-flex items-center gap-2.5 border-ink/55! px-6 py-3 text-[0.95rem] font-medium text-ink hover:border-ink/80!"
+          >
+            Télécharger la fiche technique
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M12 3v12" />
+              <path d="m7 11 5 5 5-5" />
+              <path d="M5 20h14" />
+            </svg>
+          </a>
         </Reveal>
       </div>
     </section>
