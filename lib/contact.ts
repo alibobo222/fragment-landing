@@ -15,7 +15,9 @@ export interface ContactPayload extends LeadInput {
 
 export type ContactResult =
   | { ok: true; emailed: boolean }
-  | { ok: false; message: string };
+  /** `injoignable` : le serveur n'a pas répondu du tout (hors ligne, DNS,
+   *  service arrêté). Le formulaire propose alors le courriel en secours. */
+  | { ok: false; message: string; injoignable?: boolean };
 
 /** Charge utile envoyée à la fonction Edge. Le honeypot part avec le reste :
  *  c'est le serveur qui décide quoi en faire. */
@@ -54,7 +56,10 @@ export async function submitContact(
       signal,
     });
   } catch {
-    return { ok: false, message: "Connexion impossible. Vérifiez votre réseau." };
+    // Ne désigne ni le réseau du visiteur ni le nôtre : à cet endroit on ne
+    // sait pas lequel des deux a manqué, et accuser le sien à tort l'envoie
+    // chercher une panne qui n'est pas la sienne.
+    return { ok: false, injoignable: true, message: "L'envoi n'a pas pu aboutir." };
   }
 
   // Une réponse peut être vide ou mal formée : ne jamais laisser un `json()`

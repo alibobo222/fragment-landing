@@ -101,7 +101,7 @@ describe("submitContact", () => {
     expect(res.ok).toBe(true);
   });
 
-  it("rend un message réseau lorsque la requête échoue", async () => {
+  it("signale un serveur injoignable sans accuser le réseau du visiteur", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(async () => {
@@ -114,6 +114,10 @@ describe("submitContact", () => {
       source: "direct",
     });
     expect(res.ok).toBe(false);
-    expect(res.ok === false && res.message).toMatch(/réseau/);
+    // Le message ne doit désigner ni le réseau du visiteur ni le nôtre : à cet
+    // endroit on ignore lequel des deux a manqué.
+    expect(res.ok === false && res.message).toBe("L'envoi n'a pas pu aboutir.");
+    // `injoignable` déclenche la proposition du courriel de secours.
+    expect(res.ok === false && res.injoignable).toBe(true);
   });
 });

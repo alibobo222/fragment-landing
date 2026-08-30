@@ -3,7 +3,7 @@
 import { useId, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { useSelection } from "@/components/SelectionProvider";
-import { validateLead, isValid, type LeadErrors } from "@/lib/validation";
+import { validateLead, isValid, type LeadErrors, type LeadInput } from "@/lib/validation";
 import { buildContactPayload, submitContact } from "@/lib/contact";
 import { track, getSource } from "@/lib/analytics";
 import { siteConfig } from "@/config/site";
@@ -24,6 +24,9 @@ export function ContactForm() {
   const { variant } = useSelection();
   const [errors, setErrors] = useState<LeadErrors>({});
   const [status, setStatus] = useState<Status>("idle");
+  // Lien mailto proposé quand le serveur est injoignable — PROPOSÉ, pas imposé :
+  // après un échec on offre une porte, on ne pousse personne dedans.
+  const [mailtoSecours, setMailtoSecours] = useState<string | null>(null);
   const startedRef = useRef(false);
   // Verrou synchrone : `status` ne change qu'au rendu suivant, ce qui laisse
   // passer un double clic rapide. Ce booléen, lui, est à jour immédiatement.
@@ -36,6 +39,21 @@ export function ContactForm() {
       track("contact_form_started", { variant: variant.id });
     }
   };
+
+  /** Courriel prérempli : même contenu pour le repli et pour le secours. */
+  function construireMailto(input: LeadInput): string {
+    const subject = `Contact FRAGMENT — ${variant.name}`;
+    const lines = [
+      `Prénom : ${input.firstName}`,
+      `E-mail : ${input.email}`,
+      `Configuration : ${variant.name} (${variant.materialsSummary})`,
+      "",
+      input.message || "(pas de message)",
+    ];
+    return `mailto:${siteConfig.contactEmail}?subject=${encodeURIComponent(
+      subject
+    )}&body=${encodeURIComponent(lines.join("\n"))}`;
+  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -76,6 +94,7 @@ export function ContactForm() {
       if (!result.ok) {
         setStatus("error");
         setErrors({ form: result.message });
+        setMailtoSecours(result.injoignable ? construireMailto(input) : null);
         return;
       }
 
@@ -89,17 +108,7 @@ export function ContactForm() {
     // sans `NEXT_PUBLIC_CONTACT_ENDPOINT`) : ouverture du client mail prérempli.
     // Ce n'est PAS le chemin de production — il perd le message quand aucun
     // client mail n'est configuré, ce qui est fréquent sur mobile.
-    const subject = `Contact FRAGMENT — ${variant.name}`;
-    const lines = [
-      `Prénom : ${input.firstName}`,
-      `E-mail : ${input.email}`,
-      `Configuration : ${variant.name} (${variant.materialsSummary})`,
-      "",
-      input.message || "(pas de message)",
-    ];
-    const href = `mailto:${siteConfig.contactEmail}?subject=${encodeURIComponent(
-      subject
-    )}&body=${encodeURIComponent(lines.join("\n"))}`;
+    const href = construireMailto(input);
     track("contact_form_submitted", { variant: variant.id });
     window.location.href = href;
     form.reset();
@@ -129,6 +138,14 @@ export function ContactForm() {
       {status === "error" && errors.form && (
         <p role="alert" className="border border-brick/40 bg-brick/5 px-3 py-2 text-sm text-brick">
           {errors.form}
+          {mailtoSecours && (
+            <>
+              {" "}Écrivez-nous directement :{" "}
+              <a href={mailtoSecours} className="underline underline-offset-2">
+                {siteConfig.contactEmail}
+              </a>
+            </>
+          )}
         </p>
       )}
 
@@ -193,6 +210,27 @@ export function ContactForm() {
           {status === "loading" ? "Envoi…" : "Prendre contact"}
         </motion.button>
       </div>
+
+      {/* Information au moment de la collecte (CNIL) : elle doit figurer ICI,
+          pas seulement sur une page distincte. Placée APRÈS le bouton pour ne
+          pas insérer son lien entre la case de consentement et l'envoi —
+          l'ordre de tabulation des champs reste celui d'avant.
+
+          Volontairement SÉPARÉE de la case à cocher : informer et recueillir un
+          consentement sont deux actes distincts, les fondre en un seul rendrait
+          le consentement moins clair. */}
+      <p className="text-xs leading-relaxed text-ink-muted">
+        Votre prénom, votre e-mail et votre message sont enregistrés par les
+        éditeurs du site dans le seul but de vous répondre. Ils sont conservés
+        trois ans après notre dernier échange, ne sont transmis à personne
+        d&apos;autre que nos prestataires techniques, et ne servent à aucune
+        prospection. Vous pouvez demander leur suppression à tout moment. En
+        savoir plus :{" "}
+        <a href="/confidentialite/" className="underline underline-offset-2 hover:text-ink">
+          politique de confidentialité
+        </a>
+        .
+      </p>
     </form>
   );
 }
