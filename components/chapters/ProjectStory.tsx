@@ -58,10 +58,10 @@ export function ProjectStory() {
         <div className="u-container">
           <Reveal>
             <p className="max-w-[50ch] text-sm leading-relaxed text-ink-soft">
-              Plutôt que de partir d&apos;une matière neuve, la lampe s&apos;appuie
+              Plutôt que de partir d’une matière neuve, la lampe s’appuie
               sur ce qui existe déjà — une grille perforée standard, une chute, une
               pièce promise à une seconde vie. La contrainte du réemploi
-              n&apos;est pas subie : elle oriente le dessin et donne à chaque
+              n’est pas subie : elle oriente le dessin et donne à chaque
               exemplaire son caractère.
             </p>
           </Reveal>
@@ -83,9 +83,9 @@ export function ProjectStory() {
         {/* Géométrie */}
         <Text eyebrow="Un langage brutaliste" title="Jouer avec la géométrie">
           Le dessin part de volumes simples — un cylindre, un plan incliné, une
-          découpe — assemblés sans détour. Rien n&apos;est ajouté pour décorer :
+          découpe — assemblés sans détour. Rien n’est ajouté pour décorer :
           ce sont les intersections, les proportions et les masses qui font
-          l&apos;objet. Une grammaire brutaliste, réduite à l&apos;essentiel.
+          l’objet. Une grammaire brutaliste, réduite à l’essentiel.
         </Text>
 
         {/* Croquis d'étude → objet */}
@@ -105,20 +105,34 @@ export function ProjectStory() {
         <Text eyebrow="Logique constructiviste" title="Simple à fabriquer, à assembler">
           Chaque pièce est pensée pour être facile à produire et à monter. Peu de
           composants, des jonctions lisibles, une logique de construction
-          évidente. La forme naît autant des contraintes de l&apos;atelier que de
-          l&apos;intention : fabriquer devient une manière de dessiner.
+          évidente. La forme naît autant des contraintes de l’atelier que de
+          l’intention : fabriquer devient une manière de dessiner.
         </Text>
 
         {/* Vue éclatée 3D — pilotée par le scroll (remplace l'illustration). */}
         <ExplodedLampSection />
 
-        {/* Matières */}
-        <Text eyebrow="Dialogue de matières" title="Combiner matières et textures">
-          L&apos;identité se joue dans le contact des matières : le mat contre le
-          poli, le minéral contre le métal, la surface brute contre l&apos;âme
-          veinée. Chaque association déplace légèrement le caractère de la lampe,
-          sans jamais rompre la cohérence de la forme.
-        </Text>
+        {/* Matières — l'espace fait la coupure. Le `gap-6` du conteneur est
+            le rythme INTÉRIEUR au chapitre ; ici on ouvre un chapitre, donc
+            l'intervalle doit être franchement plus large que tout ce qui le
+            précède, sur le rythme des autres sections de la page. */}
+        <div className="mt-10">
+          {/* Filet à bord perdu — 1 px, couleur de ligne du système. Serré de
+              part et d'autre : l'espace dit déjà la coupure, le filet ne fait
+              que la confirmer. Trop d'air autour et il devient un ornement. */}
+          {/* `u-bleed` tire de -1.4rem de chaque côté : il lui faut le padding
+              d'un `u-container` pour compenser, sinon le filet sort du viewport
+              et élargit le document de 22 px (mesuré à 320 et 390 px). */}
+          <div className="u-container">
+            <hr className="u-bleed mb-6 border-0 border-t border-line" />
+          </div>
+          <Text eyebrow="Dialogue de matières" title="Combiner matières et textures">
+            L’identité se joue dans le contact des matières : le mat contre le
+            poli, le minéral contre le métal, la surface brute contre l’âme
+            veinée. Chaque association déplace légèrement le caractère de la lampe,
+            sans jamais rompre la cohérence de la forme.
+          </Text>
+        </div>
 
         {/* Détail nacre / grille */}
         <figure className="u-container">

@@ -303,10 +303,18 @@ function ExplodedScrollTrack({ onContextLost }: { onContextLost: () => void }) {
           style={{ opacity: reduce ? 1 : cartoucheOpacity }}
           className="pointer-events-none absolute inset-x-0 bottom-6 flex flex-col items-center gap-1 px-[1.4rem] text-center"
         >
-          <span className="u-eyebrow text-[0.6rem] tracking-[0.18em] text-ink-muted">
+          {/* Métadonnée sous une image, pas un titre. Jusqu'ici cette ligne
+              et l'amorce de la section suivante avaient le même corps, la
+              même couleur et le même interlettrage : rien ne disait laquelle
+              ferme un chapitre et laquelle en ouvre un.
+
+              `u-eyebrow` fixe corps et interlettrage, et l'emporte sur les
+              utilitaires : d'où le `!`. Le `text-[0.6rem]` qui figurait ici
+              avant était d'ailleurs sans effet. */}
+          <span className="u-eyebrow text-[0.55rem]! tracking-[0.08em]! text-ink-muted">
             06 pièces · assemblage manuel
           </span>
-          <span className="u-index text-[0.62rem] text-ink">
+          <span className="u-index text-[0.58rem] tracking-tight text-ink-muted">
             {variant.index} — {variant.name}
           </span>
         </motion.div>
