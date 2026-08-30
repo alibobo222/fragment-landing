@@ -83,7 +83,7 @@
  */
 import { createHash } from "node:crypto";
 import { readFileSync, existsSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { dirname, extname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -128,10 +128,52 @@ export function extractProductTextureImages() {
   return [...matches].map((m) => m[1]);
 }
 
+/**
+ * Extensions dont le contenu est du TEXTE. Liste EXPLICITE, jamais une
+ * détection heuristique du binaire : c'est un réglage qui doit se relire, et
+ * une heuristique qui se trompe corromprait silencieusement une empreinte.
+ *
+ * Toute extension absente d'ici est traitée comme BINAIRE, donc hachée octet
+ * pour octet — le défaut sûr : normaliser un .png ou un .glb le corromprait.
+ */
+const EXTENSIONS_TEXTE = new Set([".ts", ".tsx", ".mjs", ".js", ".json", ".css"]);
+
+/** @param {string} relPath @returns {boolean} */
+export function estTexte(relPath) {
+  return EXTENSIONS_TEXTE.has(extname(relPath).toLowerCase());
+}
+
+/**
+ * Empreinte d'une entrée — sur son CONTENU, pas sur son encodage de plateforme.
+ *
+ * Le dépôt stocke du LF (voir .gitattributes, `* text=auto`) mais chaque poste
+ * garde ses fins de ligne natives : le MÊME fichier est en CRLF sur Windows et
+ * en LF sur la CI Ubuntu. Hacher les octets bruts faisait donc diverger deux
+ * arbres identiques, et le garde-fou signalait des vignettes « périmées » alors
+ * que rien n'avait changé — un rouge sur du bruit, qui apprend à ignorer le
+ * rouge. Normaliser en LF avant de hacher rend l'empreinte identique partout.
+ *
+ * Les binaires (images, GLB) passent intacts : aucune substitution.
+ *
+ * Seul CRLF → LF est normalisé. Un CR isolé n'est pas touché : il n'apparaît
+ * dans aucune des sources du projet, et le convertir reviendrait à réécrire du
+ * contenu au lieu d'un encodage de fin de ligne.
+ *
+ * @param {Buffer} contenu octets du fichier (disque ou objet git)
+ * @param {string} relPath chemin, qui détermine texte ou binaire
+ * @returns {string} sha256 hexadécimal
+ */
+export function hashEntry(contenu, relPath) {
+  const octets = estTexte(relPath)
+    ? Buffer.from(contenu.toString("utf8").replace(/\r\n/g, "\n"), "utf8")
+    : contenu;
+  return createHash("sha256").update(octets).digest("hex");
+}
+
 function sha256File(relPath) {
   const abs = join(ROOT, relPath);
   if (!existsSync(abs)) return null;
-  return createHash("sha256").update(readFileSync(abs)).digest("hex");
+  return hashEntry(readFileSync(abs), relPath);
 }
 
 /**

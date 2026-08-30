@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-26T21:37:35.780Z",
+  "generatedAt": "2026-08-30T15:12:51.246Z",
   "ids": [
     "prototype-noir-cable-bleu",
     "porcelaine-acier-noir",
@@ -8,7 +8,7 @@
     "coquille-laiton",
     "verre-bleu-acier-anodise"
   ],
-  "hash": "e80a9ba84e428f98e926de042b4f5f8919eef37f4e4cec7876dc54d3c425b3ca",
+  "hash": "f32ac551324fb829b4b9dea78ac08696600d81789d62379101f7cd3e56e6fff8",
   "files": [
     {
       "path": "app/packshot/page.tsx",
@@ -16,7 +16,7 @@
     },
     {
       "path": "components/hero/Lamp3D.tsx",
-      "sha256": "15481697e1e60f4d3887b9e549aa8da8575705a4b6ea9c85d65e1ad00d7d0262"
+      "sha256": "1342486b6f7bd8ab5215eb94af2fe6dd940999bf6e741eddd79d3491a33f96c1"
     },
     {
       "path": "components/packshot/Packshot.tsx",
@@ -28,7 +28,7 @@
     },
     {
       "path": "data/lampModel.ts",
-      "sha256": "da06222b0d7f90c5fb4115ebf5026179395d3fa5a20f9e357e90a8184248cb49"
+      "sha256": "e566031c53309ac8b16eb0574534927e789b52396459fb5129fc5c92fc4c1a6f"
     },
     {
       "path": "data/product.ts#projection",
@@ -36,7 +36,7 @@
     },
     {
       "path": "lib/lampTextures.ts",
-      "sha256": "72a42c2fb4e731f189716d869fff60e8fd96daf1d1bfcc91d181cebff35b82f2"
+      "sha256": "423f5a6e603f2d92123e13868f5acd41850e25106ea86cbf9bb7faa7a837f8a7"
     },
     {
       "path": "public/models/lampe-optimisee.glb",
