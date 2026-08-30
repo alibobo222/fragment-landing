@@ -297,3 +297,32 @@ périmètre. Rien de tout cela n'est corrigé.
   rendrait la réponse possible d'un clic.
 - **`trailingSlash` et `PAGES_BASE_PATH` n'ont plus d'objet** depuis le retrait
   de GitHub Pages. Inoffensifs, donc laissés : c'est du nettoyage.
+
+### Saccade au défilement — mesurée, close le 30/08/2026
+
+Sujet **clos**, consigné pour qu'il ne soit pas rouvert par erreur.
+
+Sur GPU matériel, le défilement tient **48,6 fps de moyenne**. Il ne bloque que
+sur **trois à-coups au montage des scènes** (~1 900 ms cumulés) : vue éclatée
+vers y=1800, configurateur vers y=7020. Répartition du temps mesurée par trace :
+GPU et composition 98 %, script 1,8 %, style et mise en page 0,1 %.
+
+Écartés par la mesure, ne pas y revenir :
+
+- le **shader hexagonal** ne coûte rien sur GPU (120,4 → 119,8 fps entre c16ecb0
+  et l'actuel) — il ne pèse qu'en rendu logiciel, où il retire 33 % ;
+- les **révélations au scroll et les en-têtes épinglés** ne provoquent aucun
+  recalcul mesurable (0,1 % du temps) ;
+- le **pilotage de la vue éclatée par le scroll** n'est pas en cause : ses
+  à-coups sont au montage, pas pendant le défilement.
+
+Les ~1 900 ms restants sont de la **compilation de shaders et de l'upload GPU**.
+Les deux exigent un contexte WebGL vivant : les anticiper imposerait d'en ouvrir
+un second à l'avance, ce que le projet interdit. Limite structurelle, pas réglage
+manqué. Les réduire demanderait de toucher au nombre de scènes ou au moment de
+leur montage — donc à la conception. **Décision prise : on l'accepte.**
+
+Attention pour toute mesure future : Chromium headless rend en LOGICIEL
+(SwiftShader) et donne 1,5 à 4 fps là où le GPU en donne 33 à 54. Sans les
+drapeaux `--use-angle=d3d11 --enable-gpu-rasterization --ignore-gpu-blocklist`,
+on mesure une machine que presque aucun visiteur n'a.
