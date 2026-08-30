@@ -102,6 +102,11 @@ export function LampStage({
   const [active, setActive] = useState(false); // proche du viewport → monter le canvas
   const [ready3D, setReady3D] = useState(false);
   const [contextePerdu, setContextePerdu] = useState(false);
+  const mentionRef = useRef<HTMLParagraphElement>(null);
+  const controlesRef = useRef<HTMLDivElement>(null);
+  // Le focus n'est déplacé QUE s'il était dans les contrôles qu'on retire :
+  // le voler à quelqu'un qui lisait plus bas serait pire que le problème.
+  const focusADeplacer = useRef(false);
   const [tabHidden, setTabHidden] = useState(false);
   // Hauteur RÉELLE de la boîte (h-[54svh] dans Configurator.tsx — dépend du
   // viewport, y compris mobile) : mesurée pour calculer la focale compensée
@@ -150,6 +155,14 @@ export function LampStage({
     document.addEventListener("visibilitychange", onVis);
     return () => document.removeEventListener("visibilitychange", onVis);
   }, []);
+
+  // Le focus clavier ne doit pas tomber sur le body quand les contrôles
+  // disparaissent : il rejoint la mention, qui explique justement pourquoi.
+  useEffect(() => {
+    if (!contextePerdu || !focusADeplacer.current) return;
+    focusADeplacer.current = false;
+    mentionRef.current?.focus();
+  }, [contextePerdu]);
 
   // Monte / démonte le canvas selon la proximité du viewport.
   useEffect(() => {
@@ -250,6 +263,10 @@ export function LampStage({
               fov={effectiveFov}
               onCreated={() => setReady3D(true)}
               onContextLost={() => {
+                // Lu AVANT le rendu qui démonte les contrôles, sinon
+                // document.activeElement est déjà retombé sur le body.
+                focusADeplacer.current =
+                  controlesRef.current?.contains(document.activeElement) ?? false;
                 setReady3D(false);
                 setContextePerdu(true);
               }}
@@ -258,9 +275,38 @@ export function LampStage({
         </div>
       )}
 
-      {/* Contrôles d'éclairage — plats, nets, sans verre ni ombre. */}
+      {/* RÉGION VIVE PERMANENTE — rendue dès le premier affichage, vide tant que
+          tout va bien. Elle ne doit PAS apparaître en même temps que son texte :
+          plusieurs lecteurs d'écran n'annoncent que les mutations d'une région
+          déjà observée, et un conteneur inséré avec son contenu passe à la
+          trappe. Vide elle n'a aucune hauteur et, étant hors-flux, ne déplace
+          rien ; surtout, pas de `display:none`, qui la sortirait de l'arbre
+          d'accessibilité et ferait retomber le problème.
+
+          tabIndex={-1} : cible de repli pour le focus clavier (voir l'effet
+          plus haut), sans jamais entrer dans l'ordre de tabulation. */}
       {showControls && use3D && (
+        <p
+          ref={mentionRef}
+          role="status"
+          tabIndex={-1}
+          className="absolute -bottom-6 left-[1.4rem] right-[1.4rem] z-10 text-center text-sm leading-snug text-ink-muted"
+        >
+          {contextePerdu
+            ? "Vue interactive interrompue. Rechargez la page pour la retrouver."
+            : ""}
+        </p>
+      )}
+
+      {/* Contrôles d'éclairage — plats, nets, sans verre ni ombre.
+          Retirés — pas désactivés — quand le contexte est perdu :
+          perforation et allumage n'agissent QUE sur la scène 3D, aucun des deux
+          ne change la photo de repli. Un bouton grisé promettrait un retour qui
+          n'aura lieu qu'au rechargement. Le choix de configuration, lui, reste :
+          il change la variante, donc la photo. */}
+      {showControls && use3D && !contextePerdu && (
         <div
+          ref={controlesRef}
           // Les contrôles SORTENT du cadre de la scène : posés en dessous, sur
           // le blanc, plutôt qu'en surimpression sur la lampe. Ils empiétaient
           // sur le produit — et sur un configurateur, c'est l'objet qui doit
