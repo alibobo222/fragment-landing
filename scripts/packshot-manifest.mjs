@@ -136,7 +136,7 @@ export function extractProductTextureImages() {
  * Toute extension absente d'ici est traitée comme BINAIRE, donc hachée octet
  * pour octet — le défaut sûr : normaliser un .png ou un .glb le corromprait.
  */
-const EXTENSIONS_TEXTE = new Set([".ts", ".tsx", ".mjs", ".js", ".json", ".css"]);
+const EXTENSIONS_TEXTE = new Set([".ts", ".tsx", ".mjs", ".js", ".json", ".css", ".svg"]);
 
 /** @param {string} relPath @returns {boolean} */
 export function estTexte(relPath) {
