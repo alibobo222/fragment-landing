@@ -263,3 +263,37 @@ correctif de sécurité incidental.
   utilisatrice. Pas touché : conservé comme matière de catalogue disponible
   pour une future configuration plutôt que supprimé — à trancher à froid, en
   même temps que `glassBlue`/`blueTerrazzo`.
+
+### Mise en ligne du 30/08/2026 — vu, non traité
+
+Relevé pendant la bascule sur `noirmineral.studio`, laissé de côté par
+périmètre. Rien de tout cela n'est corrigé.
+
+- **Les assets chargés hors de Next ne préfixent pas `basePath`** : le GLB
+  (`data/lampModel.ts`), les douze textures (`lib/lampTextures.ts`) et les
+  images passées à `next/image` en mode `unoptimized` s'écrivent en chemins
+  absolus. Sous un sous-chemin, ils répondent 404 — c'est ce qui a tué le site
+  sur GitHub Pages. À la racine du domaine, le problème ne se voit plus, mais le
+  défaut est intact et ressortirait au premier déploiement sous sous-chemin.
+- **Aucune barrière d'erreur autour des scènes 3D.** `useGLTF` lève quand un
+  fichier manque, rien ne l'attrape, React démonte tout l'arbre : un seul asset
+  absent et il n'y a plus de site du tout. Le filet posé plus tôt couvre la
+  PERTE de contexte WebGL, pas l'ÉCHEC DE CHARGEMENT — deux chemins différents
+  vers le même écran vide.
+- **Le projet Supabase gratuit s'endort après sept jours d'inactivité.** C'est
+  ce qui a mis le formulaire hors service. Une sonde périodique (workflow
+  planifié + branche de vivacité protégée par jeton dans la fonction) a été
+  conçue en détail mais non posée. Sans elle, la panne reviendra — a fortiori
+  derrière un QR code imprimé.
+- **Aucun garde-fou ne protège l'endpoint de contact ni le rendu.** Trois
+  contrôles ont été spécifiés, aucun écrit : validation de forme de
+  `NEXT_PUBLIC_CONTACT_ENDPOINT` au build en CI, extension du test d'existence
+  d'assets au GLB et aux images de composants, et surtout un test de fumée sur
+  `out/` qui échouerait sur un 404 ou une exception — le seul des trois qui
+  aurait attrapé la panne du 30/08.
+- **`CONTACT_FROM_EMAIL` n'a pas de `Reply-To`.** Les notifications partent de
+  `contact@noirmineral.studio`, qui n'est pas une boîte : répondre directement
+  au courriel écrirait dans le vide. Poser `Reply-To` sur l'adresse du visiteur
+  rendrait la réponse possible d'un clic.
+- **`trailingSlash` et `PAGES_BASE_PATH` n'ont plus d'objet** depuis le retrait
+  de GitHub Pages. Inoffensifs, donc laissés : c'est du nettoyage.
