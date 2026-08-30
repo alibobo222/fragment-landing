@@ -64,14 +64,13 @@ export const siteConfig: SiteConfig = {
   checkoutUrl: null,
 
   // TODO: remplacer par l'adresse de contact réelle de l'atelier.
-  contactEmail: "contact@noirmineral.studio",
+  contactEmail: "studionoirmineral@outlook.fr",
 
   // TODO: renseigner le compte Instagram s'il existe, sinon laisser `null`.
   instagramUrl: null,
 
-  // TODO: publier puis lier les pages légales.
-  legalNoticeUrl: null,
-  privacyUrl: null,
+  legalNoticeUrl: "/mentions-legales/",
+  privacyUrl: "/confidentialite/",
 
   // Renseignée par `NEXT_PUBLIC_CONTACT_ENDPOINT` au build (voir .env.example et
   // le workflow GitHub Actions). Absente en local tant qu'on n'a pas servi la
@@ -82,7 +81,7 @@ export const siteConfig: SiteConfig = {
   analyticsId: null,
 
   // URL GitHub Pages réelle du dépôt (alibobo222/fragment-landing).
-  siteUrl: "https://alibobo222.github.io/fragment-landing",
+  siteUrl: "https://noirmineral.studio",
 };
 
 /** Libellé du CTA final dérivé du mode commercial. */

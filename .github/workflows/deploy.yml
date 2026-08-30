@@ -1,21 +1,21 @@
 name: Déploiement GitHub Pages
 
 # Vérifie types, lint et tests sur chaque pull request.
-# ⚠️ DÉPLOIEMENT SUSPENDU — 27/08/2026
+# ⚠️ DÉPLOIEMENT GITHUB PAGES HORS SERVICE — 30/08/2026
 #
-# Le site publié plantait entièrement : les assets chargés HORS de Next (GLB,
-# textures, images de public/) sont écrits en chemins absolus, sans basePath.
-# Sous /fragment-landing/ ils répondaient 404 ; useGLTF levait, aucune barrière
-# d'erreur ne l'attrapait, et React démontait toute la page — plus de site du
-# tout dès qu'on approchait du configurateur.
+# Le site officiel est désormais servi par Vercel sur https://noirmineral.studio.
+# Publier en parallèle sur Pages produirait un second site, à une autre URL, qui
+# divergerait en silence — et le QR code imprimé pointe vers le domaine.
 #
-# Le déclencheur `push` est retiré pour qu'aucun déploiement ne reparte tant que
-# les chemins ne sont pas corrigés. La validation sur pull request reste active :
-# on continue de vérifier le code, on cesse seulement de le publier.
+# Pages servait le site sous /fragment-landing/, un sous-chemin que les assets
+# chargés hors de Next (GLB, textures, images) ne préfixaient pas : ils
+# répondaient 404 et la page entière s'effondrait. À la racine du domaine, le
+# problème ne se pose plus. Le défaut de préfixage, lui, reste à corriger.
 #
-# POUR REDÉPLOYER : remettre les deux lignes `push:` / `branches:` ci-dessous.
-# Le job `deploy` exige `github.event_name == 'push'`, il ne peut donc pas
-# partir par `workflow_dispatch` — la suspension ne dépend pas d'un oubli.
+# Le déclencheur `push` est retiré ; la validation sur pull request reste active :
+# on continue de vérifier le code, on cesse seulement de le publier ici. Le job
+# `deploy` exigeant `github.event_name == 'push'`, il ne peut pas repartir par
+# `workflow_dispatch`. Rien n'est supprimé — remettre `push` suffirait.
 on:
   pull_request:
   workflow_dispatch:
