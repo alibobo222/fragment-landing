@@ -39,104 +39,111 @@ export function SiteHeader() {
   }, [open]);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-line bg-white">
-      <div className="u-container flex h-14 items-center justify-between">
-        <a
-          href="#top"
-          onClick={() => setOpen(false)}
-          className="inline-flex items-center"
-          aria-label={`${siteConfig.brandName}, retour en haut`}
-        >
-          <Image
-            src="/images/brand/fragment-wordmark.png"
-            alt={siteConfig.brandName}
-            width={777}
-            height={180}
-            priority
-            className="h-[1.7rem] w-auto"
-          />
-        </a>
-
-        <motion.button
-          type="button"
-          {...buttonMotion}
-          onClick={() => setOpen((v) => !v)}
-          aria-expanded={open}
-          aria-controls="menu-principal"
-          aria-label={open ? "Fermer le menu" : "Ouvrir le menu"}
-          className="btn-glass btn-glass-icon inline-flex h-10 w-10 items-center justify-center"
-        >
-          <BurgerIcon open={open} />
-        </motion.button>
-      </div>
-
-      <AnimatePresence>
-        {open && (
-          <>
-            {/* Voile sur le surround (desktop) — ferme au clic. */}
-            <motion.div
-              className="fixed inset-0 z-40 bg-ink/25"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
-              onClick={() => setOpen(false)}
-              aria-hidden
+    <>
+      <header className="fixed inset-x-0 top-0 z-40 mx-auto w-full max-w-[30rem] border-b border-line bg-white">
+        <div className="u-container flex h-14 items-center justify-between">
+          <a
+            href="#top"
+            onClick={() => setOpen(false)}
+            className="inline-flex items-center"
+            aria-label={`${siteConfig.brandName}, retour en haut`}
+          >
+            <Image
+              src="/images/brand/fragment-wordmark.png"
+              alt={siteConfig.brandName}
+              width={777}
+              height={180}
+              priority
+              className="h-[1.7rem] w-auto"
             />
-            {/* Panneau, cadré sur la colonne mobile. */}
-            <motion.div
-              id="menu-principal"
-              role="dialog"
-              aria-modal="true"
-              aria-label="Navigation principale"
-              className="fixed inset-y-0 left-1/2 top-14 z-50 w-full max-w-[30rem] -translate-x-1/2 overflow-y-auto bg-white"
-              initial={reduce ? { opacity: 0 } : { opacity: 0, y: -12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={reduce ? { opacity: 0 } : { opacity: 0, y: -12 }}
-              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-            >
-              <motion.nav
-                className="u-container flex flex-col py-6"
-                initial="hidden"
-                animate="visible"
-                variants={{ visible: { transition: { staggerChildren: 0.06, delayChildren: 0.08 } } }}
+          </a>
+
+          <motion.button
+            type="button"
+            {...buttonMotion}
+            onClick={() => setOpen((v) => !v)}
+            aria-expanded={open}
+            aria-controls="menu-principal"
+            aria-label={open ? "Fermer le menu" : "Ouvrir le menu"}
+            className="btn-glass btn-glass-icon inline-flex h-10 w-10 items-center justify-center"
+          >
+            <BurgerIcon open={open} />
+          </motion.button>
+        </div>
+
+        <AnimatePresence>
+          {open && (
+            <>
+              {/* Voile sur le surround (desktop) — ferme au clic. */}
+              <motion.div
+                className="fixed inset-0 z-40 bg-ink/25"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
+                onClick={() => setOpen(false)}
+                aria-hidden
+              />
+              {/* Panneau, cadré sur la colonne mobile. */}
+              <motion.div
+                id="menu-principal"
+                role="dialog"
+                aria-modal="true"
+                aria-label="Navigation principale"
+                className="fixed inset-y-0 left-1/2 top-14 z-50 w-full max-w-[30rem] -translate-x-1/2 overflow-y-auto bg-white"
+                initial={reduce ? { opacity: 0 } : { opacity: 0, y: -12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={reduce ? { opacity: 0 } : { opacity: 0, y: -12 }}
+                transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
               >
-                {MENU.map((item) => (
-                  <motion.a
-                    key={item.href}
-                    href={item.href}
-                    onClick={() => setOpen(false)}
-                    variants={{
-                      hidden: { opacity: 0, y: reduce ? 0 : 14 },
-                      visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] } },
-                    }}
-                    // Même typographie que les titres de section (u-title,
-                    // voir components/ui/SectionHeading.tsx) : taille, graisse,
-                    // interlignage et suivi de lettres identiques — une seule
-                    // source pour les deux, jamais deux réglages qui divergent.
-                    // font-display reste explicite : u-title n'impose la police
-                    // que via le sélecteur h1/h2/h3, pas sur un <a>.
-                    className="group flex items-baseline gap-4 border-b border-line py-4 font-display u-title text-ink transition-colors hover:text-anthracite"
-                  >
-                    <span className="u-index w-7 shrink-0 text-xs text-ink-muted">
-                      {item.num}
-                    </span>
-                    {item.label}
-                  </motion.a>
-                ))}
-                <a
-                  href={`mailto:${siteConfig.contactEmail}`}
-                  onClick={() => setOpen(false)}
-                  className="mt-8 text-sm text-ink-muted underline-offset-4 hover:text-ink hover:underline"
+                <motion.nav
+                  className="u-container flex flex-col py-6"
+                  initial="hidden"
+                  animate="visible"
+                  variants={{ visible: { transition: { staggerChildren: 0.06, delayChildren: 0.08 } } }}
                 >
-                  {siteConfig.contactEmail}
-                </a>
-              </motion.nav>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-    </header>
+                  {MENU.map((item) => (
+                    <motion.a
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => setOpen(false)}
+                      variants={{
+                        hidden: { opacity: 0, y: reduce ? 0 : 14 },
+                        visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] } },
+                      }}
+                      // Même typographie que les titres de section (u-title,
+                      // voir components/ui/SectionHeading.tsx) : taille, graisse,
+                      // interlignage et suivi de lettres identiques — une seule
+                      // source pour les deux, jamais deux réglages qui divergent.
+                      // font-display reste explicite : u-title n'impose la police
+                      // que via le sélecteur h1/h2/h3, pas sur un <a>.
+                      className="group flex items-baseline gap-4 border-b border-line py-4 font-display u-title text-ink transition-colors hover:text-anthracite"
+                    >
+                      <span className="u-index w-7 shrink-0 text-xs text-ink-muted">
+                        {item.num}
+                      </span>
+                      {item.label}
+                    </motion.a>
+                  ))}
+                  <a
+                    href={`mailto:${siteConfig.contactEmail}`}
+                    onClick={() => setOpen(false)}
+                    className="mt-8 text-sm text-ink-muted underline-offset-4 hover:text-ink hover:underline"
+                  >
+                    {siteConfig.contactEmail}
+                  </a>
+                </motion.nav>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
+      </header>
+
+      {/* CALE — l'en-tête est hors flux, ce vide tient sa place dans la
+          colonne. 3.5rem (h-14) + 1px pour le filet inférieur : la mise en
+          page reste au pixel près celle du sticky qu'il remplace. */}
+      <div aria-hidden className="h-[calc(3.5rem+1px)]" />
+    </>
   );
 }
 
