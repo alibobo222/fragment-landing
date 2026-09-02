@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
 import { siteConfig } from "@/config/site";
@@ -9,7 +9,7 @@ import { siteConfig } from "@/config/site";
  * Chapitre 1 — Hero visuel STATIQUE (fidèle à la maquette).
  *
  * Grande photographie verticale de la lampe, plein cadre, nom de la
- * configuration en bas + indicateur de défilement. Entrée en fondu-zoom lente,
+ * configuration en bas + amorce de défilement. Entrée en fondu-zoom lente,
  * léger parallax au scroll (profondeur). Aucune 3D ici — elle arrive au
  * chapitre « Explorer ».
  */
@@ -64,14 +64,84 @@ export function Hero() {
         >
           {siteConfig.collectionName}
         </motion.h1>
-        <motion.span
-          aria-hidden
-          className="mt-4 h-1 w-9 rounded-full bg-white/70"
-          initial={{ opacity: 0, scaleX: 0.4 }}
-          animate={{ opacity: 1, scaleX: 1 }}
-          transition={{ duration: 0.8, delay: 1, ease: [0.22, 1, 0.36, 1] }}
-        />
+        <Amorce />
       </motion.div>
     </section>
+  );
+}
+
+const CLE_AMORCE = "amorce-defilement-vue";
+
+/**
+ * AMORCE DE DÉFILEMENT — la barre, puis un trait de 1 px qui descend sur
+ * 24 px, marque un temps, s'efface, et recommence toutes les 2,4 s. Aucun
+ * texte : il dit qu'il y a quelque chose en dessous, il ne l'explique pas.
+ *
+ * Il ne revient JAMAIS une fois compris : dès 40 px de défilement — le geste
+ * a eu lieu — ou au bout de 8 secondes, il s'éteint pour toute la session. Un
+ * repère qui continue d'insister après avoir été compris devient un tic.
+ *
+ * prefers-reduced-motion : le trait n'apparaît pas du tout. La barre seule
+ * demeure, et c'est l'alternance des sols qui dit qu'il y a une suite.
+ */
+function Amorce() {
+  const reduce = useReducedMotion();
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    if (reduce) return;
+    try {
+      if (sessionStorage.getItem(CLE_AMORCE) === "1") return;
+    } catch {
+      // Navigation privée ou stockage refusé : l'amorce joue, sans mémoire.
+    }
+    setVisible(true);
+
+    const eteindre = () => {
+      setVisible(false);
+      try {
+        sessionStorage.setItem(CLE_AMORCE, "1");
+      } catch {
+        // Sans stockage, l'amorce rejouera au prochain montage. Sans gravité.
+      }
+    };
+
+    const minuteur = window.setTimeout(eteindre, 8000);
+    const auDefilement = () => {
+      if (window.scrollY > 40) eteindre();
+    };
+    window.addEventListener("scroll", auDefilement, { passive: true });
+    return () => {
+      window.clearTimeout(minuteur);
+      window.removeEventListener("scroll", auDefilement);
+    };
+  }, [reduce]);
+
+  return (
+    <>
+      <motion.span
+        aria-hidden
+        className="mt-4 h-1 w-9 rounded-full bg-white/70"
+        initial={{ opacity: 0, scaleX: 0.4 }}
+        animate={{ opacity: 1, scaleX: 1 }}
+        transition={{ duration: 0.8, delay: 1, ease: [0.22, 1, 0.36, 1] }}
+      />
+      {visible && (
+        // scaleY sur une boîte de 24 px déjà réservée, plutôt qu'une hauteur
+        // animée : le trait descend sans provoquer un seul recalcul de mise
+        // en page à chaque image.
+        <motion.span
+          aria-hidden
+          className="mt-2 block h-6 w-px origin-top bg-white/70"
+          animate={{ scaleY: [0, 1, 1, 1], opacity: [1, 1, 1, 0] }}
+          transition={{
+            duration: 2.4,
+            times: [0, 0.35, 0.72, 1],
+            repeat: Infinity,
+            ease: [0.22, 1, 0.36, 1],
+          }}
+        />
+      )}
+    </>
   );
 }
