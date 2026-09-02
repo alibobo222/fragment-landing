@@ -16,7 +16,14 @@ export interface SiteConfig {
   brandName: string;
   /** Nom de la collection / gamme de la lampe (« Noir Minéral »). */
   collectionName: string;
+  /** Accroche courte. Sert AUSSI de titre de page : la garder brève. */
   baseline: string;
+  /**
+   * Le cadre dans lequel le projet a été mené. Champ distinct de `baseline`,
+   * qui compose le <title> — un paragraphe y serait illisible dans l'onglet et
+   * dans les résultats de recherche.
+   */
+  projectStatement: string;
   /** Prix TTC. `null` tant qu'il n'est pas fixé — ne jamais inventer. */
   price: number | null;
   currency: string;
@@ -42,6 +49,11 @@ export interface SiteConfig {
   analyticsId: string | null;
   /** URL canonique absolue du site en production. */
   siteUrl: string;
+  /**
+   * Les auteurs du projet, dans l'ordre convenu entre eux — ce n'est pas une
+   * liste triable, ne pas la réordonner. Affichée en colophon, tout en bas.
+   */
+  authors: string[];
 }
 
 export const siteConfig: SiteConfig = {
@@ -50,6 +62,11 @@ export const siteConfig: SiteConfig = {
   brandName: "FRAGMENT",
   collectionName: "Noir Minéral",
   baseline: "La lumière prend position.",
+
+  projectStatement:
+    "Le projet Noir Minéral s’inscrit dans la 1re édition de FRGMNT, réunissant " +
+    "des créateurs pendant 48 heures pour concevoir du mobilier à partir de " +
+    "matériaux industriels revalorisés.",
 
   // TODO: fixer le prix de vente public. Tant que `null`, aucun prix ni donnée
   // structurée Product avec offre n'est affiché.
@@ -82,6 +99,8 @@ export const siteConfig: SiteConfig = {
 
   // URL GitHub Pages réelle du dépôt (alibobo222/fragment-landing).
   siteUrl: "https://noirmineral.studio",
+
+  authors: ["Clémence BIROT", "Vincent CASSAT", "Alicia BONNARD"],
 };
 
 /** Libellé du CTA final dérivé du mode commercial. */
