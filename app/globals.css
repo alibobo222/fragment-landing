@@ -17,6 +17,13 @@
   --color-ink-muted: #6c6a62;    /* gris béton (texte secondaire) */
   --color-line: #cbc8bd;         /* filet béton */
 
+  /* CHAPITRAGE — échantillonnés sur la photo du hero, aucune autre teinte.
+     Le bleu est la SEULE couleur d'accent des repères de lecture ; les trois
+     autres sont des sols. */
+  --color-fil: #143792;          /* bleu du câble — fil de progression, chapitre courant */
+  --color-lampe: #29251f;        /* noir de la lampe — sol du chapitre 03 */
+  --color-pierre: #f2f1ee;       /* sol des chapitres 02 et 05 */
+
   /* Accents MATIÈRE — dérivés du produit/configurateur, jamais décoratifs. */
   --color-cobalt: #2a3fe6;
   --color-brass: #b08a52;
@@ -391,4 +398,26 @@
       transform: translate3d(-50%, 0, 0);
     }
   }
+}
+
+/* ------------------------------------------------------------------ *
+ * LES SOLS — le changement de fond EST la séparation entre chapitres.
+ * Pas de filet, pas de trait, pas de dégradé : deux chapitres voisins ne
+ * partagent jamais le même sol, et c'est ce qui les distingue. Chaque sol
+ * fixe aussi la couleur du texte et --halo, le halo posé derrière la scène 3D,
+ * qui doit se régler sur le fond qui le porte.
+ * ------------------------------------------------------------------ */
+@layer utilities {
+  .sol-papier {
+    background-color: var(--color-paper);
+    color: var(--color-lampe);
+    --halo: rgb(41 37 31 / 0.07);
+  }
+
+  .sol-pierre {
+    background-color: var(--color-pierre);
+    color: var(--color-lampe);
+    --halo: rgb(41 37 31 / 0.07);
+  }
+
 }

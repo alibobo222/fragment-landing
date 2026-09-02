@@ -41,11 +41,10 @@ function Text({
 
 export function ProjectStory() {
   return (
-    <section id="projet" aria-labelledby="projet-title" className="scroll-mt-16 bg-white pt-4 pb-20">
+    <section id="projet" aria-labelledby="projet-title" className="sol-papier scroll-mt-16 pb-12">
       {/* Non épinglé (demandé) : le titre défile normalement avec le reste
           du chapitre au lieu de rester fixé en haut d'écran pendant le scroll. */}
       <SectionHeading
-        sticky={false}
         index="01"
         kicker="Le projet"
         id="projet-title"
@@ -116,7 +115,7 @@ export function ProjectStory() {
             le rythme INTÉRIEUR au chapitre ; ici on ouvre un chapitre, donc
             l'intervalle doit être franchement plus large que tout ce qui le
             précède, sur le rythme des autres sections de la page. */}
-        <div className="mt-10">
+        <div className="mt-8">
           {/* Filet à bord perdu — 1 px, couleur de ligne du système. Serré de
               part et d'autre : l'espace dit déjà la coupure, le filet ne fait
               que la confirmer. Trop d'air autour et il devient un ornement. */}

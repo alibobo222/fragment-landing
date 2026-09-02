@@ -16,14 +16,13 @@ export function Details() {
   // vaut mieux que de laisser croire qu'elle n'existe pas.
   const specs = productSpecs.filter((spec) => spec.value !== null || spec.pending);
   return (
-    <section id="details" aria-labelledby="details-title" className="scroll-mt-16 bg-white pt-4 pb-20">
+    <section id="details" aria-labelledby="details-title" className="sol-pierre scroll-mt-16 pb-12">
       {/* Non épinglé (demandé) : le titre défile normalement avec le reste
           du chapitre. La révélation au scroll (même Reveal que le corps de
           section, juste en-dessous) crée le point de repère qui remplaçait
           l'épinglage — un temps d'arrêt à l'arrivée, pas un titre qui suit. */}
       <Reveal>
         <SectionHeading
-          sticky={false}
           index="04"
           kicker="Fiche technique"
           id="details-title"

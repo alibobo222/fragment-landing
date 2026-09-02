@@ -19,7 +19,7 @@ export function ContactSection() {
     <section
       id="contact"
       aria-labelledby="contact-title"
-      className="scroll-mt-16 border-t border-ink bg-white pt-4 pb-20"
+      className="sol-papier scroll-mt-16 pb-12"
     >
       {/* Non épinglé (demandé) : le titre défile normalement avec le reste
           du chapitre. La révélation au scroll (même Reveal que le corps de
@@ -27,7 +27,6 @@ export function ContactSection() {
           l'épinglage — un temps d'arrêt à l'arrivée, pas un titre qui suit. */}
       <Reveal>
         <SectionHeading
-          sticky={false}
           index="05"
           kicker="Prendre contact"
           id="contact-title"
@@ -60,7 +59,7 @@ export function ContactSection() {
         </Reveal>
 
         <Reveal delay={0.1}>
-          <div className="mt-10 border-t border-line pt-6">
+          <div className="mt-8 border-t border-line pt-6">
             <p className="u-eyebrow">Ou directement</p>
             <a
               href={`mailto:${siteConfig.contactEmail}`}

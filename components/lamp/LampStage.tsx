@@ -233,8 +233,10 @@ export function LampStage({
         aria-hidden
         className="pointer-events-none absolute inset-0"
         style={{
-          background:
-            "radial-gradient(circle at 50% 55%, rgba(20,20,28,0.07) 0%, rgba(20,20,28,0.03) 32%, rgba(20,20,28,0) 60%)",
+          // --halo est defini par le sol du chapitre (globals.css) : sombre sur
+          // les sols clairs, clair sur le noir du chapitre 03. Sans cela le halo
+          // disparaissait purement et simplement sur fond noir.
+          background: "radial-gradient(circle at 50% 55%, var(--halo, rgb(41 37 31 / 0.07)) 0%, transparent 62%)",
         }}
       />
       {/* Repli photo : LCP immédiat + secours (pas de WebGL / reduced-motion). */}

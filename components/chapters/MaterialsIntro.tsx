@@ -10,13 +10,12 @@ import { MaterialsMarquee } from "@/components/chapters/MaterialsMarquee";
  */
 export function MaterialsIntro() {
   return (
-    <section id="matieres" aria-labelledby="matieres-title" className="scroll-mt-16 bg-white pt-4 pb-10">
+    <section id="matieres" aria-labelledby="matieres-title" className="sol-pierre scroll-mt-16 pb-8">
       {/* Titre NON épinglé : ce chapitre tient en trois phrases et une image.
           Un titre qui reste collé en haut d'écran a du sens quand la section est
           longue et qu'on risque d'oublier où l'on est — pas ici, où il ne fait
           que consommer 110 px de hauteur en permanence. */}
       <SectionHeading
-        sticky={false}
         index="02"
         kicker="Les matières"
         id="matieres-title"

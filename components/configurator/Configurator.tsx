@@ -59,11 +59,10 @@ export function Configurator() {
       // le bas du chapitre précédent, le haut de celui-ci, et le pt-6 du titre
       // de section. Près de 120 px de vide pour une simple respiration entre
       // deux chapitres. Réduites ensemble, elles en laissent environ 65.
-      className="scroll-mt-16 bg-white pt-1 pb-12"
+      className="sol-papier scroll-mt-16 pb-10"
     >
       {/* Titre NON épinglé : la place en haut d'écran revient à la scène 3D. */}
       <SectionHeading
-        sticky={false}
         index="03"
         kicker="Le configurateur"
         id="configurateur-title"
@@ -141,7 +140,7 @@ export function Configurator() {
           de contact — qui passait donc dessous et disparaissait.
           Un bloc épinglé sans contenu à survoler ne rend aucun service et masque
           ce qui le suit. Le retirer règle le défaut sans rien compenser. */}
-      <div className="mt-1 bg-white pb-4">
+      <div className="mt-1 pb-4">
         {/* ⚠️ HAUTEUR FIXE, LARGEUR LIBRE — et c'est tout le point.
             La boîte était `aspect-square max-w-[40svh] overflow-hidden` : un carré
             d'environ 296 px dans une colonne qui en fait 480. Le câble, qui
@@ -161,7 +160,7 @@ export function Configurator() {
             camera={[0.12, 0.14, 0.5]}
             fov={30}
             imageSizes="480px"
-            className="u-bleed h-[54svh] bg-white"
+            className="u-bleed h-[54svh]"
           />
         </div>
         <VariantPicker selectedId={selectedId} onChoose={onChoose} />
