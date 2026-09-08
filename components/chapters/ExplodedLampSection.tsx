@@ -12,6 +12,7 @@ import {
 import { useSelection } from "@/components/SelectionProvider";
 import { variants } from "@/data/product";
 import { RevealImage } from "@/components/ui/motion";
+import { composer } from "@/lib/typographie";
 import { ExplodedAnnotations } from "@/components/chapters/ExplodedAnnotations";
 import {
   EXPLODED_TIMELINE as T,
@@ -295,6 +296,22 @@ function ExplodedScrollTrack({ onContextLost }: { onContextLost: () => void }) {
               ))}
             </div>
           </div>
+
+          {/* Ce que le défilement va révéler — HORS du badge, sous lui : le
+              cartouche garde son dessin, sa largeur et sa jauge intacts.
+              Elle porte `hintOpacity`, la même valeur que l'invite du bas :
+              les deux s'effacent ensemble dès que le désassemblage commence,
+              et rien ne subsiste une fois le geste compris.
+              Mono sans capitales : `u-eyebrow` est le registre des étiquettes
+              de cette planche, mais une phrase entière en capitales y crierait. */}
+          <motion.p
+            style={{ opacity: reduce ? 0 : hintOpacity }}
+            className="u-mono mt-2 max-w-[15rem] text-[0.62rem] leading-[1.45] text-ink-muted"
+          >
+            {composer(
+              "Faites défiler pour découvrir l'éclaté 3D de la lampe et le rôle de chaque pièce."
+            )}
+          </motion.p>
         </div>
 
         {/* Cartouche de planche (bas) — prend la place de l'invite au scroll
@@ -312,7 +329,11 @@ function ExplodedScrollTrack({ onContextLost }: { onContextLost: () => void }) {
               utilitaires : d'où le `!`. Le `text-[0.6rem]` qui figurait ici
               avant était d'ailleurs sans effet. */}
           <span className="u-eyebrow text-[0.55rem]! tracking-[0.08em]! text-ink-muted">
-            06 pièces · assemblage manuel
+            {/* Cinq et non six : l'ampoule a quitté la nomenclature — c'est un
+                consommable, pas une pièce de l'objet. Ce compte doit suivre la
+                planche, sans quoi le cartouche annonce une pièce que rien
+                n'étiquette. */}
+            05 pièces · assemblage manuel
           </span>
           <span className="u-index text-[0.58rem] tracking-tight text-ink-muted">
             {variant.index} — {variant.name}
