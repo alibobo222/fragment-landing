@@ -81,8 +81,8 @@ export function ProjectStory() {
 
         {/* Géométrie */}
         <Text eyebrow="Un langage brutaliste" title="Jouer avec la géométrie">
-          Le dessin part de volumes simples — un cylindre, un plan incliné, une
-          découpe — assemblés sans détour. Rien n’est ajouté pour décorer :
+          Le dessin part de volumes simples — deux cylindres imbriqués, des
+          découpes droites, un plan incliné — assemblés sans détour. Rien n’est ajouté pour décorer :
           ce sont les intersections, les proportions et les masses qui font
           l’objet. Une grammaire brutaliste, réduite à l’essentiel.
         </Text>
