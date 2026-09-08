@@ -91,8 +91,8 @@ const ANNOS: AnnoDef[] = [
   {
     part: "socket",
     num: "04",
-    label: "Douille et manchon cylindrique fileté en métal",
-    detail: null,
+    label: "Douille et manchon",
+    detail: "cylindrique fileté en métal",
     side: "right",
   },
   // Décalé vers la gauche : le câble s'étale vers la droite du cadre et venait
@@ -100,8 +100,8 @@ const ANNOS: AnnoDef[] = [
   {
     part: "cable",
     num: "05",
-    label: "Câble électrique en tissu",
-    detail: null,
+    label: "Câble électrique",
+    detail: "en tissu",
     side: "right",
     biasY: 0.18,
     biasX: -0.12,
@@ -119,12 +119,12 @@ const COLUMN_X: Record<Side, number> = { left: 0.03, right: 0.97 };
  * sa gouttière et se contente de passer à la ligne — ce qui est la norme sur une
  * planche technique.
  *
- * Passée de 24 % à 32 % : « Douille et manchon cylindrique fileté en métal »
- * contient des mots plus longs que la gouttière ne l'était, et « cylindrique »
- * sortait du cadre par la droite au lieu de passer à la ligne. La césure
- * (hyphens, sur un document déjà en lang="fr") fait le reste : elle coupe les
- * mots que même 32 % ne suffiraient pas à contenir, plutôt que de les laisser
- * déborder.
+ * Portée de 24 % à 32 %, et pas au-delà : « cylindrique » sortait du cadre par
+ * la droite au lieu de passer à la ligne, mais à 40 % l'étiquette entrait dans
+ * la lampe et son propre trait la barrait. La lisibilité d'un nom long se règle
+ * en le RÉPARTISSANT entre le nom et sa ligne de détail, pas en élargissant la
+ * gouttière jusqu'à manger la géométrie. La césure (hyphens, sur un document
+ * déjà en lang="fr") reste en dernier recours.
  */
 const LABEL_MAX_WIDTH = "32%";
 
@@ -138,7 +138,7 @@ const TEXT_GAP = 9;
 const TIP_GAP = 10;
 
 /** Longueur des barbes de la pointe (px). */
-const HEAD_LEN = 8;
+const HEAD_LEN = 11;
 
 /**
  * Pénalité appliquée à un point cible situé DERRIÈRE le texte, c'est-à-dire dans
@@ -166,10 +166,10 @@ const CENTER_BIAS = 0.3;
  * situé au-delà de ce seuil est préféré. C'est un réglage GLOBAL — aucune flèche
  * n'est corrigée à la main.
  */
-const MIN_LEADER_LEN = 48;
+const MIN_LEADER_LEN = 64;
 
 /** Poids de la pénalité de trait trop court. */
-const SHORT_LEADER_PENALTY = 1.6;
+const SHORT_LEADER_PENALTY = 3.2;
 
 // Fenêtre de révélation — ACTE 2 de la chronologie (voir `explodedTimeline.ts`).
 const START = EXPLODED_TIMELINE.annoStart;
@@ -368,7 +368,19 @@ export function ExplodedAnnotations({
         // Déduit de la largeur mesurée, jamais relu dans le DOM : la boucle doit
         // rester sans reflow.
         const colX = (COLUMN_X[anno.side] + (anno.biasX ?? 0)) * W;
-        els.label.style.left = `${colX}px`;
+        // ⚠️ La colonne de DROITE est ancrée par `right`, jamais par `left`.
+        // Elle l'était : `left: 97%` avec une translation de -100 %, ce qui
+        // plaçait bien l'étiquette À L'ŒIL mais ne lui laissait, POUR LA MISE
+        // EN PAGE, que les 3 % restants jusqu'au bord — douze pixels. Le texte
+        // se repliait donc sur son mot le plus long : « Douille et manchon
+        // cylindrique fileté en métal » tenait sur cinq lignes dans 72 px,
+        // quand la colonne de gauche en occupait 120. La translation ne
+        // déplace que le rendu, pas la largeur disponible.
+        if (anno.side === "left") {
+          els.label.style.left = `${colX}px`;
+        } else {
+          els.label.style.right = `${W - colX}px`;
+        }
         const wBox = boxRef.current[i].w;
         // Emprise horizontale RÉELLE du texte, quelle que soit la colonne.
         const boxLeft = anno.side === "left" ? colX : colX - wBox;
@@ -585,7 +597,7 @@ export function ExplodedAnnotations({
           <g
             className="text-ink"
             stroke="currentColor"
-            strokeWidth={1.2}
+            strokeWidth={1.6}
             strokeLinecap="round"
             strokeLinejoin="round"
           >
@@ -601,14 +613,14 @@ export function ExplodedAnnotations({
                   ref={(el) => {
                     elRefs.current[i].head = el;
                   }}
-                  strokeWidth={1.5}
+                  strokeWidth={1.9}
                   style={{ opacity: 0 }}
                 />
                 <circle
                   ref={(el) => {
                     elRefs.current[i].dot = el;
                   }}
-                  r={1.7}
+                  r={2.2}
                   fill="currentColor"
                   stroke="none"
                   style={{ opacity: 0 }}
@@ -636,12 +648,11 @@ export function ExplodedAnnotations({
               }}
               className="absolute"
               style={{
-                left: `${COLUMN_X[anno.side] * 100}%`,
+                ...(anno.side === "left"
+                  ? { left: `${COLUMN_X.left * 100}%` }
+                  : { right: `${(1 - COLUMN_X.right) * 100}%` }),
                 top: 0,
-                transform:
-                  anno.side === "left"
-                    ? "translate(0, -50%)"
-                    : "translate(-100%, -50%)",
+                transform: "translate(0, -50%)",
                 maxWidth: LABEL_MAX_WIDTH,
                 textAlign: anno.side === "left" ? "left" : "right",
                 opacity: 0,
