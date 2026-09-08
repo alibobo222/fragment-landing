@@ -131,14 +131,19 @@ const COLUMN_X: Record<Side, number> = { left: 0.03, right: 0.97 };
  * sa gouttière et se contente de passer à la ligne — ce qui est la norme sur une
  * planche technique.
  *
- * Portée de 24 % à 32 %, et pas au-delà : « cylindrique » sortait du cadre par
- * la droite au lieu de passer à la ligne, mais à 40 % l'étiquette entrait dans
- * la lampe et son propre trait la barrait. La lisibilité d'un nom long se règle
- * en le RÉPARTISSANT entre le nom et sa ligne de détail, pas en élargissant la
- * gouttière jusqu'à manger la géométrie. La césure (hyphens, sur un document
- * déjà en lang="fr") reste en dernier recours.
+ * Portée de 24 % à 32 % puis ramenée à 26 % quand la scène a reculé : à 24 %
+ * « cylindrique » sortait du cadre par la droite au lieu de passer à la ligne,
+ * mais à 40 % l'étiquette entrait dans la lampe et son propre trait la barrait.
+ * La lisibilité d'un nom long se règle en le RÉPARTISSANT entre le nom et sa
+ * ligne de détail, pas en élargissant la gouttière jusqu'à manger la géométrie.
  */
-const LABEL_MAX_WIDTH = "26%";
+// 26 % de la scène, mais JAMAIS moins de 92 px. Sans césure ni coupure de mot,
+// une colonne trop étroite ne fait plus passer le mot à la ligne : elle le
+// laisse déborder. À 320 px de large, 26 % ne valaient que 83 px, tandis que
+// « cylindrique » en demande 87 et « Wasterial® » 84. Le plancher ne joue que
+// sur les écrans les plus étroits ; au-delà de 354 px, le pourcentage reprend
+// la main et les grandes colonnes restent inchangées.
+const LABEL_MAX_WIDTH = "max(26%, 92px)";
 
 /** Écart vertical minimal entre deux étiquettes voisines (px). */
 const LABEL_GAP = 12;
@@ -678,7 +683,15 @@ export function ExplodedAnnotations({
                 ref={(el) => {
                   elRefs.current[i].span = el;
                 }}
-                className="inline-block hyphens-auto text-[0.72rem] font-medium leading-snug text-ink [overflow-wrap:break-word]"
+                // NI CÉSURE NI COUPURE DE MOT. La césure automatique et
+                // overflow-wrap: break-word avaient été posées quand la colonne
+                // faisait 24 % et qu'un mot pouvait la dépasser — « cylindrique »
+                // sortait alors du cadre. Depuis, la colonne est à 26 % et les
+                // noms les plus longs ont été répartis sur la ligne de détail :
+                // plus aucun mot ne dépasse, et la césure ne servait plus qu'à
+                // fabriquer des « ma-tières » et des « cylindri-que ».
+                // Les lignes se coupent entre les mots, jamais dedans.
+                className="inline-block text-[0.72rem] font-medium leading-snug text-ink"
               >
                 {/* AUCUNE taille ici : l'indice hérite celle du nom de la pièce,
                     portée par le span parent. Il l'avait fixée à 0,6 rem, si
