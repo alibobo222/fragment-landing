@@ -35,6 +35,14 @@ interface AnnoDef {
    * la matière réelle de la pièce, qui change avec la sélection. Une chaîne la
    * remplace par un texte fixe ; `null` la supprime, pour les pièces dont le
    * nom porte déjà la matière et qu'une seconde ligne répéterait.
+   *
+   * SA CAPITALE DÉCIDE DE LA LIAISON dans l'équivalent textuel lu par les
+   * lecteurs d'écran. Un détail qui NOMME une matière commence par une
+   * majuscule et se joint par un deux-points — « Abat-jour : Collection
+   * matières Wasterial® ». Un détail qui COMPLÈTE le nom commence par une
+   * minuscule et se joint par une virgule — « Douille et manchon,
+   * cylindrique fileté en métal ». Le deux-points y était inaudible : il
+   * séparait un nom de sa propre suite.
    */
   detail?: string | null;
 }
@@ -581,7 +589,11 @@ export function ExplodedAnnotations({
           const mat = anno.detail !== undefined ? anno.detail : materialOf(anno.part);
           return (
             <li key={anno.part}>
-              {composer(`${anno.num} — ${anno.label}${mat ? ` : ${mat}` : ""}`)}
+              {composer(
+                `${anno.num} — ${anno.label}${
+                  mat ? `${/^[a-zà-ÿ]/.test(mat) ? ", " : " : "}${mat}` : ""
+                }`
+              )}
             </li>
           );
         })}
