@@ -83,6 +83,23 @@
   html {
     scroll-behavior: smooth;
     -webkit-text-size-adjust: 100%;
+
+    /* ANCRAGE EN HAUT DU DOCUMENT — la mise en page refuse de se stabiliser
+       ailleurs qu'au sommet, au lieu de corriger après coup un décalage dont
+       on ignore la cause.
+
+       Safari iOS dépose la page à 108 px à l'arrivée — deux relevés
+       indépendants, au pixel près — sans qu'on sache pourquoi. Un reset en
+       JavaScript devait deviner QUAND agir, et risquait de contrarier le geste
+       d'un visiteur qui défile aussitôt. Ici c'est le navigateur qui ramène à
+       zéro, y compris après une modification de mise en page, et sans aucun
+       état à tenir.
+
+       « proximity » et non « mandatory » : l'ancrage n'agit qu'à proximité
+       immédiate du sommet. Un seul élément de la page porte
+       scroll-snap-align — le hero, voir components/hero/Hero.tsx — donc tout
+       le reste du défilement demeure entièrement libre, sans aimantation. */
+    scroll-snap-type: y proximity;
   }
 
   @media (prefers-reduced-motion: reduce) {
