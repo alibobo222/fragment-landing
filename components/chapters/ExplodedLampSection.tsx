@@ -66,6 +66,21 @@ const STAGE_BOTTOM = 30;
  */
 const STAGE_TOP = 18;
 
+/**
+ * Hauteur de la puce d'acte (« Désassemblage » / « Nomenclature »).
+ *
+ * Elle était calée sur STAGE_TOP, c'est-à-dire tout en haut de la fenêtre de
+ * scène — or l'objet, lui, occupe le milieu du cadre. Mesuré à l'éclatement
+ * maximal, où l'ampoule monte le plus haut : environ 148 px de blanc séparaient
+ * la puce du premier pixel de la lampe. Elle descend donc de 70 px, ce qui
+ * referme la moitié de ce vide sans jamais venir au contact — il reste près de
+ * 80 px de dégagement dans l'état le plus défavorable.
+ *
+ * Valeur distincte de STAGE_TOP, qui reste la marge de la fenêtre d'annotations
+ * et n'a aucune raison de suivre la puce.
+ */
+const BADGE_TOP = STAGE_TOP + 70;
+
 /** Illustration statique d'origine (repli : pas de WebGL / reduced-motion). */
 function StaticEclate({ conteneurRef }: { conteneurRef?: RefObject<HTMLElement | null> }) {
   return (
@@ -260,7 +275,7 @@ function ExplodedScrollTrack({ onContextLost }: { onContextLost: () => void }) {
             titre de chapitre libère pendant l'épinglage. */}
         <div
           className="pointer-events-none absolute left-[1.4rem]"
-          style={{ top: STAGE_TOP }}
+          style={{ top: BADGE_TOP }}
         >
           <div className="btn-glass btn-glass-secondary inline-flex flex-col gap-1.5 px-3 py-1.5">
             <div className="flex items-center gap-1.5">
