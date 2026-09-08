@@ -175,7 +175,8 @@ export const variants: ProductVariant[] = [
     // l'extérieur), avec la photo réelle Renature appliquée par-dessus en
     // baseColor uniquement (voir applyInteriorVeneer, lib/lampTextures.ts).
     shadeInner: {
-      label: "Biomatériau Renature®",
+      label:
+        "Phyli® - Renature (formulé à partir de coproduits et de déchets de l'industrie agroalimentaire)",
       color: "#1c2028",
       material: "matte",
       textureImage: "/textures/swatch/renature.webp",
