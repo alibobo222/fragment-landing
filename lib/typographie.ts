@@ -38,6 +38,20 @@ const APO = "’";
  *  unités et n'ont aucune raison d'être insécables. */
 const UNITES = ["K", "V", "W", "A", "Hz", "cm", "mm", "m", "kg", "g", "h", "min", "s", "lm", "nm", "°C", "%"];
 
+/**
+ * Longueur au-delà de laquelle une parenthèse n'est PLUS rendue insécable.
+ *
+ * Une courte incise — « (hors câble) », « (couleur selon configuration) » — se
+ * lit comme un bloc : la couper en deux lignes la fait perdre. Au-delà, forcer
+ * la cohésion produirait l'inverse, une ligne qui déborde de sa colonne au lieu
+ * de passer proprement à la ligne — et sur une colonne étroite, ce débordement
+ * est réel : à trente signes, « (couleur selon configuration) » devenait
+ * insoluble et élargissait le document de 4 px au-delà du viewport (mesuré :
+ * 379 px pour 375). Seize signes retiennent les incises de mesure — « (hors
+ * câble) », « (hors tout) » — et laissent respirer tout le reste.
+ */
+const PARENTHESE_COURTE = 16;
+
 /** Mots d'une ou deux lettres, en fin desquels on pose une insécable. */
 const MOT_COURT = /(^|[\s(«])([A-Za-zÀ-ÿ]{1,2}|\d{1,2}) (?=[A-Za-zÀ-ÿ0-9«])/g;
 
@@ -74,6 +88,15 @@ export function composer(texte: string): string {
   // Mots d'une ou deux lettres. Appliqué en dernier, et une seule passe : les
   // chevauchements ne sont pas repris, ce qui évite les chaînes trop longues.
   t = t.replace(MOT_COURT, "$1$2" + INSEC);
+
+  // Courtes parenthèses : insécables À L'INTÉRIEUR, pour que l'incise ne se
+  // brise pas en fin de ligne. « H 20 × l 22 × P 16 cm (hors câble) » se
+  // coupait entre « hors » et « câble ». La coupure reste possible DEVANT la
+  // parenthèse — c'est elle qu'on veut, elle garde l'incise entière.
+  const courte = new RegExp(`\\(([^()]{1,${PARENTHESE_COURTE}})\\)`, "g");
+  t = t.replace(courte, (_, dedans) =>
+    "(" + dedans.replace(/ /g, INSEC) + ")"
+  );
 
   return t;
 }

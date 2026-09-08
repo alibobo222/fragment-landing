@@ -105,4 +105,25 @@ describe("composer — micro-typographie française", () => {
       expect(composer(une)).toBe(une);
     });
   });
+
+  describe("courtes parenthèses", () => {
+    it("rend insécable l'intérieur d'une courte incise", () => {
+      const r = composer("H 20 × l 22 × P 16 cm (hors câble)");
+      expect(r).toContain("(hors\u00A0câble)");
+    });
+
+    it("laisse la coupure possible DEVANT la parenthèse", () => {
+      const r = composer("16 cm (hors câble)");
+      // L'espace qui précède l'ouvrante reste ordinaire : c'est par là que
+      // la ligne doit se couper, en gardant l'incise entière.
+      expect(r).toContain("cm (");
+    });
+
+    it("laisse respirer une longue parenthèse", () => {
+      // Au-delà du seuil, forcer la cohésion ferait déborder la colonne.
+      const long = "Quatre volumes (abat-jour, pièce métallique, douille et pied)";
+      expect(composer(long)).toContain("métallique, douille");
+      expect(composer(long)).not.toContain("abat-jour,\u00A0pièce");
+    });
+  });
 });
