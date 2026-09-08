@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { Reveal } from "@/components/ui/Reveal";
 import { SectionHeading } from "@/components/ui/SectionHeading";
+import { composer } from "@/lib/typographie";
 import { RevealImage } from "@/components/ui/motion";
 import { MaterialsMarquee } from "@/components/chapters/MaterialsMarquee";
 
@@ -29,20 +30,17 @@ export function MaterialsIntro() {
             sur une zone de simple lecture, corrigé ici. */}
         <Reveal delay={0.05}>
           <p className="mt-1 max-w-[50ch] text-sm leading-relaxed text-ink-soft">
-            La lampe est fabriquée principalement à partir de Wasterial®
-            d’Etnisi, des matériaux composés de matières usagées et
-            revalorisées : béton, pierre, brique, verre, sable…
+            {composer(
+              "La lampe est fabriquée principalement à partir de Wasterial® d'Etnisi, des matériaux composés de matières usagées et revalorisées : béton, pierre, brique, verre, sable…"
+            )}
           </p>
           <p className="mt-3 max-w-[50ch] text-sm leading-relaxed text-ink-soft">
-            Chaque matériau conserve quelque chose de son origine et lui
-            donne sa propre couleur, son grain et sa texture. La forme reste
-            la même, mais les combinaisons de couleurs et de textures lui
-            donnent des expressions différentes. Des pièces d’assemblage
-            supplémentaires permettent ensuite de personnaliser et
-            d’enrichir chaque composition.
+            {composer(
+              "Chaque matériau conserve quelque chose de son origine et lui donne sa propre couleur, son grain et sa texture. La forme reste la même, mais les combinaisons de couleurs et de textures lui donnent des expressions différentes. Des pièces d'assemblage supplémentaires permettent ensuite de personnaliser et d'enrichir chaque composition."
+            )}
           </p>
           <p className="mt-3 max-w-[50ch] text-sm leading-relaxed text-ink">
-            Une même forme. Des possibilités multiples.
+            {composer("Une même forme. Des possibilités multiples.")}
           </p>
         </Reveal>
       </div>

@@ -2,6 +2,7 @@ import { Reveal } from "@/components/ui/Reveal";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { RevealImage } from "@/components/ui/motion";
 import { ExplodedLampSection } from "@/components/chapters/ExplodedLampSection";
+import { composer } from "@/lib/typographie";
 
 /**
  * Chapitre « Le projet » — la démarche de conception, racontée à travers ses
@@ -29,10 +30,15 @@ function Text({
   return (
     <div className="u-container">
       <Reveal>
-        <p className="u-eyebrow">{eyebrow}</p>
-        <h3 className="mt-2 text-lg leading-tight">{title}</h3>
+        {/* Les trois textes passent par composer(). Ils ne le faisaient pas :
+            écrits directement en JSX, ils échappaient aux règles françaises que
+            le reste du site applique — l'espace devant les deux-points y était
+            restée ordinaire alors qu'elle a disparu partout ailleurs. Un texte
+            qui n'est pas composé finit toujours par se voir. */}
+        <p className="u-eyebrow">{composer(eyebrow)}</p>
+        <h3 className="mt-2 text-lg leading-tight">{composer(title)}</h3>
         <p className="mt-2.5 max-w-[50ch] text-sm leading-relaxed text-ink-soft">
-          {children}
+          {typeof children === "string" ? composer(children) : children}
         </p>
       </Reveal>
     </div>
@@ -57,12 +63,9 @@ export function ProjectStory() {
         <div className="u-container">
           <Reveal>
             <p className="max-w-[50ch] text-sm leading-relaxed text-ink-soft">
-              Plutôt que de partir de matières neuves, la lampe s’appuie sur
-              ce qui existe déjà : une grille perforée standard, des chutes
-              minérales déjà mises en forme, un profilé métallique promis à
-              une seconde vie. La contrainte du réemploi n’est pas subie :
-              elle oriente le dessin et donne à chaque exemplaire son
-              caractère.
+              {composer(
+                "Plutôt que de partir de matières neuves, la lampe s'appuie sur ce qui existe déjà : une grille perforée standard, des chutes minérales déjà mises en forme, un profilé métallique promis à une seconde vie. La contrainte du réemploi n'est pas subie : elle oriente le dessin et donne à chaque exemplaire son caractère."
+              )}
             </p>
           </Reveal>
         </div>
