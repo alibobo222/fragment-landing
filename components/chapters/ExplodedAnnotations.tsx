@@ -7,6 +7,7 @@ import { finishFor, type LampPart } from "@/data/lampModel";
 import type { ProductVariant } from "@/data/product";
 import { EXPLODED_TIMELINE } from "@/components/chapters/explodedTimeline";
 import { splitFinishLabel } from "@/lib/materialLabel";
+import { composer } from "@/lib/typographie";
 
 type Side = "left" | "right";
 interface AnnoDef {
@@ -27,14 +28,23 @@ interface AnnoDef {
    *  la hauteur de sa propre pièce. Utile quand la pièce est au milieu d'un
    *  empilement : la nomenclature se lit alors comme une échelle régulière. */
   centerBetween?: boolean;
+  /**
+   * Ligne de détail sous le nom de la pièce.
+   *
+   * Par défaut (`undefined`) elle est DÉRIVÉE de la configuration affichée —
+   * la matière réelle de la pièce, qui change avec la sélection. Une chaîne la
+   * remplace par un texte fixe ; `null` la supprime, pour les pièces dont le
+   * nom porte déjà la matière et qu'une seconde ligne répéterait.
+   */
+  detail?: string | null;
 }
 
 // Nomenclature — deux colonnes qui correspondent aux deux groupes réellement
 // séparés par la vue éclatée :
 //
 //   colonne GAUCHE  01→03 : les volumes structurels (abat-jour, support, pied)
-//   colonne DROITE  04→06 : le groupe électrique (ampoule, douille, câble),
-//                           celui qui sort latéralement dans ExplodedLamp3D.
+//   colonne DROITE  04→05 : le groupe électrique (douille, câble), celui qui
+//                           sort latéralement dans ExplodedLamp3D.
 //
 // L'ordre du tableau est l'ordre de LECTURE et de TRACÉ, et il coïncide avec
 // l'ordre vertical des pièces dans chaque colonne — donc deux flèches d'une même
@@ -60,19 +70,42 @@ const ANNOS: AnnoDef[] = [
   // s'aèrent au passage. Les bornes de `layoutColumn` empêchent de sortir de la
   // fenêtre : un biais généreux se traduit simplement par « aussi haut / aussi
   // bas que possible ».
-  { part: "shade", num: "01", label: "Abat-jour", side: "left", biasY: -0.14 },
+  {
+    part: "shade",
+    num: "01",
+    label: "Abat-jour",
+    detail: "Collection matières Wasterial®",
+    side: "left",
+    biasY: -0.14,
+  },
   // « Assemblage » plutôt que « Support d'assemblage » : c'est le terme employé
   // par `partLabels` et par la fiche technique, et c'était de loin l'étiquette
   // la plus large — elle débordait vers le centre, en plein sur la géométrie.
   // Centré entre l'abat-jour et le pied plutôt que calé sur sa propre pièce :
   // la colonne de gauche se lit comme une échelle à trois barreaux réguliers.
   { part: "connector", num: "02", label: "Assemblage", side: "left", centerBetween: true },
-  { part: "base", num: "03", label: "Pied", side: "left" },
-  { part: "bulb", num: "04", label: "Ampoule", side: "right", biasY: -0.1 },
-  { part: "socket", num: "05", label: "Douille", side: "right" },
+  { part: "base", num: "03", label: "Pied", detail: "Collection matières Wasterial®", side: "left" },
+  // L'ampoule ne figure plus à la nomenclature : ce n'est pas une pièce de
+  // l'objet mais un consommable, et la planche décrit ce qui est fabriqué.
+  // Sa géométrie reste dans la scène — elle éclaire l'intérieur de l'abat-jour.
+  {
+    part: "socket",
+    num: "04",
+    label: "Douille et manchon cylindrique fileté en métal",
+    detail: null,
+    side: "right",
+  },
   // Décalé vers la gauche : le câble s'étale vers la droite du cadre et venait
   // passer derrière son propre texte.
-  { part: "cable", num: "06", label: "Câble textile", side: "right", biasY: 0.18, biasX: -0.12 },
+  {
+    part: "cable",
+    num: "05",
+    label: "Câble électrique en tissu",
+    detail: null,
+    side: "right",
+    biasY: 0.18,
+    biasX: -0.12,
+  },
 ];
 
 /** Bord extérieur de chaque colonne, en fraction de largeur. */
@@ -85,8 +118,15 @@ const COLUMN_X: Record<Side, number> = { left: 0.03, right: 0.97 };
  * large déborde vers le centre, donc sur la géométrie. Étroite, elle reste dans
  * sa gouttière et se contente de passer à la ligne — ce qui est la norme sur une
  * planche technique.
+ *
+ * Passée de 24 % à 32 % : « Douille et manchon cylindrique fileté en métal »
+ * contient des mots plus longs que la gouttière ne l'était, et « cylindrique »
+ * sortait du cadre par la droite au lieu de passer à la ligne. La césure
+ * (hyphens, sur un document déjà en lang="fr") fait le reste : elle coupe les
+ * mots que même 32 % ne suffiraient pas à contenir, plutôt que de les laisser
+ * déborder.
  */
-const LABEL_MAX_WIDTH = "24%";
+const LABEL_MAX_WIDTH = "32%";
 
 /** Écart vertical minimal entre deux étiquettes voisines (px). */
 const LABEL_GAP = 12;
@@ -522,11 +562,10 @@ export function ExplodedAnnotations({
           Cette liste porte la même information, dans le même ordre. */}
       <ol className="sr-only">
         {ANNOS.map((anno) => {
-          const mat = materialOf(anno.part);
+          const mat = anno.detail !== undefined ? anno.detail : materialOf(anno.part);
           return (
             <li key={anno.part}>
-              {anno.num} — {anno.label}
-              {mat ? ` : ${mat}` : ""}
+              {composer(`${anno.num} — ${anno.label}${mat ? ` : ${mat}` : ""}`)}
             </li>
           );
         })}
@@ -583,7 +622,7 @@ export function ExplodedAnnotations({
             Leur hauteur est pilotée en JS (voir draw) ; le CSS ne fixe que la
             colonne et le centrage vertical sur le point calculé. */}
         {ANNOS.map((anno, i) => {
-          const mat = materialOf(anno.part);
+          const mat = anno.detail !== undefined ? anno.detail : materialOf(anno.part);
           // « Câble textile » + « Câble textile bleu » se réduit à une seule
           // ligne : « Câble textile — bleu ». Les matières sans rapport avec le
           // nom de la pièce (« Abat-jour » / « Wasterial® - Brique ») gardent
@@ -612,21 +651,24 @@ export function ExplodedAnnotations({
                 ref={(el) => {
                   elRefs.current[i].span = el;
                 }}
-                className="inline-block text-[0.68rem] font-medium leading-snug text-ink"
+                className="inline-block hyphens-auto text-[0.8rem] font-medium leading-snug text-ink [overflow-wrap:break-word]"
               >
-                <span className="u-index text-[0.6rem] font-normal text-ink-muted">
-                  {anno.num}
-                </span>{" "}
-                {anno.label}
+                {/* AUCUNE taille ici : l'indice hérite celle du nom de la pièce,
+                    portée par le span parent. Il l'avait fixée à 0,6 rem, si
+                    bien qu'agrandir le nom laissait le chiffre en arrière —
+                    deux valeurs à tenir d'accord pour un seul rapport. La
+                    graisse et la couleur suffisent à le mettre au second plan. */}
+                <span className="u-index font-normal text-ink-muted">{anno.num}</span>{" "}
+                {composer(anno.label)}
                 {parts?.suffix && (
                   <span className="font-normal text-ink-muted">
                     {" — "}
-                    {parts.suffix}
+                    {composer(parts.suffix)}
                   </span>
                 )}
                 {parts?.full && (
                   <span className="u-index mt-0.5 block text-[0.55rem] font-normal leading-tight text-ink-muted">
-                    {parts.full}
+                    {composer(parts.full)}
                   </span>
                 )}
               </span>
