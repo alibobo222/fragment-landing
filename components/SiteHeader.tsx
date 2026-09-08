@@ -158,8 +158,27 @@ export function SiteHeader() {
                         // source pour les deux, jamais deux réglages qui divergent.
                         // font-display reste explicite : u-title n'impose la police
                         // que via le sélecteur h1/h2/h3, pas sur un <a>.
-                        className="group flex items-baseline gap-4 border-b border-line py-4 font-display u-title text-ink transition-colors hover:text-anthracite"
-                        style={courant ? { color: "var(--color-fil)" } : undefined}
+                        // UNE SEULE LIGNE PAR CHAPITRE, quelle que soit la
+                        // largeur. « Le configurateur 3D » demande 291 px au
+                        // corps de u-title (2.1rem) ; la colonne en offre 286
+                        // à 375 px de large, et seulement 231 à 320. La taille
+                        // suit donc le viewport au lieu d'être fixe : la borne
+                        // haute reste sous u-title, la borne basse garantit le
+                        // libellé le plus long sur la plus étroite des colonnes.
+                        // Le point d'exclamation est obligatoire — u-title et
+                        // text-[...] ont la même spécificité, et sans lui
+                        // l'ordre dans la couche utilities trancherait.
+                        className="group flex items-baseline gap-4 whitespace-nowrap border-b border-line py-4 font-display u-title text-[clamp(1.5rem,7.6vw,1.9rem)]! text-ink transition-colors hover:text-anthracite"
+                        // cv01 sans ss01 : body applique les deux, et cv01
+                        // encadre les chiffres d'Overused Grotesk — le « 3 » de
+                        // « Le configurateur 3D » sortait dans un rectangle
+                        // noir. Le premier libellé de chapitre à contenir un
+                        // chiffre a révélé le défaut ; il vaudra pour tous les
+                        // suivants. ss01 est conservé, c'est la lettre du site.
+                        style={{
+                          fontFeatureSettings: '"ss01"',
+                          ...(courant ? { color: "var(--color-fil)" } : {}),
+                        }}
                       >
                         <span
                           className="u-index w-7 shrink-0 text-xs"

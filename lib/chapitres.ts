@@ -15,7 +15,7 @@ import { useEffect, useState } from "react";
 export const CHAPITRES = [
   { num: "01", id: "projet", label: "Le projet" },
   { num: "02", id: "matieres", label: "Les matières" },
-  { num: "03", id: "configurateur", label: "Le configurateur" },
+  { num: "03", id: "configurateur", label: "Le configurateur 3D" },
   { num: "04", id: "details", label: "Fiche technique" },
   { num: "05", id: "contact", label: "Prendre contact" },
 ] as const;
