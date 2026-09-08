@@ -94,6 +94,10 @@ const ANNOS: AnnoDef[] = [
     label: "Douille et manchon",
     detail: "cylindrique fileté en métal",
     side: "right",
+    // Remontée : posée à la hauteur de sa pièce, l etiquette venait se coller
+    // au flanc de la douille et sa fleche tombait a cinq pixels. Le vide
+    // au-dessus, a droite de l abat-jour, lui rend une diagonale lisible.
+    biasY: -0.1,
   },
   // Décalé vers la gauche : le câble s'étale vers la droite du cadre et venait
   // passer derrière son propre texte.
@@ -126,7 +130,7 @@ const COLUMN_X: Record<Side, number> = { left: 0.03, right: 0.97 };
  * gouttière jusqu'à manger la géométrie. La césure (hyphens, sur un document
  * déjà en lang="fr") reste en dernier recours.
  */
-const LABEL_MAX_WIDTH = "32%";
+const LABEL_MAX_WIDTH = "26%";
 
 /** Écart vertical minimal entre deux étiquettes voisines (px). */
 const LABEL_GAP = 12;
@@ -166,7 +170,7 @@ const CENTER_BIAS = 0.3;
  * situé au-delà de ce seuil est préféré. C'est un réglage GLOBAL — aucune flèche
  * n'est corrigée à la main.
  */
-const MIN_LEADER_LEN = 64;
+const MIN_LEADER_LEN = 44;
 
 /** Poids de la pénalité de trait trop court. */
 const SHORT_LEADER_PENALTY = 3.2;
@@ -662,7 +666,7 @@ export function ExplodedAnnotations({
                 ref={(el) => {
                   elRefs.current[i].span = el;
                 }}
-                className="inline-block hyphens-auto text-[0.8rem] font-medium leading-snug text-ink [overflow-wrap:break-word]"
+                className="inline-block hyphens-auto text-[0.72rem] font-medium leading-snug text-ink [overflow-wrap:break-word]"
               >
                 {/* AUCUNE taille ici : l'indice hérite celle du nom de la pièce,
                     portée par le span parent. Il l'avait fixée à 0,6 rem, si

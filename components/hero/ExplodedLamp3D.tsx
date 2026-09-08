@@ -57,7 +57,13 @@ import type { PartVariants } from "@/components/hero/Lamp3D";
 // nécessaire à la nomenclature est prise sur l'ÉTALEMENT LATÉRAL des pièces
 // (voir EXPLODE ci-dessous), pas en éloignant la caméra : on garde ainsi un
 // objet grand ET des marges franches à gauche et à droite.
-const CAMERA: [number, number, number] = [0.405, 0.27, 1.15];
+// Reculée de 25 % (était [0.405, 0.27, 1.15]) pour dégager les gouttières de la
+// planche : à l'ancien cadrage, l'objet occupait les deux tiers de la largeur et
+// il ne restait qu'une soixantaine de pixels de chaque côté — moins que la seule
+// étiquette, sans parler de sa flèche. On RECULE plutôt que d'élargir le champ :
+// à FOV constant, la perspective du produit ne change pas, seule sa taille
+// apparente diminue.
+const CAMERA: [number, number, number] = [0.506, 0.338, 1.438];
 const FOV = 30;
 
 // Rotation d'affichage du GROUPE PARENT (toutes les pièces). Orientation de base
