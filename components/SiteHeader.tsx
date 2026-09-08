@@ -55,8 +55,8 @@ export function SiteHeader() {
 
   return (
     <>
-      <header className="fixed inset-x-0 top-0 z-40 mx-auto w-full max-w-[30rem] border-b border-line bg-white">
-        <div className="u-container flex h-14 items-center justify-between">
+      <header className="fixed inset-x-0 top-0 z-40 mx-auto w-full max-w-[30rem] border-b-[length:var(--header-rule)] border-line bg-white">
+        <div className="u-container flex h-[var(--header-row)] items-center justify-between">
           {/* La bande ne porte QUE le logotype et l'accès au sommaire. Elle a
               un temps affiché le numéro du chapitre courant à droite du
               logotype : dans 56 px de haut, à côté d'un logotype, il ajoutait
@@ -126,7 +126,7 @@ export function SiteHeader() {
                 role="dialog"
                 aria-modal="true"
                 aria-label="Sommaire"
-                className="fixed inset-y-0 left-1/2 top-14 z-50 w-full max-w-[30rem] -translate-x-1/2 overflow-y-auto bg-white"
+                className="fixed inset-y-0 left-1/2 top-[var(--header-h)] z-50 w-full max-w-[30rem] -translate-x-1/2 overflow-y-auto bg-white"
                 initial={reduce ? { opacity: 0 } : { opacity: 0, y: -12 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={reduce ? { opacity: 0 } : { opacity: 0, y: -12 }}
@@ -186,9 +186,9 @@ export function SiteHeader() {
       </header>
 
       {/* CALE — l'en-tête est hors flux, ce vide tient sa place dans la
-          colonne. 3.5rem (h-14) + 1px pour le filet inférieur : la mise en
-          page reste au pixel près celle du sticky qu'il remplace. */}
-      <div aria-hidden className="h-[calc(3.5rem+1px)]" />
+          colonne. Sa hauteur vient de --header-h (globals.css), la même que
+          celle dont le hero se défalque : une seule source, pas de dérive. */}
+      <div aria-hidden className="h-[var(--header-h)]" />
     </>
   );
 }

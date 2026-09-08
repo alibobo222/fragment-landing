@@ -44,6 +44,16 @@
 @layer base {
   :root {
     color-scheme: light;
+
+    /* HAUTEUR DE L'EN-TÊTE — source unique. L'en-tête est hors flux (fixed) :
+       trois éléments doivent connaître sa hauteur exacte, la cale qui tient sa
+       place, le hero qui remplit ce qui reste de l'écran, et le panneau du menu
+       qui s'ouvre dessous. Le filet compte : sans lui, le hero débordait d'un
+       pixel et le chapitre suivant pointait sous le hero, même en haut de page.
+       Changer la rangée ou le filet ici suffit — rien d'autre à synchroniser. */
+    --header-row: 3.5rem;
+    --header-rule: 1px;
+    --header-h: calc(var(--header-row) + var(--header-rule));
     /* Accent global piloté par le modèle affiché dans le hero (JS). */
     --accent: var(--color-cobalt);
     /* Pôle clair du même modèle, pour les éléments posés sur fond noir. */
