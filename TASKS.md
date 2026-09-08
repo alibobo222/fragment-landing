@@ -345,3 +345,21 @@ on mesure une machine que presque aucun visiteur n'a.
   occurrences de ponctuation double de `data/product.ts` et `data/materials.ts`
   sont toutes dans des textes alternatifs : jamais affichés, donc jamais coupés
   en fin de ligne, et une insécable y gênerait plutôt la synthèse vocale.
+- **La bande du haut disparaît sur Safari iOS, et on ne sait toujours pas
+  pourquoi.** Ouvert depuis un lien WhatsApp sur iPhone, le `<header>` est
+  absent de l'écran. Deux correctifs ont échoué : le passage de `sticky` à
+  `fixed` (de4a5d1, resté en place — il ne nuit pas), puis un recalage du
+  défilement à l'arrivée (f68e503, révoqué). Ce qui est ÉCARTÉ par la mesure :
+  aucun `transform`, `filter`, `backdrop-filter`, `perspective`, `will-change`,
+  `contain` ni `overflow` sur la chaîne `header → div.app-shell → body → html` ;
+  aucune classe conditionnelle ni media query masquante ; les variables
+  `--header-row`, `--header-rule`, `--header-h` sont bien déclarées en
+  production et les règles `height` et `border-bottom-width` bien générées ;
+  le collage fonctionne dans Playwright WebKit à 393×852, où le défaut ne s'est
+  JAMAIS reproduit. Deux relevés indépendants donnent `scrollY = 108` à
+  l'arrivée, au pixel près — déterministe, et proche des 109 px de chrome haut
+  de Safari, ce qui reste une piste et non une preuve. Reprendre ce sujet
+  demande une mesure sur l'appareil : un panneau activé par `?diag=1` affichant
+  `scrollY`, `innerHeight`, `visualViewport.height` et le `rect` réel du
+  `<header>`. Sans cette mesure, tout correctif est une devinette — deux l'ont
+  déjà été.
