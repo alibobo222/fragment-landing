@@ -56,10 +56,19 @@ export const productSpecs: SpecField[] = [
   // Ce chiffre vient de la CAO, pas d'un mètre posé sur l'objet fini : à
   // remplacer par la mesure de l'atelier dès qu'elle est disponible.
   { key: "dimensions", label: "Dimensions", value: "H 20 × l 22 × P 16 cm (hors câble)" },
-  { key: "weight", label: "Poids", value: null, pending: true }, // TODO: poids en kg
+  // Donné par l'atelier. Ni `pending` ni TODO : la valeur est là, la ligne
+  // s'affiche comme les autres.
+  { key: "weight", label: "Poids", value: "3 kg" },
 
   // — DE QUOI C'EST FAIT
-  { key: "assembly", label: "Structure", value: "Trois volumes assemblés (abat-jour, pièce métallique, pied)" },
+  // Quatre et non trois : la douille est comptée parmi les volumes. Elle n'est
+  // pas seulement un organe électrique — sa masse cylindrique se lit dans la
+  // composition, au même titre que le pied et l'abat-jour.
+  {
+    key: "assembly",
+    label: "Structure",
+    value: "Quatre volumes assemblés : abat-jour, pièce métallique, douille et pied",
+  },
   {
     key: "cable",
     label: "Câble textile",

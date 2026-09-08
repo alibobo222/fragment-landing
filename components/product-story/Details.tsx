@@ -3,6 +3,9 @@ import { SectionHeading } from "@/components/ui/SectionHeading";
 import { productSpecs } from "@/data/specs";
 import { composer } from "@/lib/typographie";
 
+/** « a, b et c » — le « et » du français, sans concaténation à la main. */
+const listeFr = new Intl.ListFormat("fr", { style: "long", type: "conjunction" });
+
 /**
  * Fiche technique — datasheet mono (nomenclature). Uniquement les données
  * réellement disponibles ; les champs non renseignés (`value: null` dans
@@ -15,6 +18,12 @@ export function Details() {
   // s'il est marqué `pending` : la donnée est demandée à l'atelier, et le dire
   // vaut mieux que de laisser croire qu'elle n'existe pas.
   const specs = productSpecs.filter((spec) => spec.value !== null || spec.pending);
+  // Ce qui reste à préciser : les caractéristiques sans valeur. `pending`
+  // n'entre pas ici — ces lignes-là s'affichent déjà, avec leur mention
+  // d'attente ; les nommer une seconde fois serait redondant.
+  const aPreciser = productSpecs
+    .filter((c) => c.value === null && !c.pending)
+    .map((c) => c.label.toLowerCase());
   return (
     <section id="details" aria-labelledby="details-title" className="sol-pierre scroll-mt-16 pb-12">
       {/* Non épinglé (demandé) : le titre défile normalement avec le reste
@@ -57,11 +66,19 @@ export function Details() {
               note, et le rapprochement la rattache au tableau qu'elle
               commente — l'espace plus large qui la suit revient au bouton,
               qui est une action, pas une suite de lecture. */}
-          <p className="mt-3 max-w-[36ch] text-xs italic leading-relaxed text-ink-muted">
-            Certaines caractéristiques (poids, source lumineuse,
-            alimentation) sont précisées au cas par cas selon la configuration,
-            lors de votre prise de contact.
-          </p>
+          {/* La liste entre parenthèses est DÉRIVÉE, jamais écrite à la main.
+              Elle l'était : elle annonçait « poids, source lumineuse,
+              alimentation » alors que la source lumineuse était renseignée
+              depuis longtemps et que le poids venait de l'être. Une énumération
+              en dur ment dès qu'une valeur arrive — et personne ne pense à la
+              relire en remplissant un champ. */}
+          {aPreciser.length > 0 && (
+            <p className="mt-3 max-w-[36ch] text-xs italic leading-relaxed text-ink-muted">
+              {composer(
+                `Certaines caractéristiques (${listeFr.format(aPreciser)}) sont précisées au cas par cas selon la configuration, lors de votre prise de contact.`
+              )}
+            </p>
+          )}
 
           {/* Variante CLAIRE des boutons du site — `btn-glass-secondary`, la
               même famille que le CTA du configurateur, même géométrie. Son
