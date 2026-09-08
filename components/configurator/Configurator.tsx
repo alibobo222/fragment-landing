@@ -14,6 +14,7 @@ import { scrollToId } from "@/lib/scroll";
 import { materialTexture } from "@/lib/materialSwatch";
 import { splitFinishLabel, capitalise } from "@/lib/materialLabel";
 import { SectionHeading } from "@/components/ui/SectionHeading";
+import { composer } from "@/lib/typographie";
 import { LampStage } from "@/components/lamp/LampStage";
 import { buttonMotion } from "@/components/ui/motion";
 import { ProductThumb } from "@/components/ui/ProductThumb";
@@ -164,6 +165,20 @@ export function Configurator() {
           />
         </div>
         <VariantPicker selectedId={selectedId} onChoose={onChoose} />
+
+        {/* Placée SOUS le sélecteur, et pas ailleurs : c'est là, devant six
+            vignettes, que naît la question « et si je veux autre chose ? ».
+            Plus haut elle serait lue avant qu'on ait rien à comparer, plus bas
+            elle passerait après le bouton de contact, donc après la décision.
+
+            Corps et registre de la note de la fiche technique (Details.tsx) :
+            petite, en italique, sourde — une précision, pas un argument. Le
+            site n'est pas marchand, la phrase ne vend rien, elle informe. */}
+        <p className="u-container mt-4 max-w-[46ch] text-xs italic leading-relaxed text-ink-muted">
+          {composer(
+            "Ces six compositions sont des propositions : les matières, les textures et les couleurs se choisissent."
+          )}
+        </p>
       </div>
 
       {/* ---------- Invitation à échanger (pas d'achat) ---------- */}
