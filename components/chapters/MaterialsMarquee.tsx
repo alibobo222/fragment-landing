@@ -21,9 +21,25 @@ import { materialMobileImage, materials, type MaterialSample } from "@/data/mate
  */
 const SPEED_PX_PER_S = 40; // 35–45 px/s demandé.
 
-function SampleItem({ sample, lazy }: { sample: MaterialSample; lazy?: boolean }) {
+function SampleItem({
+  sample,
+  lazy,
+  ancre,
+}: {
+  sample: MaterialSample;
+  lazy?: boolean;
+  /**
+   * Poser un point d'ancrage sur cet échantillon. RÉSERVÉ à la bande à
+   * défilement manuel : dans le ruban animé, le conteneur ne défile pas et ne
+   * déclare aucun scroll-snap-type, si bien qu'un scroll-snap-align y
+   * retomberait sur le DOCUMENT et y créerait dix-huit points d'ancrage
+   * verticaux parasites — depuis que html porte un ancrage en haut de page
+   * (globals.css), ce n'est plus inoffensif.
+   */
+  ancre?: boolean;
+}) {
   return (
-    <li className="w-28 shrink-0 snap-start sm:w-36">
+    <li className={`w-28 shrink-0 sm:w-36 ${ancre ? "snap-start" : ""}`}>
       {/* Pas de libellé visible sous l'échantillon (demandé) — le nom reste
           un vrai texte pour autant : porté par `alt`, lu au clavier/lecteur
           d'écran quand l'échantillon reçoit le focus ou est parcouru. */}
@@ -65,11 +81,15 @@ function ManualStrip() {
       // deux marges négatives et ferait déborder le bandeau de 1,4rem
       // (22,4px) de chaque côté au-delà du bord réel de la page — largeur
       // pleine héritée du parent, pas recalculée ici.
-      className="overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      // snap-x/snap-mandatory sont ICI et non sur le <ul> : le type d'ancrage
+      // se déclare sur le conteneur qui défile. Posé sur l'enfant, il ne
+      // s'appliquait à rien, et les <li> se rattachaient au défilement
+      // VERTICAL du document.
+      className="snap-x snap-mandatory overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
     >
-      <ul className="flex snap-x snap-mandatory">
+      <ul className="flex">
         {materials.map((m) => (
-          <SampleItem key={m.id} sample={m} />
+          <SampleItem key={m.id} sample={m} ancre />
         ))}
       </ul>
     </div>
