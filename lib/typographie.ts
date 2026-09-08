@@ -80,10 +80,24 @@ export function composer(texte: string): string {
   t = t.replace(/«[  ]?/g, "«" + INSEC);
   t = t.replace(/[  ]?»/g, INSEC + "»");
 
-  // Ponctuation double : insécable avant, si une espace ordinaire précède ou si
-  // rien ne précède. On ne touche pas à « 16:9 » ni aux URL (pas d'espace après).
+  // Point-virgule, exclamation, interrogation : insécable avant, si une espace
+  // ordinaire précède ou si rien ne précède.
   t = t.replace(/[  ]?([;!?])/g, INSEC + "$1");
-  t = t.replace(/[  ]?:(?=[  ]|$)/g, INSEC + ":");
+
+  // DEUX-POINTS : COLLÉS au mot qui précède, demandé par l'atelier.
+  //
+  // C'est un écart assumé à l'orthotypographie française, qui veut une espace
+  // insécable devant les deux-points comme devant les autres ponctuations
+  // doubles. Le choix est esthétique et il est ASSUMÉ, pas oublié : ne pas le
+  // « corriger » en croyant réparer une omission.
+  //
+  // Si l'espace revient un jour, la voie propre n'est pas de rétablir U+00A0
+  // — c'est lui qui paraissait trop large — mais l'espace fine insécable
+  // U+202F, qui est la forme correcte et beaucoup plus serrée.
+  //
+  // On ne touche toujours pas à « 16:9 » ni aux URL : la coupure exige une
+  // espace après le signe.
+  t = t.replace(/[  ]+:(?=[  ]|$)/g, ":");
 
   // Mots d'une ou deux lettres. Appliqué en dernier, et une seule passe : les
   // chevauchements ne sont pas repris, ce qui évite les chaînes trop longues.

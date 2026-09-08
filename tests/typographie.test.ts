@@ -6,9 +6,16 @@ const APO = "’";
 
 describe("composer — micro-typographie française", () => {
   describe("ponctuation double", () => {
-    it("pose une insécable avant les deux-points", () => {
+    it("colle les deux-points au mot qui précède", () => {
+      // Écart assumé à l'orthotypographie française — voir lib/typographie.ts.
       expect(composer("Une seule chose : vous répondre.")).toBe(
-        `Une seule chose${INSEC}: vous répondre.`
+        "Une seule chose: vous répondre."
+      );
+    });
+
+    it("colle les deux-points même après une insécable déjà posée", () => {
+      expect(composer(`Une seule chose${INSEC}: vous répondre.`)).toBe(
+        "Une seule chose: vous répondre."
       );
     });
 
@@ -18,8 +25,8 @@ describe("composer — micro-typographie française", () => {
       );
     });
 
-    it("insère l'insécable même quand aucune espace ne précède", () => {
-      expect(composer("Attention: ceci")).toBe(`Attention${INSEC}: ceci`);
+    it("laisse tels quels les deux-points déjà collés", () => {
+      expect(composer("Attention: ceci")).toBe("Attention: ceci");
     });
 
     it("ne touche pas aux deux-points sans espace après — ratios, horaires", () => {
@@ -95,9 +102,15 @@ describe("composer — micro-typographie française", () => {
     });
 
     it("n'introduit jamais d'espace ordinaire supplémentaire", () => {
+      // Le contrat a changé : composer ÉCHANGE des espaces contre des
+      // insécables, et il en SUPPRIME une seule — celle qui précédait les
+      // deux-points, désormais collés (voir lib/typographie.ts). Il n'en
+      // ajoute toujours aucune. On compare donc à l'attendu, espace des
+      // deux-points ôtée.
       const avant = "Une phrase : simple, avec « des guillemets » et l'apostrophe.";
+      const attendu = avant.replace(/'/g, APO).replace(/ :/g, ":");
       const apres = composer(avant);
-      expect(apres.replace(new RegExp(INSEC, "g"), " ")).toBe(avant.replace(/'/g, APO));
+      expect(apres.replace(new RegExp(INSEC, "g"), " ")).toBe(attendu);
     });
 
     it("est idempotente — composer deux fois ne change rien de plus", () => {
