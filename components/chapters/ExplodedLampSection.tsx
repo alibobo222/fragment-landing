@@ -299,9 +299,14 @@ function ExplodedScrollTrack({ onContextLost }: { onContextLost: () => void }) {
 
           {/* Ce que le défilement va révéler — HORS du badge, sous lui : le
               cartouche garde son dessin, sa largeur et sa jauge intacts.
-              Elle porte `hintOpacity`, la même valeur que l'invite du bas :
-              les deux s'effacent ensemble dès que le désassemblage commence,
-              et rien ne subsiste une fois le geste compris.
+              Elle porte `hintOpacity` : elle s'efface dès que le
+              désassemblage commence, et rien ne subsiste une fois le geste
+              compris. Une seconde invite, « Défilez pour désassembler »,
+              vivait en bas de scène avec sa propre flèche animée ; deux
+              formulations du même message dans un seul écran, plus la flèche
+              du cartouche, faisaient trois signaux pour un geste. Celle-ci
+              est restée parce qu'elle dit ce qu'on va DÉCOUVRIR, pas
+              seulement ce qu'il faut faire.
               Mono sans capitales : `u-eyebrow` est le registre des étiquettes
               de cette planche, mais une phrase entière en capitales y crierait. */}
           <motion.p
@@ -340,29 +345,6 @@ function ExplodedScrollTrack({ onContextLost }: { onContextLost: () => void }) {
           </span>
         </motion.div>
 
-        {/* Invite au scroll — s'efface dès le début du désassemblage. */}
-        <motion.div
-          style={{ opacity: reduce ? 0 : hintOpacity }}
-          className="pointer-events-none absolute inset-x-0 bottom-7 flex flex-col items-center gap-2"
-        >
-          <span className="u-eyebrow text-ink-muted">Défilez pour désassembler</span>
-          <motion.svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.6"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="text-ink-muted"
-            aria-hidden
-            animate={reduce ? undefined : { y: [0, 4, 0] }}
-            transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
-          >
-            <path d="M12 5v14M6 13l6 6 6-6" />
-          </motion.svg>
-        </motion.div>
       </div>
     </div>
   );
