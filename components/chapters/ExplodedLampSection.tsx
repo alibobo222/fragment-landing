@@ -72,14 +72,20 @@ const STAGE_TOP = 18;
  * Elle était calée sur STAGE_TOP, c'est-à-dire tout en haut de la fenêtre de
  * scène — or l'objet, lui, occupe le milieu du cadre. Mesuré à l'éclatement
  * maximal, où l'ampoule monte le plus haut : environ 148 px de blanc séparaient
- * la puce du premier pixel de la lampe. Elle descend donc de 70 px, ce qui
- * referme la moitié de ce vide sans jamais venir au contact — il reste près de
- * 80 px de dégagement dans l'état le plus défavorable.
+ * la puce du premier pixel de la lampe.
+ *
+ * Elle descend donc, mais de 12 px seulement — pas de 70 comme d'abord posé.
+ * À 70, le vide se déplaçait simplement AU-DESSUS d'elle : 112 px entre la fin
+ * du paragraphe précédent et la puce, contre 42 auparavant. On ne referme pas
+ * un blanc en le poussant ailleurs. À 12, l'espace qui précède la puce revient
+ * à une cinquantaine de pixels, et il reste largement de quoi la séparer de la
+ * lampe — l'objet n'atteint jamais le haut du cadre, même à l'éclatement
+ * maximal.
  *
  * Valeur distincte de STAGE_TOP, qui reste la marge de la fenêtre d'annotations
  * et n'a aucune raison de suivre la puce.
  */
-const BADGE_TOP = STAGE_TOP + 70;
+const BADGE_TOP = STAGE_TOP + 12;
 
 /** Illustration statique d'origine (repli : pas de WebGL / reduced-motion). */
 function StaticEclate({ conteneurRef }: { conteneurRef?: RefObject<HTMLElement | null> }) {
@@ -348,14 +354,19 @@ function ExplodedScrollTrack({ onContextLost }: { onContextLost: () => void }) {
               `u-eyebrow` fixe corps et interlettrage, et l'emporte sur les
               utilitaires : d'où le `!`. Le `text-[0.6rem]` qui figurait ici
               avant était d'ailleurs sans effet. */}
-          <span className="u-eyebrow text-[0.55rem]! tracking-[0.08em]! text-ink-muted">
+          {/* En encre pleine, et le point d'exclamation est obligatoire :
+              u-eyebrow pose lui-même color: var(--color-ink-muted), qu'un
+              simple utilitaire de couleur ne surclasse pas. La ligne de
+              configuration qui suit reste sourde — c'est ce qui distingue le
+              titre de sa légende, maintenant qu'ils ont des corps voisins. */}
+          <span className="u-eyebrow text-[0.78rem]! tracking-[0.08em]! text-ink!">
             {/* Cinq et non six : l'ampoule a quitté la nomenclature — c'est un
                 consommable, pas une pièce de l'objet. Ce compte doit suivre la
                 planche, sans quoi le cartouche annonce une pièce que rien
                 n'étiquette. */}
             05 pièces · assemblage manuel
           </span>
-          <span className="u-index text-[0.58rem] tracking-tight text-ink-muted">
+          <span className="u-index text-[0.72rem] tracking-tight text-ink-muted">
             {variant.index} — {variant.name}
           </span>
         </motion.div>

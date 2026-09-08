@@ -112,19 +112,20 @@ export function ProjectStory() {
         {/* Vue éclatée 3D — pilotée par le scroll (remplace l'illustration). */}
         <ExplodedLampSection />
 
-        {/* Matières — l'espace fait la coupure. Le `gap-6` du conteneur est
-            le rythme INTÉRIEUR au chapitre ; ici on ouvre un chapitre, donc
-            l'intervalle doit être franchement plus large que tout ce qui le
-            précède, sur le rythme des autres sections de la page. */}
-        <div className="mt-8">
-          {/* Filet à bord perdu — 1 px, couleur de ligne du système. Serré de
-              part et d'autre : l'espace dit déjà la coupure, le filet ne fait
-              que la confirmer. Trop d'air autour et il devient un ornement. */}
-          {/* `u-bleed` tire de -1.4rem de chaque côté : il lui faut le padding
-              d'un `u-container` pour compenser, sinon le filet sort du viewport
-              et élargit le document de 22 px (mesuré à 320 et 390 px). */}
+        {/* Matières — l'espace fait la coupure, et le `gap-6` du conteneur est
+            le rythme INTÉRIEUR au chapitre. L'intervalle reste plus large que
+            lui, mais moins qu'avant : il valait 32 px, ce qui portait à 98 px
+            le blanc entre le cartouche de la planche éclatée et ce filet — la
+            piste laisse déjà 42 px sous le cartouche, et le rythme 24. Trois
+            marges qui s'additionnent, pour une seule respiration voulue. */}
+        <div className="mt-4">
+          {/* Filet DANS la colonne, plus à bord perdu. Il touchait les deux
+              bords de l'écran (`u-bleed`, -1.4rem de chaque côté), ce qui en
+              faisait une césure de page ; il ne sépare que deux parties d'un
+              même chapitre. Rentré dans la gouttière du `u-container`, il
+              s'arrête où s'arrête le texte qu'il sépare. */}
           <div className="u-container">
-            <hr className="u-bleed mb-6 border-0 border-t border-line" />
+            <hr className="mb-6 border-0 border-t border-line" />
           </div>
           <Text eyebrow="Dialogue de matières" title="Combiner matières et textures">
             L’identité se joue dans le contact des matières : le mat contre le
