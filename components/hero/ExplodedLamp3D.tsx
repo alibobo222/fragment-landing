@@ -174,7 +174,29 @@ const EXPLODE: Record<LampPart, { axis: number; lat: number }> = {
   // ce qui avait été détruit par la version précédente, où j'écartais tout le
   // monde pour résoudre une collision entre deux pièces.
   connector: { axis: 0.05, lat: -1.15 },
-  bulb: { axis: -0.62, lat: 0.36 },
+  // L'AMPOULE SORT PAR LE HAUT, seule. Son vecteur pointait dans le même sens
+  // que celui de la douille — axe négatif, latéral positif — si bien qu'elle
+  // semblait l'accompagner et restait sous l'abat-jour. Elle a pourtant
+  // toujours eu son vecteur PROPRE : rien à dégrouper, seulement à retourner.
+  //
+  // Mesuré sur le GLB, en unités d'éclatement (0 = centre de la douille) :
+  //   abat-jour  -1.089 → 2.625, soit 0.420 → 4.134 à l'éclatement maximal
+  //   ampoule     0.010 → 1.693, épaisseur 1.683 — c'est son diamètre
+  // L'amplitude n'est PAS bornée par le cadre : projeté hors navigateur, un
+  // axe de 3.6 donne |ndc| 0.62, très à l'intérieur, et le cadre tolérerait
+  // jusqu'à 5.83. C'est le CONTRASTE qui borne. À 3.6 l'ampoule se retrouve
+  // à 1.78 u au-dessus de l'abat-jour, seule au milieu du fond blanc : elle
+  // est blanc cassé sur blanc, présente et illisible — rien autour d'elle ne
+  // la détache.
+  //
+  // 2.82 la pose juste au-dessus du bord, dégagement 0.50 u : franchement
+  // sortie, et encore adossée à la masse sombre de l'abat-jour qui la
+  // découpe. Le repère utile n'est pas la distance parcourue, c'est le fond
+  // sur lequel elle se lit.
+  //
+  // Le latéral passe à 0 : à 0.36 l'ampoule sortait de biais. L'abat-jour est
+  // sur l'axe, c'est par son ouverture qu'elle doit passer.
+  bulb: { axis: 2.82, lat: 0 },
   socket: { axis: -0.86, lat: 0.44 },
   cable: { axis: -1.1, lat: 0.48 },
   base: { axis: -1.36, lat: 0 },
