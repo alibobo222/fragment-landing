@@ -57,11 +57,12 @@ export function ProjectStory() {
         <div className="u-container">
           <Reveal>
             <p className="max-w-[50ch] text-sm leading-relaxed text-ink-soft">
-              Plutôt que de partir d’une matière neuve, la lampe s’appuie
-              sur ce qui existe déjà — une grille perforée standard, une chute, une
-              pièce promise à une seconde vie. La contrainte du réemploi
-              n’est pas subie : elle oriente le dessin et donne à chaque
-              exemplaire son caractère.
+              Plutôt que de partir de matières neuves, la lampe s’appuie sur
+              ce qui existe déjà : une grille perforée standard, des chutes
+              minérales déjà mises en forme, un profilé métallique promis à
+              une seconde vie. La contrainte du réemploi n’est pas subie :
+              elle oriente le dessin et donne à chaque exemplaire son
+              caractère.
             </p>
           </Reveal>
         </div>
