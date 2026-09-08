@@ -175,8 +175,11 @@ export const variants: ProductVariant[] = [
     // l'extérieur), avec la photo réelle Renature appliquée par-dessus en
     // baseColor uniquement (voir applyInteriorVeneer, lib/lampTextures.ts).
     shadeInner: {
-      label:
-        "Phyli® - Renature (formulé à partir de coproduits et de déchets de l'industrie agroalimentaire)",
+      // Abrégé : la formule complète — « formulé à partir de coproduits et de
+      // déchets de l'industrie agroalimentaire » — occupait trois lignes dans
+      // le nuancier. La parenthèse garde les DEUX origines, coproduits et
+      // déchets, qui sont l'information ; c'est la périphrase qui tombe.
+      label: "Phyli® - Renature (coproduits et déchets agroalimentaires)",
       color: "#1c2028",
       material: "matte",
       textureImage: "/textures/swatch/renature.webp",
@@ -207,7 +210,7 @@ export const variants: ProductVariant[] = [
   {
     id: "brique-aluminium",
     index: "03",
-    name: "Terracotta",
+    name: "Corten",
     materialsSummary: "Wasterial® - Coquilles de moules · Acier corten",
     accent: "#a8371f",
     accentOnDark: "#d9663f",

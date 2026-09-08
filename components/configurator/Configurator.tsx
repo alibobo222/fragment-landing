@@ -331,7 +331,7 @@ function VariantPicker({
  * configuration (assemblage, abat-jour, câble), pas par son ordre dans
  * `variants` ni par son `index` éditorial, qui ne coïncident pas avec cette
  * numérotation. Correspondance vérifiée pièce par pièce :
- *   1 Terracotta — brique/aluminium/câble noir      → brique-aluminium
+ *   1 Corten — brique/aluminium/câble noir          → brique-aluminium
  *   2 Lichen     — coquille/vert/laiton/câble rouge → coquille-laiton
  *   3 Craie      — porcelaine/acier noir/câble noir → porcelaine-acier-noir
  *   4 Graphite   — noir/aluminium/câble bleu        → prototype-noir-cable-bleu
